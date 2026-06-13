@@ -1,0 +1,40 @@
+# Local development dependencies only (Postgres + Redis).
+# The web app runs on Vercel and the worker on Railway/Fly in production;
+# this file is purely for `docker compose up -d` during local development.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ielts-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ielts
+      POSTGRES_PASSWORD: ielts
+      POSTGRES_DB: ielts
+    ports:
+      - "5432:5432"
+    volumes:
+      - ielts-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ielts"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: ielts-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - ielts-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ielts-pg-data:
+  ielts-redis-data:

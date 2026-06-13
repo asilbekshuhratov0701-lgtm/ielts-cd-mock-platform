@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/*
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+.turbo/
+
+# Env & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Prisma
+packages/db/prisma/migrations/dev.db*
+.prisma/
+
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Test / coverage
+coverage/
+*.tsbuildinfo
+
+# Uploaded media (local dev)
+/uploads/
+
+# Local SQLite dev database (pnpm db:local)
+/.localdb/
+# Generated SQLite schema variant (derived from schema.prisma)
+packages/db/prisma/schema.sqlite.prisma

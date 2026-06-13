@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(AUTH_SECRET=\"dev-build-secret-not-used-1234567890\" AUTH_TRUST_HOST=true DATABASE_URL=\"postgresql://u:p@localhost:5432/db\" DIRECT_URL=\"postgresql://u:p@localhost:5432/db\" pnpm --filter @ielts/web build)",
+      "Bash(echo \"build exit: $?\")",
+      "Read(//tmp/**)",
+      "Bash(pnpm format *)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm lint *)",
+      "Bash(echo \"lint exit: $?\")",
+      "Bash(npx tsx *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(rm -f scoretest.mts)"
+    ]
+  }
+}

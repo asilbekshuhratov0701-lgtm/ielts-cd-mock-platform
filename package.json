@@ -1,0 +1,37 @@
+{
+  "name": "ielts-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "IELTS Computer-Delivered mock exam platform (Listening, Reading, Writing).",
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "dev:web": "pnpm --filter @ielts/web dev",
+    "build": "turbo run build",
+    "lint": "eslint .",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:local": "node scripts/dev-db.mjs",
+    "db:generate": "pnpm --filter @ielts/db run generate",
+    "db:migrate": "pnpm --filter @ielts/db run migrate",
+    "db:studio": "pnpm --filter @ielts/db run studio"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/node": "^22.10.5",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.19.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "ioredis": "^5.11.1"
+    }
+  }
+}

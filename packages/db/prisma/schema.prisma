@@ -1,0 +1,861 @@
+// =============================================================================
+// IELTS Computer-Delivered Mock Platform — Prisma schema (data definition only).
+// Covers core tables (§3) + v2 extension tables (§12: E1-E14).
+// This is the single source of truth for the database. No business logic here.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Direct (non-pooled) connection used by `prisma migrate`. Pooled URL is used at runtime.
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EXAMINER
+  CANDIDATE
+}
+
+enum UserStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  DELETED
+}
+
+enum ModuleType {
+  ACADEMIC
+  GENERAL
+}
+
+/// Universal Draft -> Review -> Publish workflow (E4). Applied to exams, imports, etc.
+enum ContentStatus {
+  DRAFT
+  IN_REVIEW
+  PREVIEW
+  APPROVED
+  PUBLISHED
+  ASSIGNED
+  ARCHIVED
+}
+
+enum ExamSource {
+  MANUAL
+  AI_IMPORT
+  TEMPLATE
+}
+
+enum SectionKind {
+  LISTENING
+  READING
+  WRITING
+}
+
+/// Full official IELTS question-type set. Each maps to a renderer in the UI registry.
+enum QuestionType {
+  MULTIPLE_CHOICE
+  MULTIPLE_ANSWER
+  TRUE_FALSE_NOT_GIVEN
+  YES_NO_NOT_GIVEN
+  MATCHING_HEADINGS
+  MATCHING_INFORMATION
+  MATCHING_FEATURES
+  MATCHING_SENTENCE_ENDINGS
+  SENTENCE_COMPLETION
+  SUMMARY_COMPLETION
+  NOTE_COMPLETION
+  TABLE_COMPLETION
+  FLOW_CHART_COMPLETION
+  DIAGRAM_LABELLING
+  MAP_LABELLING
+  PLAN_LABELLING
+  SHORT_ANSWER
+  CLASSIFICATION
+  WRITING_TASK_1
+  WRITING_TASK_2
+}
+
+enum AnswerType {
+  SINGLE
+  MULTI
+  TEXT
+  DROPDOWN
+  MATCH
+}
+
+enum MatchMode {
+  EXACT
+  CONTAINS
+  REGEX
+  SET
+}
+
+enum AttemptStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+  PUBLISHED
+  EXPIRED
+  ABANDONED
+}
+
+enum AssignmentTargetType {
+  CANDIDATE
+  GROUP
+  ORG
+}
+
+enum AssignmentStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum MediaKind {
+  AUDIO
+  IMAGE
+  DOC
+}
+
+enum ImportStatus {
+  UPLOADED
+  PARSING
+  OCR
+  ANALYZING
+  STRUCTURING
+  VALIDATING
+  NEEDS_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+  FAILED
+}
+
+enum ImportArtifactRole {
+  SOURCE_DOC
+  AUDIO
+  IMAGE
+}
+
+enum SuggestionStatus {
+  OPEN
+  ACCEPTED
+  REJECTED
+}
+
+/// Writing evaluation workflow (E13). Examiners reach COMPLETED; only admins PUBLISH.
+enum WritingEvalStatus {
+  PENDING
+  ASSIGNED
+  IN_REVIEW
+  COMPLETED
+  PUBLISHED
+}
+
+enum NotificationChannel {
+  INAPP
+  EMAIL
+}
+
+/// Powers Live Exam Center (E6) + Emergency Recovery audit trail (E7).
+enum SessionEventType {
+  START
+  HEARTBEAT
+  AUTOSAVE
+  DISCONNECT
+  RESUME
+  BLUR
+  FULLSCREEN_EXIT
+  AUTO_SUBMIT
+  SUBMIT
+}
+
+enum TemplateKind {
+  FULL_ACADEMIC
+  FULL_GT
+  LISTENING_ONLY
+  READING_ONLY
+  WRITING_ONLY
+  MINI
+  CUSTOM
+}
+
+enum LibraryContentType {
+  PASSAGE
+  AUDIO
+  QUESTION_GROUP
+  WRITING_TASK
+}
+
+enum GroupKind {
+  BATCH
+  LEVEL
+  VIP
+  CUSTOM
+}
+
+// ----------------------------------------------------------------------------
+// Identity & tenancy
+// ----------------------------------------------------------------------------
+
+/// Tenant root. A single default org to start; multi-center later flips a flag (§11).
+model Organization {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  brandingJson Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  users           User[]
+  exams           Exam[]
+  templates       ExamTemplate[]
+  libraryItems    LibraryItem[]
+  candidateGroups CandidateGroup[]
+  media           Media[]
+  mediaFolders    MediaFolder[]
+  importJobs      ImportJob[]
+  settings        Setting[]
+  auditLogs       AuditLog[]
+}
+
+model User {
+  id           String       @id @default(cuid())
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email        String       @unique
+  passwordHash String?
+  role         Role         @default(CANDIDATE)
+  status       UserStatus   @default(ACTIVE)
+  name         String?
+  locale       String       @default("en")
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  candidateProfile    CandidateProfile?
+  staffProfile        StaffProfile?
+  sessions            Session[]
+  passwordResetTokens PasswordResetToken[]
+
+  attempts           Attempt[]
+  assignments        ExamAssignment[]
+  groupMemberships   CandidateGroupMember[]
+  writingEvaluations WritingEvaluation[]
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+
+  @@index([orgId])
+  @@index([role])
+}
+
+model CandidateProfile {
+  userId     String    @id
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetBand Float?
+  country    String?
+  phone      String?
+  dob        DateTime?
+  notes      String?   @db.Text
+}
+
+model StaffProfile {
+  userId          String  @id
+  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String?
+  permissionsJson Json?
+}
+
+// --- Auth.js support tables ---
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expires   DateTime
+  usedAt    DateTime?
+
+  @@index([userId])
+}
+
+// ----------------------------------------------------------------------------
+// Exam authoring (E1 templates, E5 versioning)
+// ----------------------------------------------------------------------------
+
+/// Reusable exam blueprint defining structure / timings / sections / defaults (E1).
+model ExamTemplate {
+  id            String       @id @default(cuid())
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name          String
+  kind          TemplateKind
+  structureJson Json
+  createdById   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  exams Exam[]
+
+  @@index([orgId])
+}
+
+model Exam {
+  id         String        @id @default(cuid())
+  orgId      String
+  org        Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  title      String
+  moduleType ModuleType    @default(ACADEMIC)
+  status     ContentStatus @default(DRAFT)
+  source     ExamSource    @default(MANUAL)
+
+  // Versioning (E5). Published versions are frozen; edits fork a new version.
+  rootId          String?
+  parentVersionId String?
+  versionLabel    String? @default("v1")
+  frozen          Boolean @default(false)
+
+  templateId  String?
+  template    ExamTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  createdById String?
+  publishedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  sections      ExamSection[]
+  assignments   ExamAssignment[]
+  attempts      Attempt[]
+  versionEvents ExamVersionEvent[]
+  importJob     ImportJob?
+
+  @@index([orgId, status])
+  @@index([rootId])
+}
+
+model ExamVersionEvent {
+  id            String   @id @default(cuid())
+  examId        String
+  exam          Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  actorId       String?
+  changeSummary String
+  createdAt     DateTime @default(now())
+
+  @@index([examId])
+}
+
+model ExamSection {
+  id           String      @id @default(cuid())
+  examId       String
+  exam         Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+  kind         SectionKind
+  order        Int
+  durationSec  Int
+  settingsJson Json?
+
+  passages        Passage[]
+  audioTracks     AudioTrack[]
+  questionGroups  QuestionGroup[]
+  writingTasks    WritingTask[]
+  sectionAttempts SectionAttempt[]
+
+  @@unique([examId, order])
+  @@index([examId])
+}
+
+// ----------------------------------------------------------------------------
+// Content (reusable via the Question Bank library — E2)
+// Library fields (isLibrary/category/difficulty/tagsJson) appear on every content
+// table; LibraryItem indexes them for fast search/filter.
+// ----------------------------------------------------------------------------
+
+model Passage {
+  id           String      @id @default(cuid())
+  sectionId    String
+  section      ExamSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  order        Int
+  title        String?
+  bodyRichtext String      @db.Text
+  imageMediaId String?
+  imageMedia   Media?      @relation("PassageImage", fields: [imageMediaId], references: [id], onDelete: SetNull)
+
+  isLibrary  Boolean @default(false)
+  category   String?
+  difficulty String?
+  tagsJson   Json?
+
+  questionGroups QuestionGroup[]
+
+  @@index([sectionId])
+}
+
+model AudioTrack {
+  id          String      @id @default(cuid())
+  sectionId   String
+  section     ExamSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  mediaId     String
+  media       Media       @relation("AudioMedia", fields: [mediaId], references: [id], onDelete: Restrict)
+  durationSec Int?
+  order       Int         @default(0)
+
+  isLibrary  Boolean @default(false)
+  category   String?
+  difficulty String?
+  tagsJson   Json?
+
+  questionGroups QuestionGroup[]
+
+  @@index([sectionId])
+}
+
+model WritingTask {
+  id             String      @id @default(cuid())
+  sectionId      String
+  section        ExamSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  taskNo         Int
+  promptRichtext String      @db.Text
+  imageMediaId   String?
+  imageMedia     Media?      @relation("WritingImage", fields: [imageMediaId], references: [id], onDelete: SetNull)
+  minWords       Int         @default(150)
+
+  isLibrary  Boolean @default(false)
+  category   String?
+  difficulty String?
+  tagsJson   Json?
+
+  submissions WritingSubmission[]
+
+  @@index([sectionId])
+}
+
+model QuestionGroup {
+  id                   String       @id @default(cuid())
+  sectionId            String
+  section              ExamSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  passageId            String?
+  passage              Passage?     @relation(fields: [passageId], references: [id], onDelete: SetNull)
+  audioTrackId         String?
+  audioTrack           AudioTrack?  @relation(fields: [audioTrackId], references: [id], onDelete: SetNull)
+  type                 QuestionType
+  instructionsRichtext String       @db.Text
+  order                Int
+  // Type-specific layout: table cells, heading lists, diagram + label anchors, etc.
+  layoutJson           Json?
+
+  isLibrary  Boolean @default(false)
+  category   String?
+  difficulty String?
+  tagsJson   Json?
+
+  questions Question[]
+
+  @@index([sectionId])
+}
+
+model Question {
+  id                String        @id @default(cuid())
+  groupId           String
+  group             QuestionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  number            Int
+  prompt            String        @db.Text
+  answerType        AnswerType    @default(TEXT)
+  optionsInlineJson Json?
+  points            Int           @default(1)
+
+  options   QuestionOption[]
+  answerKey AnswerKey?
+  answers   Answer[]
+
+  @@unique([groupId, number])
+  @@index([groupId])
+}
+
+model QuestionOption {
+  id         String   @id @default(cuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  label      String
+  value      String
+  order      Int      @default(0)
+
+  @@index([questionId])
+}
+
+/// Server-only. Never serialized to candidate clients; scoring is server-side.
+model AnswerKey {
+  id            String    @id @default(cuid())
+  questionId    String    @unique
+  question      Question  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  acceptedJson  Json
+  matchMode     MatchMode @default(EXACT)
+  caseSensitive Boolean   @default(false)
+}
+
+/// Index that turns reusable content into a searchable library (E2).
+model LibraryItem {
+  id          String             @id @default(cuid())
+  orgId       String
+  org         Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  contentType LibraryContentType
+  refId       String
+  category    String?
+  difficulty  String?
+  tagsJson    Json?
+  reuseCount  Int                @default(0)
+  createdAt   DateTime           @default(now())
+
+  @@index([orgId, contentType])
+}
+
+// ----------------------------------------------------------------------------
+// Candidate groups & assignment (E3)
+// ----------------------------------------------------------------------------
+
+model CandidateGroup {
+  id         String       @id @default(cuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name       String
+  kind       GroupKind    @default(CUSTOM)
+  filterJson Json?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  members CandidateGroupMember[]
+
+  @@index([orgId])
+}
+
+model CandidateGroupMember {
+  groupId     String
+  group       CandidateGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   User           @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  addedAt     DateTime       @default(now())
+
+  @@id([groupId, candidateId])
+  @@index([candidateId])
+}
+
+model ExamAssignment {
+  id          String               @id @default(cuid())
+  examId      String
+  exam        Exam                 @relation(fields: [examId], references: [id], onDelete: Cascade)
+  targetType  AssignmentTargetType
+  // Group/Org id when targetType != CANDIDATE; candidateId set on per-candidate expansion.
+  targetId    String?
+  candidateId String?
+  candidate   User?                @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  windowStart DateTime?
+  windowEnd   DateTime?
+  status      AssignmentStatus     @default(SCHEDULED)
+  maxAttempts Int                  @default(1)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([examId])
+  @@index([candidateId])
+}
+
+// ----------------------------------------------------------------------------
+// Attempts, answers, recovery (E6/E7)
+// ----------------------------------------------------------------------------
+
+model Attempt {
+  id             String        @id @default(cuid())
+  examId         String
+  exam           Exam          @relation(fields: [examId], references: [id], onDelete: Restrict)
+  candidateId    String
+  candidate      User          @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  status         AttemptStatus @default(NOT_STARTED)
+  currentSection SectionKind?
+  startedAt      DateTime?
+  submittedAt    DateTime?
+  resumeToken    String?       @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  sectionAttempts    SectionAttempt[]
+  writingSubmissions WritingSubmission[]
+  score              Score?
+
+  // NOTE: single active attempt per (exam, candidate) is enforced by a PARTIAL UNIQUE
+  // index added in a raw migration:
+  //   CREATE UNIQUE INDEX one_active_attempt ON "Attempt"("examId","candidateId")
+  //   WHERE status = 'IN_PROGRESS';
+  @@index([candidateId])
+  @@index([examId, status])
+}
+
+model SectionAttempt {
+  id              String      @id @default(cuid())
+  attemptId       String
+  attempt         Attempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  sectionId       String
+  section         ExamSection @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  startedAt       DateTime?
+  // Server-authoritative absolute deadline (= startedAt + durationSec). Drives countdown.
+  deadlineAt      DateTime?
+  submittedAt     DateTime?
+  // Listening audio position / play-once state for recovery.
+  audioStateJson  Json?
+  lastHeartbeatAt DateTime?
+
+  answers       Answer[]
+  sessionEvents SessionEvent[]
+
+  @@unique([attemptId, sectionId])
+  @@index([attemptId])
+}
+
+model Answer {
+  id               String         @id @default(cuid())
+  sectionAttemptId String
+  sectionAttempt   SectionAttempt @relation(fields: [sectionAttemptId], references: [id], onDelete: Cascade)
+  questionId       String
+  question         Question       @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  responseJson     Json?
+  isFlagged        Boolean        @default(false)
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([sectionAttemptId, questionId])
+  @@index([sectionAttemptId])
+}
+
+model SessionEvent {
+  id               String           @id @default(cuid())
+  sectionAttemptId String
+  sectionAttempt   SectionAttempt   @relation(fields: [sectionAttemptId], references: [id], onDelete: Cascade)
+  type             SessionEventType
+  metaJson         Json?
+  createdAt        DateTime         @default(now())
+
+  @@index([sectionAttemptId])
+  @@index([createdAt])
+}
+
+// ----------------------------------------------------------------------------
+// Writing evaluation (E13) & scoring
+// ----------------------------------------------------------------------------
+
+model WritingSubmission {
+  id            String       @id @default(cuid())
+  attemptId     String
+  attempt       Attempt      @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  writingTaskId String?
+  writingTask   WritingTask? @relation(fields: [writingTaskId], references: [id], onDelete: SetNull)
+  taskNo        Int
+  contentText   String       @db.Text
+  wordCount     Int          @default(0)
+  submittedAt   DateTime?
+
+  evaluation WritingEvaluation?
+
+  @@index([attemptId])
+}
+
+model WritingEvaluation {
+  id               String            @id @default(cuid())
+  submissionId     String            @unique
+  submission       WritingSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  examinerId       String?
+  examiner         User?             @relation(fields: [examinerId], references: [id], onDelete: SetNull)
+  // Per-criterion bands: TR (Task Response), CC, LR, GRA.
+  criteriaJson     Json?
+  taskBand         Float?
+  feedbackRichtext String?           @db.Text
+  status           WritingEvalStatus @default(PENDING)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([examinerId])
+  @@index([status])
+}
+
+model Score {
+  id            String    @id @default(cuid())
+  attemptId     String    @unique
+  attempt       Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  listeningRaw  Int?
+  listeningBand Float?
+  readingRaw    Int?
+  readingBand   Float?
+  writingBand   Float?
+  overallBand   Float?
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// Media library (E9)
+// ----------------------------------------------------------------------------
+
+model MediaFolder {
+  id       String        @id @default(cuid())
+  orgId    String
+  org      Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   MediaFolder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children MediaFolder[] @relation("FolderTree")
+  name     String
+  path     String
+  media    Media[]
+
+  @@index([orgId])
+}
+
+model Media {
+  id            String       @id @default(cuid())
+  orgId         String
+  org           Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  r2Key         String       @unique
+  kind          MediaKind
+  mime          String
+  bytes         Int          @default(0)
+  originalName  String?
+  checksum      String?
+  folderId      String?
+  folder        MediaFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  tagsJson      Json?
+  version       Int          @default(1)
+  parentMediaId String?
+  parent        Media?       @relation("MediaVersions", fields: [parentMediaId], references: [id], onDelete: SetNull)
+  children      Media[]      @relation("MediaVersions")
+  archived      Boolean      @default(false)
+  createdById   String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  audioTracks       AudioTrack[]     @relation("AudioMedia")
+  passageImages     Passage[]        @relation("PassageImage")
+  writingTaskImages WritingTask[]    @relation("WritingImage")
+  importArtifacts   ImportArtifact[]
+
+  @@index([orgId])
+  @@index([folderId])
+}
+
+// ----------------------------------------------------------------------------
+// AI import pipeline (§7)
+// ----------------------------------------------------------------------------
+
+model ImportJob {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  status      ImportStatus @default(UPLOADED)
+  confidence  Float?
+  examDraftId String?      @unique
+  examDraft   Exam?        @relation(fields: [examDraftId], references: [id], onDelete: SetNull)
+  logJson     Json?
+  createdById String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  artifacts   ImportArtifact[]
+  suggestions ImportSuggestion[]
+
+  @@index([orgId, status])
+}
+
+model ImportArtifact {
+  id         String             @id @default(cuid())
+  jobId      String
+  job        ImportJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  mediaId    String?
+  media      Media?             @relation(fields: [mediaId], references: [id], onDelete: SetNull)
+  role       ImportArtifactRole
+  parsedText String?            @db.Text
+  ocrText    String?            @db.Text
+
+  @@index([jobId])
+}
+
+model ImportSuggestion {
+  id         String           @id @default(cuid())
+  jobId      String
+  job        ImportJob        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  kind       String
+  targetRef  String?
+  message    String           @db.Text
+  confidence Float?
+  status     SuggestionStatus @default(OPEN)
+  createdAt  DateTime         @default(now())
+
+  @@index([jobId])
+}
+
+// ----------------------------------------------------------------------------
+// Platform: settings, notifications, audit
+// ----------------------------------------------------------------------------
+
+/// Key/value config: branding, band conversion tables, writing weighting, security, email.
+model Setting {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  key       String
+  valueJson Json
+  updatedAt DateTime     @updatedAt
+
+  @@unique([orgId, key])
+}
+
+model Notification {
+  id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String
+  payloadJson Json?
+  channel     NotificationChannel @default(INAPP)
+  readAt      DateTime?
+  createdAt   DateTime            @default(now())
+
+  @@index([userId, readAt])
+}
+
+model AuditLog {
+  id        String       @id @default(cuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  actorId   String?
+  actor     User?        @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String?
+  entityId  String?
+  metaJson  Json?
+  ip        String?
+  createdAt DateTime     @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([actorId])
+}
