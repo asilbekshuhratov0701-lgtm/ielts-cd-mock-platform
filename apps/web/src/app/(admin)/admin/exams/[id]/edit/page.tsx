@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ArrowLeft, Plus, Send, Trash2 } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   addGroupAction,
   addPassageAction,
@@ -38,7 +42,15 @@ const QUESTION_TYPES = [
 const ANSWER_TYPES = ["SINGLE", "MULTI", "TEXT", "DROPDOWN", "MATCH"];
 const MATCH_MODES = ["EXACT", "CONTAINS", "REGEX", "SET"];
 
-const inputClass = "mt-1 block w-full rounded-lg border border-brand-200 px-2 py-1 text-sm";
+const field =
+  "h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground placeholder:text-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40";
+const area =
+  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40";
+const statusVariant: Record<string, "warning" | "success" | "muted"> = {
+  DRAFT: "warning",
+  PUBLISHED: "success",
+  ARCHIVED: "muted"
+};
 
 export default async function AdminExamEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -66,47 +78,62 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
   if (!exam) notFound();
 
   return (
-    <PageShell title={`Edit: ${exam.title}`} subtitle={`${exam.moduleType} · ${exam.status}`}>
-      <Link href="/admin/exams" className="text-sm text-brand-600 hover:underline">
-        ← Back to exams
+    <PageShell
+      title="Exam builder"
+      subtitle="Add sections, passages, questions and answer keys, then publish."
+      actions={
+        <form action={publishExamAction}>
+          <input type="hidden" name="examId" value={exam.id} />
+          <Button type="submit" variant="success">
+            <Send className="h-4 w-4" /> Publish exam
+          </Button>
+        </form>
+      }
+    >
+      <Link
+        href="/admin/exams"
+        className="inline-flex items-center gap-1 text-sm text-brand-600 hover:underline"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back to exams
       </Link>
 
-      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-brand-100 p-4">
+      <Card className="p-5">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="font-semibold text-foreground">Exam details</h2>
+          <Badge variant={statusVariant[exam.status] ?? "muted"}>{exam.status}</Badge>
+        </div>
         <form action={updateExamAction} className="flex flex-wrap items-end gap-3">
           <input type="hidden" name="examId" value={exam.id} />
-          <label className="text-xs text-foreground/60">
+          <label className="text-xs text-muted">
             Title
-            <input name="title" defaultValue={exam.title} className={inputClass} />
+            <input name="title" defaultValue={exam.title} className={`${field} mt-1 w-72`} />
           </label>
-          <label className="text-xs text-foreground/60">
+          <label className="text-xs text-muted">
             Module
-            <select name="moduleType" defaultValue={exam.moduleType} className={inputClass}>
+            <select name="moduleType" defaultValue={exam.moduleType} className={`${field} mt-1`}>
               <option value="ACADEMIC">Academic</option>
               <option value="GENERAL">General Training</option>
             </select>
           </label>
-          <button className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
+          <Button type="submit" variant="outline">
             Save
-          </button>
+          </Button>
         </form>
-        <form action={publishExamAction} className="ml-auto">
-          <input type="hidden" name="examId" value={exam.id} />
-          <button className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700">
-            Publish exam
-          </button>
-        </form>
-      </div>
+      </Card>
 
       {exam.sections.map((section) => (
-        <section key={section.id} className="rounded-xl border border-brand-100 p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold text-brand-700">
-              {section.kind} · {Math.round(section.durationSec / 60)} min
+        <Card key={section.id} className="p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 font-semibold text-foreground">
+              <Badge variant="default">{section.kind}</Badge>
+              <span className="text-sm text-muted">{Math.round(section.durationSec / 60)} min</span>
             </h2>
             <form action={deleteSectionAction}>
               <input type="hidden" name="examId" value={exam.id} />
               <input type="hidden" name="sectionId" value={section.id} />
-              <button className="text-xs text-red-600 hover:underline">Delete section</button>
+              <Button type="submit" variant="ghost" size="sm">
+                <Trash2 className="h-4 w-4" /> Delete section
+              </Button>
             </form>
           </div>
 
@@ -115,20 +142,20 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
               {section.passages.map((p) => (
                 <div key={p.id} className="rounded-lg bg-brand-50/40 p-3 text-sm">
                   <p className="font-medium text-brand-700">{p.title ?? "Untitled passage"}</p>
-                  <p className="line-clamp-2 text-foreground/60">{p.bodyRichtext}</p>
+                  <p className="line-clamp-2 text-muted">{p.bodyRichtext}</p>
                 </div>
               ))}
               <form
                 action={addPassageAction}
-                className="space-y-2 rounded-lg border border-dashed border-brand-200 p-3"
+                className="space-y-2 rounded-lg border border-dashed border-border p-3"
               >
                 <input type="hidden" name="examId" value={exam.id} />
                 <input type="hidden" name="sectionId" value={section.id} />
-                <input name="title" placeholder="Passage title" className={inputClass} />
-                <textarea name="body" rows={3} placeholder="Passage text…" className={inputClass} />
-                <button className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700">
-                  Add passage
-                </button>
+                <input name="title" placeholder="Passage title" className={field} />
+                <textarea name="body" rows={3} placeholder="Passage text…" className={area} />
+                <Button type="submit" size="sm">
+                  <Plus className="h-4 w-4" /> Add passage
+                </Button>
               </form>
             </div>
           ) : null}
@@ -140,12 +167,12 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                   <p className="font-medium text-brand-700">
                     Task {t.taskNo} · min {t.minWords} words
                   </p>
-                  <p className="line-clamp-2 text-foreground/60">{t.promptRichtext}</p>
+                  <p className="line-clamp-2 text-muted">{t.promptRichtext}</p>
                 </div>
               ))}
               <form
                 action={addWritingTaskAction}
-                className="space-y-2 rounded-lg border border-dashed border-brand-200 p-3"
+                className="space-y-2 rounded-lg border border-dashed border-border p-3"
               >
                 <input type="hidden" name="examId" value={exam.id} />
                 <input type="hidden" name="sectionId" value={section.id} />
@@ -156,7 +183,7 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                     min={1}
                     max={2}
                     placeholder="Task #"
-                    className={inputClass}
+                    className={field}
                   />
                   <input
                     name="minWords"
@@ -164,18 +191,13 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                     min={50}
                     defaultValue={150}
                     placeholder="Min words"
-                    className={inputClass}
+                    className={field}
                   />
                 </div>
-                <textarea
-                  name="prompt"
-                  rows={3}
-                  placeholder="Writing prompt…"
-                  className={inputClass}
-                />
-                <button className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700">
-                  Add writing task
-                </button>
+                <textarea name="prompt" rows={3} placeholder="Writing prompt…" className={area} />
+                <Button type="submit" size="sm">
+                  <Plus className="h-4 w-4" /> Add writing task
+                </Button>
               </form>
             </div>
           ) : null}
@@ -183,25 +205,27 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
           {section.kind !== "WRITING" ? (
             <div className="space-y-3">
               {section.questionGroups.map((group) => (
-                <div key={group.id} className="rounded-lg border border-brand-100 p-3">
+                <div key={group.id} className="rounded-xl border border-border p-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <p className="text-sm font-medium text-brand-700">{group.type}</p>
+                    <Badge variant="muted">{group.type}</Badge>
                     <form action={deleteGroupAction}>
                       <input type="hidden" name="examId" value={exam.id} />
                       <input type="hidden" name="groupId" value={group.id} />
-                      <button className="text-xs text-red-600 hover:underline">Delete group</button>
+                      <Button type="submit" variant="ghost" size="sm">
+                        <Trash2 className="h-4 w-4" /> Delete group
+                      </Button>
                     </form>
                   </div>
-                  <p className="mb-2 text-xs text-foreground/60">{group.instructionsRichtext}</p>
+                  <p className="mb-3 text-xs text-muted">{group.instructionsRichtext}</p>
 
-                  <ul className="mb-2 space-y-1 text-sm">
+                  <ul className="mb-3 space-y-1.5 text-sm">
                     {group.questions.map((q) => (
                       <li key={q.id} className="flex items-start justify-between gap-2">
-                        <span>
+                        <span className="text-foreground">
                           <span className="font-semibold text-brand-700">{q.number}.</span>{" "}
                           {q.prompt}
                           {q.answerKey ? (
-                            <span className="ml-2 text-xs text-green-700">
+                            <span className="ml-2 text-xs text-emerald-700">
                               key: {(q.answerKey.acceptedJson as string[]).join(", ")}
                             </span>
                           ) : null}
@@ -209,7 +233,9 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                         <form action={deleteQuestionAction}>
                           <input type="hidden" name="examId" value={exam.id} />
                           <input type="hidden" name="questionId" value={q.id} />
-                          <button className="text-xs text-red-600 hover:underline">×</button>
+                          <Button type="submit" variant="ghost" size="icon" title="Delete question">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
                         </form>
                       </li>
                     ))}
@@ -217,7 +243,7 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
 
                   <form
                     action={addQuestionAction}
-                    className="space-y-2 rounded-lg border border-dashed border-brand-200 p-2"
+                    className="space-y-2 rounded-lg border border-dashed border-border p-3"
                   >
                     <input type="hidden" name="examId" value={exam.id} />
                     <input type="hidden" name="groupId" value={group.id} />
@@ -227,24 +253,24 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                         type="number"
                         min={1}
                         placeholder="No."
-                        className={`${inputClass} w-20`}
+                        className={`${field} w-20`}
                       />
                       <input
                         name="prompt"
                         placeholder="Question prompt"
-                        className={inputClass}
+                        className={field}
                         required
                       />
                     </div>
                     <div className="flex gap-2">
-                      <select name="answerType" className={inputClass} defaultValue="TEXT">
+                      <select name="answerType" className={field} defaultValue="TEXT">
                         {ANSWER_TYPES.map((t) => (
                           <option key={t} value={t}>
                             {t}
                           </option>
                         ))}
                       </select>
-                      <select name="matchMode" className={inputClass} defaultValue="EXACT">
+                      <select name="matchMode" className={field} defaultValue="EXACT">
                         {MATCH_MODES.map((m) => (
                           <option key={m} value={m}>
                             {m}
@@ -256,28 +282,28 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                       name="options"
                       rows={2}
                       placeholder={'Options (one per line, "value|label") — for choice types'}
-                      className={inputClass}
+                      className={area}
                     />
                     <input
                       name="accepted"
                       placeholder="Accepted answers (comma-separated) — the answer key"
-                      className={inputClass}
+                      className={field}
                     />
-                    <button className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700">
-                      Add question
-                    </button>
+                    <Button type="submit" size="sm">
+                      <Plus className="h-4 w-4" /> Add question
+                    </Button>
                   </form>
                 </div>
               ))}
 
               <form
                 action={addGroupAction}
-                className="space-y-2 rounded-lg border border-dashed border-brand-200 p-3"
+                className="space-y-2 rounded-lg border border-dashed border-border p-3"
               >
                 <input type="hidden" name="examId" value={exam.id} />
                 <input type="hidden" name="sectionId" value={section.id} />
                 <div className="flex gap-2">
-                  <select name="type" className={inputClass} defaultValue="MULTIPLE_CHOICE">
+                  <select name="type" className={field} defaultValue="MULTIPLE_CHOICE">
                     {QUESTION_TYPES.map((t) => (
                       <option key={t} value={t}>
                         {t}
@@ -285,7 +311,7 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                     ))}
                   </select>
                   {section.kind === "READING" && section.passages.length > 0 ? (
-                    <select name="passageId" className={inputClass} defaultValue="">
+                    <select name="passageId" className={field} defaultValue="">
                       <option value="">(no passage)</option>
                       {section.passages.map((p) => (
                         <option key={p.id} value={p.id}>
@@ -298,45 +324,45 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                 <input
                   name="instructions"
                   placeholder="Group instructions"
-                  className={inputClass}
+                  className={field}
                   required
                 />
-                <button className="rounded-lg bg-brand-600 px-3 py-1.5 text-sm text-white hover:bg-brand-700">
-                  Add question group
-                </button>
+                <Button type="submit" size="sm">
+                  <Plus className="h-4 w-4" /> Add question group
+                </Button>
               </form>
             </div>
           ) : null}
-        </section>
+        </Card>
       ))}
 
-      <form
-        action={addSectionAction}
-        className="flex flex-wrap items-end gap-3 rounded-xl border border-dashed border-brand-200 p-4"
-      >
-        <input type="hidden" name="examId" value={exam.id} />
-        <label className="text-xs text-foreground/60">
-          Section
-          <select name="kind" className={inputClass} defaultValue="LISTENING">
-            <option value="LISTENING">Listening</option>
-            <option value="READING">Reading</option>
-            <option value="WRITING">Writing</option>
-          </select>
-        </label>
-        <label className="text-xs text-foreground/60">
-          Duration (min)
-          <input
-            name="durationMin"
-            type="number"
-            min={1}
-            defaultValue={30}
-            className={inputClass}
-          />
-        </label>
-        <button className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700">
-          Add section
-        </button>
-      </form>
+      <Card className="border-dashed p-5">
+        <h2 className="mb-3 font-semibold text-foreground">Add section</h2>
+        <form action={addSectionAction} className="flex flex-wrap items-end gap-3">
+          <input type="hidden" name="examId" value={exam.id} />
+          <label className="text-xs text-muted">
+            Section
+            <select name="kind" className={`${field} mt-1`} defaultValue="LISTENING">
+              <option value="LISTENING">Listening</option>
+              <option value="READING">Reading</option>
+              <option value="WRITING">Writing</option>
+            </select>
+          </label>
+          <label className="text-xs text-muted">
+            Duration (min)
+            <input
+              name="durationMin"
+              type="number"
+              min={1}
+              defaultValue={30}
+              className={`${field} mt-1`}
+            />
+          </label>
+          <Button type="submit">
+            <Plus className="h-4 w-4" /> Add section
+          </Button>
+        </form>
+      </Card>
     </PageShell>
   );
 }

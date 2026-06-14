@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { listPendingEvaluations } from "@/lib/writing-eval";
 import { PageShell } from "@/components/Shell";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 export const metadata = { title: "Writing Evaluation" };
 
@@ -13,21 +15,23 @@ export default async function AdminWritingPage() {
       subtitle="Score submitted Writing tasks. Publishing computes the Writing & Overall band."
     >
       {attempts.length === 0 ? (
-        <p className="text-sm text-foreground/60">No writing submissions awaiting evaluation.</p>
+        <Card className="p-8 text-center text-sm text-muted">
+          No writing submissions awaiting evaluation.
+        </Card>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-brand-100">
+        <Card className="overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-brand-50/50 text-left text-foreground/60">
+            <thead className="border-b border-border bg-brand-50/40 text-left text-xs uppercase tracking-wide text-muted">
               <tr>
-                <th className="px-4 py-2 font-medium">Candidate</th>
-                <th className="px-4 py-2 font-medium">Exam</th>
-                <th className="px-4 py-2 font-medium">Submitted</th>
-                <th className="px-4 py-2 font-medium">Tasks scored</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2" />
+                <th className="px-4 py-3 font-medium">Candidate</th>
+                <th className="px-4 py-3 font-medium">Exam</th>
+                <th className="px-4 py-3 font-medium">Submitted</th>
+                <th className="px-4 py-3 font-medium">Tasks scored</th>
+                <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3" />
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border">
               {attempts.map((attempt) => {
                 const total = attempt.writingSubmissions.length;
                 const scored = attempt.writingSubmissions.filter(
@@ -36,30 +40,30 @@ export default async function AdminWritingPage() {
                 const published =
                   attempt.status === "PUBLISHED" || attempt.score?.writingBand != null;
                 return (
-                  <tr key={attempt.id} className="border-t border-brand-100">
-                    <td className="px-4 py-2 font-medium text-brand-700">
+                  <tr key={attempt.id} className="hover:bg-brand-50/30">
+                    <td className="px-4 py-3 font-medium text-foreground">
                       {attempt.candidate.name ?? attempt.candidate.email}
                     </td>
-                    <td className="px-4 py-2">{attempt.exam.title}</td>
-                    <td className="px-4 py-2 text-foreground/60">
+                    <td className="px-4 py-3 text-muted">{attempt.exam.title}</td>
+                    <td className="px-4 py-3 text-muted">
                       {attempt.submittedAt ? attempt.submittedAt.toLocaleString() : "—"}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-3 tabular-nums">
                       {scored} / {total}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-3">
                       {published ? (
-                        <span className="text-green-700">Published</span>
+                        <Badge variant="success">Published</Badge>
                       ) : scored === 0 ? (
-                        <span className="text-amber-600">Pending</span>
+                        <Badge variant="warning">Pending</Badge>
                       ) : (
-                        <span className="text-brand-600">In review</span>
+                        <Badge variant="default">In review</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-2 text-right">
+                    <td className="px-4 py-3 text-right">
                       <Link
                         href={`/admin/writing/${attempt.id}`}
-                        className="text-brand-600 hover:underline"
+                        className="font-medium text-brand-700 hover:underline"
                       >
                         Evaluate
                       </Link>
@@ -69,7 +73,7 @@ export default async function AdminWritingPage() {
               })}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
     </PageShell>
   );
