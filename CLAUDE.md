@@ -6,6 +6,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A production-oriented **IELTS Computer-Delivered mock-exam platform** (Listening, Reading, Writing — no Speaking). Turborepo + pnpm monorepo: a Next.js 15 full-stack web app, a background worker, and shared packages. Full architecture blueprint lives in `/docs`; local run guide in `SETUP.md`.
 
+## Version control — commit & push after every change (important)
+
+This repo is backed up on GitHub (private `ielts-cd-mock-platform`, remote `origin` already configured + authenticated). **After every meaningful unit of work, commit and push** so progress is never lost and any change can be reverted. Do not let completed work sit uncommitted.
+
+```bash
+pnpm typecheck                 # (and pnpm lint / build when relevant) before committing
+git add -A
+git commit -m "feat(admin): add live exam center"   # clean, conventional, focused message
+git push
+```
+
+- Keep commits **focused** — one logical change each, not one giant commit. Commit at each natural checkpoint (a feature, a fix, a restyle, a doc update).
+- Use clear conventional messages: `feat(...)`, `fix(...)`, `style(...)`, `refactor(...)`, `docs:`, `chore:`.
+- **End every commit message** with: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
+- Never commit secrets — `.env`, `.localdb/`, `node_modules`, `.next`, `schema.sqlite.prisma` are gitignored (`.env.example` is the tracked template). `.gitattributes` enforces LF.
+- `gh` CLI is at `"/c/Program Files/GitHub CLI/gh.exe"` (not on the spawned-shell PATH).
+
 ## Commands
 
 ```bash
@@ -69,5 +86,4 @@ The timer is never a live process. On section start the server stores `SectionAt
 - **Don't run `pnpm db:local` while `pnpm dev:web` is running** — the dev server locks the Prisma query-engine DLL (`EPERM` on regenerate). Stop the app first; kill stray `node` if `prisma generate` hits EPERM.
 - Postgres refuses to start under an elevated Windows token — that's why local dev uses SQLite (don't reach for embedded Postgres).
 - **UI**: design-system kit in `apps/web/src/components/ui/` (Button/Card/Badge/Input/StatCard) + `cn()` (`lib/cn.ts`, clsx + tailwind-merge), `lucide-react` icons, Inter font; tokens in `packages/config/tailwind.preset.cjs` + CSS vars in `app/globals.css`. Reuse these rather than hand-rolling.
-- **Git**: commit + push per meaningful change to the private repo `ielts-cd-mock-platform`. `gh` is installed at `"/c/Program Files/GitHub CLI/gh.exe"` (not on the spawned-shell PATH). End commit messages with `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
-- Secrets/artifacts are gitignored (`.env`, `.localdb/`, `node_modules`, `.next`, `schema.sqlite.prisma`); `.env.example` is the tracked template. `.gitattributes` enforces LF.
+- **Git**: see *Version control* at the top — commit + push after every meaningful change with a clean message.
