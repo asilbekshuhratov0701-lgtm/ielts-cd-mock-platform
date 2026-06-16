@@ -8,6 +8,7 @@ import {
   type KeyedAnswer,
   type MatchMode
 } from "@ielts/core";
+import { getReleaseMode } from "@/lib/settings";
 
 function scaleToForty(rawCorrect: number, total: number): number {
   if (total <= 0) return 0;
@@ -77,16 +78,24 @@ export async function scoreAttempt(attemptId: string): Promise<void> {
     }
   }
 
+  const releaseMode = await getReleaseMode(attempt.exam.orgId);
+
   await prisma.score.upsert({
     where: { attemptId },
-    update: { listeningRaw, listeningBand, readingRaw, readingBand, publishedAt: new Date() },
+    update: {
+      listeningRaw,
+      listeningBand,
+      readingRaw,
+      readingBand,
+      ...(releaseMode === "manual" ? {} : { publishedAt: new Date() })
+    },
     create: {
       attemptId,
       listeningRaw,
       listeningBand,
       readingRaw,
       readingBand,
-      publishedAt: new Date()
+      publishedAt: releaseMode === "manual" ? null : new Date()
     }
   });
 }

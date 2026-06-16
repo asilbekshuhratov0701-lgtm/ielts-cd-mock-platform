@@ -32,7 +32,7 @@ export default async function DashboardPage() {
   ]);
 
   const overalls = attempts
-    .map((a) => a.score?.overallBand)
+    .map((a) => (a.score?.publishedAt != null ? a.score?.overallBand : null))
     .filter((b): b is number => typeof b === "number");
   const avgOverall =
     overalls.length > 0 ? overalls.reduce((s, b) => s + b, 0) / overalls.length : null;
@@ -73,7 +73,9 @@ export default async function DashboardPage() {
           <p className="text-sm text-muted">No completed exams yet. Start your first mock above.</p>
         ) : (
           <ul className="divide-y divide-border">
-            {attempts.slice(0, 5).map((attempt) => (
+            {attempts.slice(0, 5).map((attempt) => {
+              const released = attempt.score?.publishedAt != null;
+              return (
               <li key={attempt.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="truncate font-medium text-foreground">{attempt.exam.title}</p>
@@ -81,27 +83,36 @@ export default async function DashboardPage() {
                     {attempt.submittedAt ? attempt.submittedAt.toLocaleDateString() : "—"}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted">
-                  <Badge variant="muted">L {band(attempt.score?.listeningBand)}</Badge>
-                  <Badge variant="muted">R {band(attempt.score?.readingBand)}</Badge>
-                  <Badge variant={attempt.score?.writingBand == null ? "warning" : "muted"}>
-                    W{" "}
-                    {attempt.score?.writingBand == null
-                      ? "pending"
-                      : band(attempt.score.writingBand)}
-                  </Badge>
-                  {attempt.score?.overallBand != null ? (
-                    <Badge variant="success">Overall {band(attempt.score.overallBand)}</Badge>
-                  ) : null}
-                </div>
-                <Link
-                  href={`/results/${attempt.id}`}
-                  className="text-sm font-medium text-brand-700 hover:underline"
-                >
-                  View
-                </Link>
+                {released ? (
+                  <div className="flex items-center gap-2 text-xs text-muted">
+                    <Badge variant="muted">L {band(attempt.score?.listeningBand)}</Badge>
+                    <Badge variant="muted">R {band(attempt.score?.readingBand)}</Badge>
+                    <Badge variant={attempt.score?.writingBand == null ? "warning" : "muted"}>
+                      W{" "}
+                      {attempt.score?.writingBand == null
+                        ? "pending"
+                        : band(attempt.score.writingBand)}
+                    </Badge>
+                    {attempt.score?.overallBand != null ? (
+                      <Badge variant="success">Overall {band(attempt.score.overallBand)}</Badge>
+                    ) : null}
+                  </div>
+                ) : (
+                  <Badge variant="muted">Awaiting release</Badge>
+                )}
+                {released ? (
+                  <Link
+                    href={`/results/${attempt.id}`}
+                    className="text-sm font-medium text-brand-700 hover:underline"
+                  >
+                    View
+                  </Link>
+                ) : (
+                  <span className="text-sm text-muted">—</span>
+                )}
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </Card>

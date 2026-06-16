@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
-import { SETTING_KEYS, setSetting } from "@/lib/settings";
+import { SETTING_KEYS, setSetting, setStringSetting } from "@/lib/settings";
 import { logAudit } from "@/lib/audit";
 
 async function requireAdmin() {
@@ -21,6 +21,7 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
   const orgName = String(formData.get("orgName") ?? "").trim();
   const task2Weight = Number(formData.get("task2Weight") ?? 2);
   const passBand = Number(formData.get("passBand") ?? 6.5);
+  const releaseMode = String(formData.get("releaseMode") ?? "auto") === "manual" ? "manual" : "auto";
 
   if (orgName) {
     await prisma.organization.update({ where: { id: admin.orgId }, data: { name: orgName } });
@@ -31,12 +32,13 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
   if (Number.isFinite(passBand) && passBand >= 0 && passBand <= 9) {
     await setSetting(admin.orgId, SETTING_KEYS.passBand, passBand);
   }
+  await setStringSetting(admin.orgId, SETTING_KEYS.releaseMode, releaseMode);
 
   await logAudit({
     orgId: admin.orgId,
     actorId: admin.id,
     action: "settings.update",
-    meta: { orgName, task2Weight, passBand }
+    meta: { orgName, task2Weight, passBand, releaseMode }
   });
   revalidatePath("/admin/settings");
 }

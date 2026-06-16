@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   Activity,
   BarChart3,
+  ClipboardCheck,
   FileBarChart,
   FileText,
   Image as ImageIcon,
@@ -27,6 +28,7 @@ const NAV: NavItem[] = [
   { href: "/admin/candidates", label: "Candidates", icon: Users },
   { href: "/admin/exams", label: "Exams", icon: FileText },
   { href: "/admin/writing", label: "Writing Evaluation", icon: PenLine },
+  { href: "/admin/results", label: "Results", icon: ClipboardCheck },
   { href: "/admin/live", label: "Live Exam Center", icon: Activity },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/question-bank", label: "Question Bank", icon: Library },

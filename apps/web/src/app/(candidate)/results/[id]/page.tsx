@@ -19,6 +19,17 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ i
   });
   if (!attempt || attempt.candidateId !== session.user.id) notFound();
 
+  if (attempt.score?.publishedAt == null) {
+    return (
+      <PageShell title={attempt.exam.title} subtitle="Detailed performance breakdown.">
+        <Card className="p-8 text-center text-sm text-muted">
+          Your results for this exam have not been released yet. They will appear here once your
+          centre publishes them.
+        </Card>
+      </PageShell>
+    );
+  }
+
   const score = attempt.score;
   const rows = [
     { label: "Listening", value: score?.listeningBand, raw: score?.listeningRaw, pending: false },

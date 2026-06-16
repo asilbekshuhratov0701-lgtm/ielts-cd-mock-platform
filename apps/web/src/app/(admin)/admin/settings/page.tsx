@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { prisma } from "@ielts/db";
-import { SETTING_KEYS, getNumberSetting } from "@/lib/settings";
+import { SETTING_KEYS, getNumberSetting, getReleaseMode } from "@/lib/settings";
 import { saveSettingsAction } from "@/lib/settings-actions";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
@@ -15,10 +15,11 @@ export default async function AdminSettingsPage() {
     ? await prisma.user.findUnique({ where: { id: session.user.id } })
     : null;
   const orgId = me?.orgId ?? "";
-  const [org, task2Weight, passBand] = await Promise.all([
+  const [org, task2Weight, passBand, releaseMode] = await Promise.all([
     orgId ? prisma.organization.findUnique({ where: { id: orgId } }) : null,
     getNumberSetting(orgId, SETTING_KEYS.task2Weight, 2),
-    getNumberSetting(orgId, SETTING_KEYS.passBand, 6.5)
+    getNumberSetting(orgId, SETTING_KEYS.passBand, 6.5),
+    getReleaseMode(orgId)
   ]);
 
   return (
@@ -65,6 +66,23 @@ export default async function AdminSettingsPage() {
               />
               <p className="text-xs text-muted">Used as the default goal in reports.</p>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="releaseMode">Result release</Label>
+            <select
+              id="releaseMode"
+              name="releaseMode"
+              defaultValue={releaseMode}
+              className="h-10 w-full max-w-sm rounded-lg border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+            >
+              <option value="auto">Automatic — show bands as soon as they are scored</option>
+              <option value="manual">Manual — hold results until released in Results</option>
+            </select>
+            <p className="text-xs text-muted">
+              In manual mode, Listening &amp; Reading bands stay hidden until staff release each
+              attempt; Writing is released when an examiner publishes.
+            </p>
           </div>
 
           <Button type="submit">Save settings</Button>

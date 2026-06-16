@@ -47,38 +47,57 @@ export default async function ResultsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {attempts.map((attempt) => (
-                <tr key={attempt.id} className="hover:bg-brand-50/30">
-                  <td className="px-4 py-3 font-medium text-foreground">{attempt.exam.title}</td>
-                  <td className="px-4 py-3 text-muted">
-                    {attempt.submittedAt ? attempt.submittedAt.toLocaleDateString() : "—"}
-                  </td>
-                  <td className="px-4 py-3 tabular-nums">{band(attempt.score?.listeningBand)}</td>
-                  <td className="px-4 py-3 tabular-nums">{band(attempt.score?.readingBand)}</td>
-                  <td className="px-4 py-3">
-                    {attempt.score?.writingBand == null ? (
-                      <Badge variant="warning">Pending</Badge>
+              {attempts.map((attempt) => {
+                const released = attempt.score?.publishedAt != null;
+                return (
+                  <tr key={attempt.id} className="hover:bg-brand-50/30">
+                    <td className="px-4 py-3 font-medium text-foreground">{attempt.exam.title}</td>
+                    <td className="px-4 py-3 text-muted">
+                      {attempt.submittedAt ? attempt.submittedAt.toLocaleDateString() : "—"}
+                    </td>
+                    {released ? (
+                      <>
+                        <td className="px-4 py-3 tabular-nums">
+                          {band(attempt.score?.listeningBand)}
+                        </td>
+                        <td className="px-4 py-3 tabular-nums">
+                          {band(attempt.score?.readingBand)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {attempt.score?.writingBand == null ? (
+                            <Badge variant="warning">Pending</Badge>
+                          ) : (
+                            <span className="tabular-nums">{band(attempt.score.writingBand)}</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {attempt.score?.overallBand == null ? (
+                            <span className="text-muted">—</span>
+                          ) : (
+                            <Badge variant="success">{band(attempt.score.overallBand)}</Badge>
+                          )}
+                        </td>
+                      </>
                     ) : (
-                      <span className="tabular-nums">{band(attempt.score.writingBand)}</span>
+                      <td className="px-4 py-3 text-muted" colSpan={4}>
+                        <Badge variant="muted">Awaiting release</Badge>
+                      </td>
                     )}
-                  </td>
-                  <td className="px-4 py-3">
-                    {attempt.score?.overallBand == null ? (
-                      <span className="text-muted">—</span>
-                    ) : (
-                      <Badge variant="success">{band(attempt.score.overallBand)}</Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/results/${attempt.id}`}
-                      className="font-medium text-brand-700 hover:underline"
-                    >
-                      View
-                    </Link>
-                  </td>
-                </tr>
-              ))}
+                    <td className="px-4 py-3 text-right">
+                      {released ? (
+                        <Link
+                          href={`/results/${attempt.id}`}
+                          className="font-medium text-brand-700 hover:underline"
+                        >
+                          View
+                        </Link>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Card>
