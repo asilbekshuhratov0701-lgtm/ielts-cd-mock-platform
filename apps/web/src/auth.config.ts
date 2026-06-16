@@ -2,7 +2,15 @@ import type { NextAuthConfig } from "next-auth";
 import type { Role } from "@ielts/core";
 
 const AUTH_PAGES = ["/login", "/register", "/forgot", "/reset"];
-const CANDIDATE_PREFIXES = ["/dashboard", "/exams", "/results", "/analytics", "/profile", "/exam"];
+const CANDIDATE_PREFIXES = [
+  "/dashboard",
+  "/exams",
+  "/results",
+  "/analytics",
+  "/profile",
+  "/exam",
+  "/notifications"
+];
 const ADMIN_PREFIX = "/admin";
 
 function roleHome(role: string | undefined): string {

@@ -1,35 +1,85 @@
+import Link from "next/link";
 import { auth } from "@/auth";
-import { prisma } from "@ielts/db";
+import { prisma, Prisma } from "@ielts/db";
 import { getReleaseMode } from "@/lib/settings";
-import { releaseResultAction, holdResultAction } from "@/lib/results-actions";
+import {
+  releaseResultAction,
+  holdResultAction,
+  releaseAllHeldAction
+} from "@/lib/results-actions";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/input";
+import { cn } from "@/lib/cn";
 
 export const metadata = { title: "Results" };
 export const dynamic = "force-dynamic";
+
+const SCORED_STATUSES = ["SUBMITTED", "GRADED", "PUBLISHED"] as const;
+
+const fieldClass =
+  "h-10 rounded-lg border border-border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40";
+
+function first(value: string | string[] | undefined): string {
+  return (Array.isArray(value) ? value[0] : value) ?? "";
+}
 
 function band(value: number | null | undefined): string {
   return value === null || value === undefined ? "—" : value.toFixed(1);
 }
 
-export default async function AdminResultsPage() {
+export default async function AdminResultsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ exam?: string; status?: string }>;
+}) {
+  const sp = await searchParams;
+  const examFilter = first(sp.exam);
+  const statusFilter = first(sp.status);
+
   const session = await auth();
   const me = session?.user?.id
     ? await prisma.user.findUnique({ where: { id: session.user.id } })
     : null;
   const orgId = me?.orgId ?? "";
 
-  const [releaseMode, attempts] = await Promise.all([
+  const where: Prisma.AttemptWhereInput = {
+    exam: { orgId },
+    status: { in: [...SCORED_STATUSES] }
+  };
+  if (examFilter) where.examId = examFilter;
+  if (statusFilter === "released") where.score = { is: { publishedAt: { not: null } } };
+  else if (statusFilter === "held") where.score = { is: { publishedAt: null } };
+
+  const [releaseMode, examRows, attempts, heldCount] = await Promise.all([
     getReleaseMode(orgId),
     prisma.attempt.findMany({
-      where: { exam: { orgId }, status: { in: ["SUBMITTED", "GRADED", "PUBLISHED"] } },
+      where: { exam: { orgId }, status: { in: [...SCORED_STATUSES] } },
+      distinct: ["examId"],
+      orderBy: { examId: "asc" },
+      select: { examId: true, exam: { select: { title: true } } }
+    }),
+    prisma.attempt.findMany({
+      where,
       include: { exam: { select: { title: true } }, candidate: true, score: true },
       orderBy: { submittedAt: "desc" },
       take: 200
+    }),
+    prisma.attempt.count({
+      where: {
+        exam: { orgId },
+        status: { in: [...SCORED_STATUSES] },
+        score: { is: { publishedAt: null } },
+        ...(examFilter ? { examId: examFilter } : {})
+      }
     })
   ]);
+
+  const exams = examRows
+    .map((row) => ({ id: row.examId, title: row.exam.title }))
+    .sort((a, b) => a.title.localeCompare(b.title));
 
   return (
     <PageShell
@@ -48,8 +98,63 @@ export default async function AdminResultsPage() {
         </p>
       ) : null}
 
+      <Card className="flex flex-wrap items-end justify-between gap-3 p-4">
+        <form method="get" className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="exam">Exam</Label>
+            <select
+              id="exam"
+              name="exam"
+              defaultValue={examFilter}
+              className={cn(fieldClass, "min-w-52")}
+            >
+              <option value="">All exams</option>
+              {exams.map((exam) => (
+                <option key={exam.id} value={exam.id}>
+                  {exam.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="status">Visibility</Label>
+            <select
+              id="status"
+              name="status"
+              defaultValue={statusFilter}
+              className={cn(fieldClass, "min-w-36")}
+            >
+              <option value="">All</option>
+              <option value="held">Held</option>
+              <option value="released">Released</option>
+            </select>
+          </div>
+          <Button type="submit" variant="secondary">
+            Filter
+          </Button>
+          {examFilter || statusFilter ? (
+            <Link
+              href="/admin/results"
+              className="text-sm text-muted underline-offset-4 hover:text-brand-700 hover:underline"
+            >
+              Clear
+            </Link>
+          ) : null}
+        </form>
+
+        {heldCount > 0 ? (
+          <form action={releaseAllHeldAction}>
+            <input type="hidden" name="examId" value={examFilter} />
+            <Button type="submit">
+              Release all held ({heldCount}
+              {examFilter ? " in exam" : ""})
+            </Button>
+          </form>
+        ) : null}
+      </Card>
+
       {attempts.length === 0 ? (
-        <Card className="p-8 text-center text-sm text-muted">No submitted attempts yet.</Card>
+        <Card className="p-8 text-center text-sm text-muted">No attempts match these filters.</Card>
       ) : (
         <Card className="overflow-hidden">
           <table className="w-full text-sm">

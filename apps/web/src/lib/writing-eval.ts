@@ -6,6 +6,7 @@ import {
   type WritingCriteria
 } from "@ielts/core";
 import { getNumberSetting, SETTING_KEYS } from "@/lib/settings";
+import { createResultReleasedNotification } from "@/lib/notifications";
 
 export async function listPendingEvaluations() {
   return prisma.attempt.findMany({
@@ -69,7 +70,7 @@ export async function publishResult(attemptId: string): Promise<void> {
     include: {
       writingSubmissions: { include: { evaluation: true } },
       score: true,
-      exam: { select: { orgId: true } }
+      exam: { select: { orgId: true, title: true } }
     }
   });
   if (!attempt) throw new Error("Attempt not found");
@@ -108,4 +109,9 @@ export async function publishResult(attemptId: string): Promise<void> {
     }),
     prisma.attempt.update({ where: { id: attemptId }, data: { status: "PUBLISHED" } })
   ]);
+
+  await createResultReleasedNotification(attempt.candidateId, {
+    attemptId,
+    examTitle: attempt.exam.title
+  });
 }

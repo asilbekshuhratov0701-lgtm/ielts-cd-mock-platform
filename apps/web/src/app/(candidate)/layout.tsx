@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import {
   BarChart3,
+  Bell,
   BookOpen,
   FileText,
   LayoutDashboard,
@@ -8,6 +10,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { auth } from "@/auth";
+import { countUnread } from "@/lib/notifications";
 import { Logo } from "@/components/Logo";
 import { NavLink } from "@/components/NavLink";
 import { LogoutButton } from "@/components/LogoutButton";
@@ -26,6 +29,7 @@ export default async function CandidateLayout({ children }: { children: ReactNod
   const session = await auth();
   const name = session?.user?.name ?? session?.user?.email ?? "User";
   const initials = name.slice(0, 2).toUpperCase();
+  const unread = session?.user?.id ? await countUnread(session.user.id) : 0;
 
   return (
     <div className="min-h-screen">
@@ -46,6 +50,18 @@ export default async function CandidateLayout({ children }: { children: ReactNod
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg text-foreground/70 hover:bg-brand-50 hover:text-brand-700"
+            >
+              <Bell className="h-5 w-5" />
+              {unread > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-600 px-1 text-[10px] font-semibold text-white">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              ) : null}
+            </Link>
             <span className="hidden items-center gap-2 sm:flex">
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
                 {initials}
