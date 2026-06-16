@@ -12,7 +12,12 @@
       "Bash(echo \"lint exit: $?\")",
       "Bash(npx tsx *)",
       "Bash(echo \"exit: $?\")",
-      "Bash(rm -f scoretest.mts)"
+      "Bash(rm -f scoretest.mts)",
+      "Bash(pnpm --filter @ielts/web exec tsc --noEmit)",
+      "Bash(pnpm -w list --depth -1)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }

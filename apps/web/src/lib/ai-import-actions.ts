@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { importExamFromPdf } from "@/lib/ai-import";
+import { logAudit } from "@/lib/audit";
 
 async function requireAdmin() {
   const session = await auth();
@@ -36,6 +37,14 @@ export async function importExamAction(formData: FormData): Promise<void> {
     redirect("/admin/imports?error=failed");
   }
 
+  await logAudit({
+    orgId: admin.orgId,
+    actorId: admin.id,
+    action: "exam.import",
+    entity: "exam",
+    entityId: examId,
+    meta: { filename: file.name }
+  });
   redirect(`/admin/exams/${examId}/edit`);
 }
 

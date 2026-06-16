@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { publishResult, saveEvaluation } from "@/lib/writing-eval";
+import { logAudit } from "@/lib/audit";
 
 const criteriaSchema = z.object({
   taskResponse: z.coerce.number().min(0).max(9),
@@ -38,9 +40,22 @@ export async function saveEvaluationAction(formData: FormData): Promise<void> {
 }
 
 export async function publishResultAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
   const attemptId = String(formData.get("attemptId") ?? "");
   if (!attemptId) return;
   await publishResult(attemptId);
+  const attempt = await prisma.attempt.findUnique({
+    where: { id: attemptId },
+    select: { exam: { select: { orgId: true } } }
+  });
+  if (attempt) {
+    await logAudit({
+      orgId: attempt.exam.orgId,
+      actorId: user.id,
+      action: "result.publish",
+      entity: "attempt",
+      entityId: attemptId
+    });
+  }
   redirect("/admin/writing");
 }

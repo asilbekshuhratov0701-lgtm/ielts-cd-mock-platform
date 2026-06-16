@@ -5,6 +5,7 @@ import {
   writingTaskBand,
   type WritingCriteria
 } from "@ielts/core";
+import { getNumberSetting, SETTING_KEYS } from "@/lib/settings";
 
 export async function listPendingEvaluations() {
   return prisma.attempt.findMany({
@@ -65,7 +66,11 @@ export async function saveEvaluation(
 export async function publishResult(attemptId: string): Promise<void> {
   const attempt = await prisma.attempt.findUnique({
     where: { id: attemptId },
-    include: { writingSubmissions: { include: { evaluation: true } }, score: true }
+    include: {
+      writingSubmissions: { include: { evaluation: true } },
+      score: true,
+      exam: { select: { orgId: true } }
+    }
   });
   if (!attempt) throw new Error("Attempt not found");
 
@@ -78,8 +83,10 @@ export async function publishResult(attemptId: string): Promise<void> {
   const task1 = submissions.find((s) => s.taskNo === 1)?.evaluation?.taskBand ?? null;
   const task2 = submissions.find((s) => s.taskNo === 2)?.evaluation?.taskBand ?? null;
 
+  const task2Weight = await getNumberSetting(attempt.exam.orgId, SETTING_KEYS.task2Weight, 2);
+
   let writingBand: number;
-  if (task1 != null && task2 != null) writingBand = overallWritingBand(task1, task2);
+  if (task1 != null && task2 != null) writingBand = overallWritingBand(task1, task2, task2Weight);
   else writingBand = (task1 ?? task2) as number;
 
   const listening = attempt.score?.listeningBand ?? null;

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma, Prisma } from "@ielts/db";
 import { auth } from "@/auth";
+import { logAudit } from "@/lib/audit";
 
 async function requireStaff() {
   const session = await auth();
@@ -96,12 +97,20 @@ export async function updateExamAction(formData: FormData): Promise<void> {
 }
 
 export async function publishExamAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
   const examId = String(formData.get("examId") ?? "");
   if (!examId) return;
-  await prisma.exam.update({
+  const exam = await prisma.exam.update({
     where: { id: examId },
     data: { status: "PUBLISHED", publishedAt: new Date() }
+  });
+  await logAudit({
+    orgId: exam.orgId,
+    actorId: user.id,
+    action: "exam.publish",
+    entity: "exam",
+    entityId: exam.id,
+    meta: { title: exam.title }
   });
   refresh(examId);
 }

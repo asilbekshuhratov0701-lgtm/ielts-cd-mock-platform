@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { hashPassword } from "@/lib/password";
+import { logAudit } from "@/lib/audit";
 
 const STAFF_ROLES = ["SUPER_ADMIN", "ADMIN", "EXAMINER"] as const;
 const ALL_ROLES = ["SUPER_ADMIN", "ADMIN", "EXAMINER", "CANDIDATE"] as const;
@@ -37,7 +38,7 @@ export async function createCandidateAction(formData: FormData): Promise<void> {
   const exists = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (exists) redirect("/admin/candidates?error=email");
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       orgId: admin.orgId,
       name: parsed.data.name,
@@ -47,6 +48,14 @@ export async function createCandidateAction(formData: FormData): Promise<void> {
       passwordHash: await hashPassword(parsed.data.password),
       candidateProfile: { create: {} }
     }
+  });
+  await logAudit({
+    orgId: admin.orgId,
+    actorId: admin.id,
+    action: "candidate.create",
+    entity: "user",
+    entityId: created.id,
+    meta: { email: parsed.data.email }
   });
   revalidatePath("/admin/candidates");
 }
@@ -65,7 +74,7 @@ export async function createStaffAction(formData: FormData): Promise<void> {
   const exists = await prisma.user.findUnique({ where: { email: parsed.data.email } });
   if (exists) redirect("/admin/users?error=email");
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       orgId: admin.orgId,
       name: parsed.data.name,
@@ -75,6 +84,14 @@ export async function createStaffAction(formData: FormData): Promise<void> {
       passwordHash: await hashPassword(parsed.data.password),
       staffProfile: { create: {} }
     }
+  });
+  await logAudit({
+    orgId: admin.orgId,
+    actorId: admin.id,
+    action: "staff.create",
+    entity: "user",
+    entityId: created.id,
+    meta: { email: parsed.data.email, role }
   });
   revalidatePath("/admin/users");
 }
@@ -102,6 +119,14 @@ export async function changeRoleAction(formData: FormData): Promise<void> {
     where: { id: userId },
     data: { role: roleRaw as (typeof ALL_ROLES)[number] }
   });
+  await logAudit({
+    orgId: admin.orgId,
+    actorId: admin.id,
+    action: "user.role_change",
+    entity: "user",
+    entityId: userId,
+    meta: { role: roleRaw }
+  });
   revalidatePath("/admin/users");
 }
 
@@ -112,6 +137,14 @@ export async function setStatusAction(formData: FormData): Promise<void> {
   if (!userId || userId === admin.id) return;
   if (status !== "ACTIVE" && status !== "SUSPENDED") return;
   await prisma.user.update({ where: { id: userId }, data: { status } });
+  await logAudit({
+    orgId: admin.orgId,
+    actorId: admin.id,
+    action: "user.status_change",
+    entity: "user",
+    entityId: userId,
+    meta: { status }
+  });
   revalidatePath("/admin/users");
   revalidatePath("/admin/candidates");
 }
