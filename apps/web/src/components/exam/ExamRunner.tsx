@@ -274,6 +274,7 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
                           </div>
                           <QuestionInput
                             question={q}
+                            groupType={group.type}
                             value={answers[q.id]}
                             onChange={(v) => onAnswer(q.id, v)}
                           />
@@ -308,19 +309,34 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
   );
 }
 
+const FIXED_CHOICES: Record<string, string[]> = {
+  TRUE_FALSE_NOT_GIVEN: ["TRUE", "FALSE", "NOT GIVEN"],
+  YES_NO_NOT_GIVEN: ["YES", "NO", "NOT GIVEN"]
+};
+
 function QuestionInput({
   question,
+  groupType,
   value,
   onChange
 }: {
   question: { id: string; answerType: string; options: { value: string; label: string }[] };
+  groupType: string;
   value: unknown;
   onChange: (value: unknown) => void;
 }) {
-  if (question.answerType === "SINGLE" && question.options.length > 0) {
+  const fixedChoices = question.options.length === 0 ? FIXED_CHOICES[groupType] : undefined;
+  const radioChoices =
+    question.answerType === "SINGLE" && question.options.length > 0
+      ? question.options
+      : fixedChoices
+        ? fixedChoices.map((c) => ({ value: c, label: c }))
+        : null;
+
+  if (radioChoices) {
     return (
       <div className="space-y-1.5">
-        {question.options.map((opt) => {
+        {radioChoices.map((opt) => {
           const selected = value === opt.value;
           return (
             <label
