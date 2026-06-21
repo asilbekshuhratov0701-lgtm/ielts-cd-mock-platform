@@ -381,6 +381,30 @@ function QuestionInput({
     );
   }
 
+  if (
+    (question.answerType === "DROPDOWN" || question.answerType === "MATCH") &&
+    question.options.length > 0
+  ) {
+    const selected = typeof value === "string" ? value : "";
+    return (
+      <select
+        value={selected}
+        onChange={(e) => onChange(e.target.value)}
+        className={cn(
+          "h-10 w-full max-w-sm rounded-lg border bg-surface px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+          selected ? "border-brand-300 text-brand-800" : "border-border"
+        )}
+      >
+        <option value="">Choose…</option>
+        {question.options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    );
+  }
+
   return (
     <input
       type="text"
