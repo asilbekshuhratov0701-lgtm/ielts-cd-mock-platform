@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Plus, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, BookmarkMinus, BookmarkPlus, Plus, Send, Trash2 } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
@@ -18,6 +18,58 @@ import {
   publishExamAction,
   updateExamAction
 } from "@/lib/admin-exam-actions";
+import { removeFromLibraryAction, saveToLibraryAction } from "@/lib/question-bank-actions";
+import type { ContentType } from "@/lib/question-bank";
+
+function LibraryControls({
+  examId,
+  contentType,
+  refId,
+  isLibrary
+}: {
+  examId: string;
+  contentType: ContentType;
+  refId: string;
+  isLibrary: boolean;
+}) {
+  if (isLibrary) {
+    return (
+      <form action={removeFromLibraryAction} className="mt-2 flex items-center gap-2">
+        <input type="hidden" name="examId" value={examId} />
+        <input type="hidden" name="contentType" value={contentType} />
+        <input type="hidden" name="refId" value={refId} />
+        <Badge variant="success">In library</Badge>
+        <Button type="submit" variant="ghost" size="sm">
+          <BookmarkMinus className="h-3.5 w-3.5" /> Remove from library
+        </Button>
+      </form>
+    );
+  }
+  return (
+    <details className="mt-2">
+      <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-brand-600 hover:underline">
+        <BookmarkPlus className="h-3.5 w-3.5" /> Save to library
+      </summary>
+      <form
+        action={saveToLibraryAction}
+        className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-border p-2"
+      >
+        <input type="hidden" name="examId" value={examId} />
+        <input type="hidden" name="contentType" value={contentType} />
+        <input type="hidden" name="refId" value={refId} />
+        <input name="category" placeholder="Category" className={`${libField} w-32`} />
+        <input name="difficulty" placeholder="Difficulty" className={`${libField} w-32`} />
+        <input name="tags" placeholder="tags, comma-separated" className={`${libField} w-48`} />
+        <Button type="submit" variant="secondary" size="sm">
+          Save
+        </Button>
+      </form>
+    </details>
+  );
+}
+
+const libField =
+  "h-8 rounded-lg border border-border bg-surface px-2.5 text-xs text-foreground placeholder:text-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40";
 
 const QUESTION_TYPES = [
   "MULTIPLE_CHOICE",
@@ -143,6 +195,12 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                 <div key={p.id} className="rounded-lg bg-brand-50/40 p-3 text-sm">
                   <p className="font-medium text-brand-700">{p.title ?? "Untitled passage"}</p>
                   <p className="line-clamp-2 text-muted">{p.bodyRichtext}</p>
+                  <LibraryControls
+                    examId={exam.id}
+                    contentType="PASSAGE"
+                    refId={p.id}
+                    isLibrary={p.isLibrary}
+                  />
                 </div>
               ))}
               <form
@@ -168,6 +226,12 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                     Task {t.taskNo} · min {t.minWords} words
                   </p>
                   <p className="line-clamp-2 text-muted">{t.promptRichtext}</p>
+                  <LibraryControls
+                    examId={exam.id}
+                    contentType="WRITING_TASK"
+                    refId={t.id}
+                    isLibrary={t.isLibrary}
+                  />
                 </div>
               ))}
               <form
@@ -216,9 +280,15 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                       </Button>
                     </form>
                   </div>
-                  <p className="mb-3 text-xs text-muted">{group.instructionsRichtext}</p>
+                  <p className="mb-1 text-xs text-muted">{group.instructionsRichtext}</p>
+                  <LibraryControls
+                    examId={exam.id}
+                    contentType="QUESTION_GROUP"
+                    refId={group.id}
+                    isLibrary={group.isLibrary}
+                  />
 
-                  <ul className="mb-3 space-y-1.5 text-sm">
+                  <ul className="mb-3 mt-3 space-y-1.5 text-sm">
                     {group.questions.map((q) => (
                       <li key={q.id} className="flex items-start justify-between gap-2">
                         <span className="text-foreground">
