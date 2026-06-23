@@ -309,9 +309,17 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
   );
 }
 
-const FIXED_CHOICES: Record<string, string[]> = {
-  TRUE_FALSE_NOT_GIVEN: ["TRUE", "FALSE", "NOT GIVEN"],
-  YES_NO_NOT_GIVEN: ["YES", "NO", "NOT GIVEN"]
+const FIXED_CHOICES: Record<string, { value: string; label: string }[]> = {
+  TRUE_FALSE_NOT_GIVEN: [
+    { value: "TRUE", label: "TRUE" },
+    { value: "FALSE", label: "FALSE" },
+    { value: "NOT_GIVEN", label: "NOT GIVEN" }
+  ],
+  YES_NO_NOT_GIVEN: [
+    { value: "YES", label: "YES" },
+    { value: "NO", label: "NO" },
+    { value: "NOT_GIVEN", label: "NOT GIVEN" }
+  ]
 };
 
 function QuestionInput({
@@ -329,9 +337,7 @@ function QuestionInput({
   const radioChoices =
     question.answerType === "SINGLE" && question.options.length > 0
       ? question.options
-      : fixedChoices
-        ? fixedChoices.map((c) => ({ value: c, label: c }))
-        : null;
+      : (fixedChoices ?? null);
 
   if (radioChoices) {
     return (
