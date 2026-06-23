@@ -20,7 +20,11 @@
       "Bash(git push *)",
       "Bash(xargs grep -ln \"href=\\\\\"/admin/writing\\\\\"\\\\|href={\\\\\"/admin\")",
       "Bash(git *)",
-      "PowerShell(Get-CimInstance *)"
+      "PowerShell(Get-CimInstance *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(cat packages/config/tsconfig.base.json)",
+      "Bash(cat apps/web/tsconfig.json)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }

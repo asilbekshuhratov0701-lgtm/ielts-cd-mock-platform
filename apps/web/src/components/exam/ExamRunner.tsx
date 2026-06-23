@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronRight, Clock, Flag, Loader2 } from "lucide-react";
+import { Check, ChevronRight, Clock, Flag, Loader2, X } from "lucide-react";
 import type { RunnerState } from "@/lib/exam";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -52,6 +52,8 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
   const [remaining, setRemaining] = useState<number>(current.remainingSec);
   const [save, setSave] = useState<SaveStatus>("idle");
   const [busy, setBusy] = useState(false);
+  const [activeQ, setActiveQ] = useState<string | null>(null);
+  const [showReview, setShowReview] = useState(false);
 
   const offsetRef = useRef(Date.parse(initial.serverNow) - Date.now());
   const deadlineMs = useMemo(() => Date.parse(current.deadlineAt), [current.deadlineAt]);
@@ -133,12 +135,21 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
     saveWriting(taskNo, text);
   };
 
+  const jumpTo = (id: string) => {
+    setActiveQ(id);
+    setShowReview(false);
+    document.getElementById(`q-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const allQuestions = current.groups.flatMap((g) => g.questions);
   const isAnswered = (id: string) => {
     const v = answers[id];
     return v !== undefined && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0);
   };
   const answeredCount = allQuestions.filter((q) => isAnswered(q.id)).length;
+  const flaggedCount = allQuestions.filter((q) => flags[q.id]).length;
+  const unansweredList = allQuestions.filter((q) => !isAnswered(q.id));
+  const flaggedList = allQuestions.filter((q) => flags[q.id]);
 
   const timerTone =
     remaining <= 60
@@ -250,7 +261,16 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
                     <p className="mb-4 text-sm font-medium text-muted">{group.instructions}</p>
                     <div className="space-y-4">
                       {group.questions.map((q) => (
-                        <div key={q.id} className="rounded-xl border border-border p-4">
+                        <div
+                          key={q.id}
+                          id={`q-${q.id}`}
+                          className={cn(
+                            "scroll-mt-24 rounded-xl border p-4 transition-colors",
+                            activeQ === q.id
+                              ? "border-brand-400 ring-2 ring-brand-200"
+                              : "border-border"
+                          )}
+                        >
                           <div className="mb-3 flex items-start justify-between gap-3">
                             <p className="text-sm text-foreground">
                               <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md bg-brand-50 text-xs font-semibold text-brand-700">
@@ -287,13 +307,129 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
         </div>
       </main>
 
-      <footer className="sticky bottom-0 border-t border-border bg-surface/90 backdrop-blur">
+      <footer className="sticky bottom-0 z-20 border-t border-border bg-surface/90 backdrop-blur">
+        {showReview && current.kind !== "WRITING" ? (
+          <div className="mx-auto max-w-6xl px-6 pt-4">
+            <div className="rounded-2xl border border-border bg-surface p-4 shadow-soft">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-foreground">Review your answers</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowReview(false)}
+                  className="rounded-lg p-1 text-muted transition-colors hover:bg-brand-50 hover:text-brand-700"
+                  title="Close review"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+                    Not answered ({unansweredList.length})
+                  </p>
+                  {unansweredList.length === 0 ? (
+                    <p className="text-sm text-emerald-700">All questions answered.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {unansweredList.map((q) => (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => jumpTo(q.id)}
+                          className="h-8 w-8 rounded-md border border-border text-xs font-semibold text-foreground transition-colors hover:border-brand-300 hover:bg-brand-50"
+                        >
+                          {q.number}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">
+                    Flagged for review ({flaggedList.length})
+                  </p>
+                  {flaggedList.length === 0 ? (
+                    <p className="text-sm text-muted">No flagged questions.</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {flaggedList.map((q) => (
+                        <button
+                          key={q.id}
+                          type="button"
+                          onClick={() => jumpTo(q.id)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-amber-100 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-200"
+                        >
+                          {q.number}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {current.kind !== "WRITING" ? (
+          <div className="mx-auto max-w-6xl overflow-x-auto px-6 pt-2">
+            <div className="flex gap-1.5 pb-1">
+              {allQuestions.map((q) => {
+                const answered = isAnswered(q.id);
+                const flagged = flags[q.id];
+                const active = activeQ === q.id;
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => jumpTo(q.id)}
+                    title={flagged ? `Question ${q.number} · flagged` : `Question ${q.number}`}
+                    className={cn(
+                      "relative h-8 w-8 shrink-0 rounded-md border text-xs font-semibold transition-colors",
+                      answered
+                        ? "border-brand-300 bg-brand-50 text-brand-700"
+                        : "border-border text-muted hover:border-brand-300 hover:bg-brand-50",
+                      active && "ring-2 ring-brand-300"
+                    )}
+                  >
+                    {q.number}
+                    {flagged ? (
+                      <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-amber-500" />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-3">
-          <span className="text-sm text-muted">
-            {current.kind === "WRITING"
-              ? `${current.writingTasks.length} task(s)`
-              : `${answeredCount} / ${allQuestions.length} answered`}
-          </span>
+          <div className="flex items-center gap-3 text-sm text-muted">
+            {current.kind === "WRITING" ? (
+              <span>{current.writingTasks.length} task(s)</span>
+            ) : (
+              <>
+                <span className="tabular-nums">
+                  {answeredCount} / {allQuestions.length} answered
+                </span>
+                {flaggedCount > 0 ? (
+                  <span className="inline-flex items-center gap-1 text-amber-700">
+                    <Flag className="h-3.5 w-3.5" />
+                    {flaggedCount}
+                  </span>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setShowReview((v) => !v)}
+                  className={cn(
+                    "rounded-lg px-2.5 py-1 text-sm font-medium transition-colors",
+                    showReview ? "bg-brand-100 text-brand-700" : "text-brand-700 hover:bg-brand-50"
+                  )}
+                >
+                  Review
+                </button>
+              </>
+            )}
+          </div>
           <Button
             onClick={() => void advance()}
             disabled={busy}
