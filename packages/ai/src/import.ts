@@ -75,6 +75,7 @@ Rules:
 - Reading sections: include each passage's full text in "passages". Group questions and set the correct official IELTS "type" for each group.
 - Writing sections: include each task in "writingTasks" with its prompt and minimum word count (Task 1 = 150, Task 2 = 250 unless stated).
 - For each question set "answerType": SINGLE for one-choice (Multiple Choice, True/False/Not Given, Yes/No/Not Given, matching-to-letters), MULTI for choose-multiple, TEXT for completion / short-answer.
+- For completion / gap-fill questions (sentence, note, table, flow-chart, summary completion), write the "prompt" as the full sentence or line with the blank marked by a run of underscores (e.g. "The library opens at ___ a.m."). Use one blank per question.
 - For choice questions, provide "options" as { value, label } (value is the letter/key the candidate selects, label is the option text).
 - Preserve the original question numbering and order.
 - Only fill "acceptedAnswers" when the correct answers are explicitly present in the document (e.g. an answer key / answers section). If answers are not in the document, leave "acceptedAnswers" empty — the administrator will enter them.

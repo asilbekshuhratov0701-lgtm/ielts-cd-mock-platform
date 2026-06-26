@@ -260,46 +260,65 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
                   >
                     <p className="mb-4 text-sm font-medium text-muted">{group.instructions}</p>
                     <div className="space-y-4">
-                      {group.questions.map((q) => (
-                        <div
-                          key={q.id}
-                          id={`q-${q.id}`}
-                          className={cn(
-                            "scroll-mt-24 rounded-xl border p-4 transition-colors",
-                            activeQ === q.id
-                              ? "border-brand-400 ring-2 ring-brand-200"
-                              : "border-border"
-                          )}
-                        >
-                          <div className="mb-3 flex items-start justify-between gap-3">
-                            <p className="text-sm text-foreground">
-                              <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md bg-brand-50 text-xs font-semibold text-brand-700">
-                                {q.number}
-                              </span>
-                              {q.prompt}
-                            </p>
-                            <button
-                              type="button"
-                              onClick={() => onToggleFlag(q.id)}
-                              title="Flag for review"
+                      {group.questions.map((q) => {
+                        const inlineGap = q.answerType === "TEXT" && GAP_RE.test(q.prompt);
+                        return (
+                          <div
+                            key={q.id}
+                            id={`q-${q.id}`}
+                            className={cn(
+                              "scroll-mt-24 rounded-xl border p-4 transition-colors",
+                              activeQ === q.id
+                                ? "border-brand-400 ring-2 ring-brand-200"
+                                : "border-border"
+                            )}
+                          >
+                            <div
                               className={cn(
-                                "shrink-0 rounded-lg p-1.5 transition-colors",
-                                flags[q.id]
-                                  ? "bg-amber-100 text-amber-700"
-                                  : "text-muted hover:bg-brand-50 hover:text-brand-700"
+                                "flex items-start justify-between gap-3",
+                                !inlineGap && "mb-3"
                               )}
                             >
-                              <Flag className="h-4 w-4" />
-                            </button>
+                              <p className="text-sm leading-relaxed text-foreground">
+                                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-md bg-brand-50 text-xs font-semibold text-brand-700">
+                                  {q.number}
+                                </span>
+                                {inlineGap ? (
+                                  <GapPrompt
+                                    prompt={q.prompt}
+                                    number={q.number}
+                                    value={answers[q.id]}
+                                    onChange={(v) => onAnswer(q.id, v)}
+                                  />
+                                ) : (
+                                  q.prompt
+                                )}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => onToggleFlag(q.id)}
+                                title="Flag for review"
+                                className={cn(
+                                  "shrink-0 rounded-lg p-1.5 transition-colors",
+                                  flags[q.id]
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "text-muted hover:bg-brand-50 hover:text-brand-700"
+                                )}
+                              >
+                                <Flag className="h-4 w-4" />
+                              </button>
+                            </div>
+                            {!inlineGap ? (
+                              <QuestionInput
+                                question={q}
+                                groupType={group.type}
+                                value={answers[q.id]}
+                                onChange={(v) => onAnswer(q.id, v)}
+                              />
+                            ) : null}
                           </div>
-                          <QuestionInput
-                            question={q}
-                            groupType={group.type}
-                            value={answers[q.id]}
-                            onChange={(v) => onAnswer(q.id, v)}
-                          />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -442,6 +461,44 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
         </div>
       </footer>
     </div>
+  );
+}
+
+const GAP_RE = /_{2,}/;
+
+function GapPrompt({
+  prompt,
+  number,
+  value,
+  onChange
+}: {
+  prompt: string;
+  number: number;
+  value: unknown;
+  onChange: (value: unknown) => void;
+}) {
+  const parts = prompt.split(/(_{2,})/);
+  let gapPlaced = false;
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (!gapPlaced && /^_{2,}$/.test(part)) {
+          gapPlaced = true;
+          return (
+            <input
+              key={i}
+              type="text"
+              value={typeof value === "string" ? value : ""}
+              onChange={(e) => onChange(e.target.value)}
+              aria-label={`Answer for question ${number}`}
+              placeholder={String(number)}
+              className="mx-1 inline-block h-8 w-36 rounded-md border border-border bg-surface px-2 align-middle text-sm text-foreground placeholder:text-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+            />
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
   );
 }
 
