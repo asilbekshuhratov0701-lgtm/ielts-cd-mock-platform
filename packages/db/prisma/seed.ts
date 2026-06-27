@@ -191,6 +191,105 @@ async function main(): Promise<void> {
                         }
                       ]
                     }
+                  },
+                  {
+                    type: "TABLE_COMPLETION",
+                    order: 1,
+                    instructionsRichtext:
+                      "Questions 8-10: Complete the table. Write NO MORE THAN TWO WORDS for each answer.",
+                    layoutJson: {
+                      kind: "table",
+                      source:
+                        "#Stage|Detail\nPlucking|Picked by [8]\nWithering|Leaves lose [9]\nDrying|Uses warm [10]",
+                      rows: [
+                        [
+                          { segs: [{ text: "Stage" }], header: true },
+                          { segs: [{ text: "Detail" }], header: true }
+                        ],
+                        [
+                          { segs: [{ text: "Plucking" }] },
+                          { segs: [{ text: "Picked by " }, { gap: 8 }] }
+                        ],
+                        [
+                          { segs: [{ text: "Withering" }] },
+                          { segs: [{ text: "Leaves lose " }, { gap: 9 }] }
+                        ],
+                        [
+                          { segs: [{ text: "Drying" }] },
+                          { segs: [{ text: "Uses warm " }, { gap: 10 }] }
+                        ]
+                      ]
+                    },
+                    questions: {
+                      create: [
+                        {
+                          number: 8,
+                          prompt: "Plucking — who picks the leaves",
+                          answerType: "TEXT",
+                          answerKey: {
+                            create: {
+                              acceptedJson: ["hand", "by hand", "workers"],
+                              matchMode: "CONTAINS"
+                            }
+                          }
+                        },
+                        {
+                          number: 9,
+                          prompt: "Withering — what the leaves lose",
+                          answerType: "TEXT",
+                          answerKey: {
+                            create: { acceptedJson: ["moisture", "water"], matchMode: "CONTAINS" }
+                          }
+                        },
+                        {
+                          number: 10,
+                          prompt: "Drying — what it uses",
+                          answerType: "TEXT",
+                          answerKey: {
+                            create: { acceptedJson: ["air", "warm air"], matchMode: "CONTAINS" }
+                          }
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    type: "FLOW_CHART_COMPLETION",
+                    order: 2,
+                    instructionsRichtext:
+                      "Questions 11-12: Complete the flow-chart. Write ONE WORD for each answer.",
+                    layoutJson: {
+                      kind: "flow",
+                      source: "Boil the [11]\nAdd the tea leaves\nSteep for [12] minutes\nServe",
+                      steps: [
+                        { segs: [{ text: "Boil the " }, { gap: 11 }] },
+                        { segs: [{ text: "Add the tea leaves" }] },
+                        { segs: [{ text: "Steep for " }, { gap: 12 }, { text: " minutes" }] },
+                        { segs: [{ text: "Serve" }] }
+                      ]
+                    },
+                    questions: {
+                      create: [
+                        {
+                          number: 11,
+                          prompt: "What is boiled first",
+                          answerType: "TEXT",
+                          answerKey: {
+                            create: { acceptedJson: ["water"], matchMode: "CONTAINS" }
+                          }
+                        },
+                        {
+                          number: 12,
+                          prompt: "How many minutes to steep",
+                          answerType: "TEXT",
+                          answerKey: {
+                            create: {
+                              acceptedJson: ["3", "three", "5", "five"],
+                              matchMode: "CONTAINS"
+                            }
+                          }
+                        }
+                      ]
+                    }
                   }
                 ]
               }

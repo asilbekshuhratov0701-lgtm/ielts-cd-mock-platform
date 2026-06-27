@@ -1,6 +1,7 @@
 import { prisma, Prisma } from "@ielts/db";
 import { computeDeadline, isExpired, remainingSeconds } from "@ielts/core";
 import { scoreAttempt } from "@/lib/scoring";
+import { isCompletionLayout, type CompletionLayout } from "@/lib/completion-layout";
 
 export class ExamError extends Error {
   constructor(
@@ -24,6 +25,7 @@ export type RunnerGroup = {
   type: string;
   instructions: string;
   order: number;
+  layout: CompletionLayout | null;
   questions: RunnerQuestion[];
 };
 
@@ -203,6 +205,7 @@ export async function loadRunnerState(
         type: g.type,
         instructions: g.instructionsRichtext,
         order: g.order,
+        layout: isCompletionLayout(g.layoutJson) ? g.layoutJson : null,
         questions: g.questions.map((q) => ({
           id: q.id,
           number: q.number,

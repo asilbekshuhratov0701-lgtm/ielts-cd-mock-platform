@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronRight, Clock, Flag, Loader2, X } from "lucide-react";
-import type { RunnerState } from "@/lib/exam";
+import { ArrowDown, Check, ChevronRight, Clock, Flag, Loader2, X } from "lucide-react";
+import type { RunnerQuestion, RunnerState } from "@/lib/exam";
+import { layoutGapNumbers, type CompletionLayout, type LayoutCell } from "@/lib/completion-layout";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
@@ -253,14 +254,31 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
                     </div>
                   );
                 })
-              : current.groups.map((group) => (
+              : current.groups.map((group) => {
+                  const byNumber = new Map(
+                    group.questions.map((q) => [q.number, q] as const)
+                  );
+                  const covered = group.layout ? layoutGapNumbers(group.layout) : null;
+                  const stacked = covered
+                    ? group.questions.filter((q) => !covered.has(q.number))
+                    : group.questions;
+                  return (
                   <div
                     key={group.id}
                     className="rounded-2xl border border-border bg-surface p-5 shadow-soft"
                   >
                     <p className="mb-4 text-sm font-medium text-muted">{group.instructions}</p>
+                    {group.layout ? (
+                      <LayoutView
+                        layout={group.layout}
+                        byNumber={byNumber}
+                        answers={answers}
+                        activeQ={activeQ}
+                        onAnswer={onAnswer}
+                      />
+                    ) : null}
                     <div className="space-y-4">
-                      {group.questions.map((q) => {
+                      {stacked.map((q) => {
                         const inlineGap = q.answerType === "TEXT" && GAP_RE.test(q.prompt);
                         return (
                           <div
@@ -321,7 +339,8 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
                       })}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
           </div>
         </div>
       </main>
@@ -460,6 +479,109 @@ export function ExamRunner({ initial }: { initial: RunnerState }) {
           </Button>
         </div>
       </footer>
+    </div>
+  );
+}
+
+type LayoutCellProps = {
+  cell: LayoutCell;
+  byNumber: Map<number, RunnerQuestion>;
+  answers: Record<string, unknown>;
+  activeQ: string | null;
+  onAnswer: (questionId: string, value: unknown) => void;
+};
+
+function LayoutCellView({ cell, byNumber, answers, activeQ, onAnswer }: LayoutCellProps) {
+  return (
+    <>
+      {cell.segs.map((seg, i) => {
+        if ("text" in seg) return <span key={i}>{seg.text}</span>;
+        const q = byNumber.get(seg.gap);
+        if (!q)
+          return (
+            <span key={i} className="text-muted">
+              [{seg.gap}]
+            </span>
+          );
+        const value = answers[q.id];
+        return (
+          <input
+            key={i}
+            id={`q-${q.id}`}
+            type="text"
+            value={typeof value === "string" ? value : ""}
+            onChange={(e) => onAnswer(q.id, e.target.value)}
+            aria-label={`Answer for question ${q.number}`}
+            placeholder={String(q.number)}
+            className={cn(
+              "mx-1 inline-block h-8 w-28 scroll-mt-24 rounded-md border bg-surface px-2 align-middle text-sm text-foreground placeholder:text-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+              activeQ === q.id ? "border-brand-400 ring-2 ring-brand-200" : "border-border"
+            )}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+function LayoutView({
+  layout,
+  byNumber,
+  answers,
+  activeQ,
+  onAnswer
+}: {
+  layout: CompletionLayout;
+  byNumber: Map<number, RunnerQuestion>;
+  answers: Record<string, unknown>;
+  activeQ: string | null;
+  onAnswer: (questionId: string, value: unknown) => void;
+}) {
+  const cellProps = { byNumber, answers, activeQ, onAnswer };
+
+  if (layout.kind === "table") {
+    return (
+      <div className="mb-4 overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <tbody>
+            {layout.rows.map((row, r) => (
+              <tr key={r}>
+                {row.map((cell, c) => {
+                  const Tag = cell.header ? "th" : "td";
+                  return (
+                    <Tag
+                      key={c}
+                      className={cn(
+                        "border border-border px-3 py-2 align-middle leading-relaxed",
+                        cell.header
+                          ? "bg-brand-50 text-left font-semibold text-brand-700"
+                          : "text-foreground"
+                      )}
+                    >
+                      <LayoutCellView cell={cell} {...cellProps} />
+                    </Tag>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4">
+      {layout.steps.map((cell, i) => (
+        <div key={i} className="flex flex-col items-center">
+          <div className="w-full max-w-md rounded-xl border border-border bg-brand-50/40 px-4 py-3 text-center text-sm leading-relaxed text-foreground">
+            <LayoutCellView cell={cell} {...cellProps} />
+          </div>
+          {i < layout.steps.length - 1 ? (
+            <ArrowDown className="my-1 h-4 w-4 shrink-0 text-muted" />
+          ) : null}
+        </div>
+      ))}
     </div>
   );
 }
