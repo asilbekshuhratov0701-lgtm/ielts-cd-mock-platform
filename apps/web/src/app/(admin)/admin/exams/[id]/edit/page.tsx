@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BookmarkMinus, BookmarkPlus, Plus, Send, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  BookmarkMinus,
+  BookmarkPlus,
+  LayoutGrid,
+  Plus,
+  Send,
+  Trash2
+} from "lucide-react";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
@@ -16,10 +24,60 @@ import {
   deleteQuestionAction,
   deleteSectionAction,
   publishExamAction,
-  updateExamAction
+  updateExamAction,
+  updateGroupLayoutAction
 } from "@/lib/admin-exam-actions";
 import { removeFromLibraryAction, saveToLibraryAction } from "@/lib/question-bank-actions";
 import type { ContentType } from "@/lib/question-bank";
+import { isCompletionLayout } from "@/lib/completion-layout";
+
+const LAYOUT_TYPES = ["TABLE_COMPLETION", "FLOW_CHART_COMPLETION"];
+
+function LayoutEditor({
+  examId,
+  group
+}: {
+  examId: string;
+  group: { id: string; type: string; layoutJson: unknown };
+}) {
+  const kind = group.type === "FLOW_CHART_COMPLETION" ? "flow" : "table";
+  const existing = isCompletionLayout(group.layoutJson) ? group.layoutJson.source : "";
+  const hint =
+    kind === "flow"
+      ? "One step per line. Mark a gap with [n], where n is the question number — e.g. Boil the [11]"
+      : "One row per line, cells separated by | . Prefix a header row with # . Mark a gap with [n] — e.g. #Stage|Detail then Drying|Uses warm [10]";
+  const placeholder =
+    kind === "flow"
+      ? "Boil the [11]\nAdd the tea leaves\nSteep for [12] minutes\nServe"
+      : "#Stage|Detail\nPlucking|Picked by [8]\nDrying|Uses warm [10]";
+  return (
+    <details className="mt-3" open={existing.length === 0 ? undefined : true}>
+      <summary className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-brand-600 hover:underline">
+        <LayoutGrid className="h-3.5 w-3.5" />{" "}
+        {kind === "flow" ? "Flow-chart layout" : "Table layout"}
+      </summary>
+      <form
+        action={updateGroupLayoutAction}
+        className="mt-2 space-y-2 rounded-lg border border-dashed border-border p-3"
+      >
+        <input type="hidden" name="examId" value={examId} />
+        <input type="hidden" name="groupId" value={group.id} />
+        <input type="hidden" name="kind" value={kind} />
+        <p className="text-xs text-muted">{hint}</p>
+        <textarea
+          name="source"
+          rows={4}
+          defaultValue={existing}
+          placeholder={placeholder}
+          className={`${area} font-mono`}
+        />
+        <Button type="submit" variant="secondary" size="sm">
+          Save layout
+        </Button>
+      </form>
+    </details>
+  );
+}
 
 function LibraryControls({
   examId,
@@ -287,6 +345,10 @@ export default async function AdminExamEditPage({ params }: { params: Promise<{ 
                     refId={group.id}
                     isLibrary={group.isLibrary}
                   />
+
+                  {LAYOUT_TYPES.includes(group.type) ? (
+                    <LayoutEditor examId={exam.id} group={group} />
+                  ) : null}
 
                   <ul className="mb-3 mt-3 space-y-1.5 text-sm">
                     {group.questions.map((q) => (

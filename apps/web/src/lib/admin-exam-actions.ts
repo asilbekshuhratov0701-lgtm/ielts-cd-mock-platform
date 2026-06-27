@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma, Prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { logAudit } from "@/lib/audit";
+import { parseLayoutSource, type LayoutKind } from "@/lib/completion-layout";
 
 async function requireStaff() {
   const session = await auth();
@@ -201,6 +202,21 @@ export async function addGroupAction(formData: FormData): Promise<void> {
       instructionsRichtext: instructions,
       order: await nextOrder("group", sectionId)
     }
+  });
+  refresh(examId);
+}
+
+export async function updateGroupLayoutAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const examId = String(formData.get("examId") ?? "");
+  const groupId = String(formData.get("groupId") ?? "");
+  const kind: LayoutKind = String(formData.get("kind") ?? "table") === "flow" ? "flow" : "table";
+  const source = String(formData.get("source") ?? "");
+  if (!groupId) return;
+  const layout = source.trim().length > 0 ? parseLayoutSource(kind, source) : null;
+  await prisma.questionGroup.update({
+    where: { id: groupId },
+    data: { layoutJson: layout ? (layout as unknown as Prisma.InputJsonValue) : Prisma.JsonNull }
   });
   refresh(examId);
 }
