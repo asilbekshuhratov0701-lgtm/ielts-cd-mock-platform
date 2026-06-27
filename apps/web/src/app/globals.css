@@ -9,6 +9,10 @@
   --foreground: 222 47% 11%;
   --muted: 215 16% 47%;
   --border: 214 32% 91%;
+
+  --space-option: 0.5rem;
+  --space-question: 1.5rem;
+  --space-group: 3rem;
 }
 
 .dark {
