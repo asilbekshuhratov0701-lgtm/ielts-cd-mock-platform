@@ -1,150 +1,402 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Music, Play } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight, Play, Sun, Volume2 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
-import { AnswersProvider } from "@/components/question-engine/answers-store";
+import type { AnswersMap } from "@/components/question-engine/types";
+import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
-function formatTime(total: number): string {
-  const s = Math.max(0, Math.floor(total));
-  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+type Entry = { number: number; key: string; multi: boolean; section: number };
+
+function buildEntries(exam: PreviewExam): Entry[] {
+  const out: Entry[] = [];
+  exam.sections.forEach((section, si) => {
+    for (const g of section.groups) {
+      if (g.inputKind === "radio") {
+        for (const q of g.questions ?? []) out.push({ number: q.number, key: q.id, multi: false, section: si });
+        for (const r of g.rows ?? []) out.push({ number: r.number, key: r.id, multi: false, section: si });
+      } else if (g.inputKind === "gap") {
+        for (const gap of g.gaps) out.push({ number: gap.number, key: gap.id, multi: false, section: si });
+      } else if (g.inputKind === "select") {
+        for (const p of g.prompts) out.push({ number: p.number, key: p.id, multi: false, section: si });
+      } else {
+        for (let n = g.numberRange[0]; n <= g.numberRange[1]; n += 1) {
+          out.push({ number: n, key: g.id, multi: true, section: si });
+        }
+      }
+    }
+  });
+  return out.sort((a, b) => a.number - b.number);
 }
 
-function AudioBar({ url }: { url: string | null }) {
-  const ref = useRef<HTMLAudioElement>(null);
-  const maxRef = useRef(0);
-  const [started, setStarted] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+function isAnswered(answers: AnswersMap, e: Entry): boolean {
+  const v = answers[e.key];
+  if (e.multi) return Array.isArray(v) && v.length > 0;
+  return v !== null && v !== undefined && v !== "";
+}
 
-  if (!url) {
-    return (
-      <Card className="flex items-center gap-2 border-amber-200 p-3 text-sm text-amber-700">
-        <Music className="h-4 w-4" /> No audio attached yet — the Listening exam needs its audio file
-        before it can play.
-      </Card>
-    );
-  }
-
+function TopBar({
+  exam,
+  audioUrl,
+  audioStarted,
+  onStartAudio,
+  volume,
+  onVolume
+}: {
+  exam: PreviewExam;
+  audioUrl: string | null;
+  audioStarted: boolean;
+  onStartAudio: () => void;
+  volume: number;
+  onVolume: (v: number) => void;
+}) {
+  const timerLabel =
+    exam.timerSource === "fixed" ? `${exam.timeLimitMinutes ?? 60} minutes left` : "Audio timed";
   return (
-    <Card className="sticky top-2 z-10 flex flex-wrap items-center gap-3 p-3">
-      <audio
-        ref={ref}
-        src={url}
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onEnded={() => setPlaying(false)}
-        onTimeUpdate={() => {
-          const t = ref.current?.currentTime ?? 0;
-          maxRef.current = Math.max(maxRef.current, t);
-          setElapsed(t);
-        }}
-        onSeeking={() => {
-          if (ref.current && ref.current.currentTime > maxRef.current + 0.5) {
-            ref.current.currentTime = maxRef.current;
-          }
-        }}
-      />
-      {!started ? (
-        <Button
-          size="sm"
-          onClick={() => {
-            setStarted(true);
-            void ref.current?.play();
-          }}
-        >
-          <Play className="h-4 w-4" /> Start audio (plays once)
-        </Button>
-      ) : (
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-          <Music className={cn("h-4 w-4", playing ? "text-brand-600" : "text-muted")} />
-          {playing ? "Playing" : "Paused"} ·{" "}
-          <span className="tabular-nums">{formatTime(elapsed)}</span>
+    <div className="flex items-center justify-between gap-4 border-b border-border bg-surface px-5 py-2.5">
+      <span className="text-sm font-bold uppercase tracking-wide text-foreground">
+        {exam.module}
+      </span>
+      <div className="flex items-center gap-3">
+        <span className="rounded-md bg-black/[0.05] px-3 py-1 text-sm font-medium text-foreground">
+          {timerLabel}
         </span>
-      )}
-      <span className="text-xs text-muted">No seeking · single play (faithful CD behaviour)</span>
-    </Card>
+        {exam.module === "listening" ? (
+          audioStarted ? (
+            <span className="flex items-center gap-1.5">
+              <Volume2 className="h-4 w-4 text-muted" />
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.05}
+                value={volume}
+                onChange={(e) => onVolume(Number(e.target.value))}
+                className="h-1 w-24 accent-violet-600"
+                aria-label="Volume"
+              />
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={onStartAudio}
+              disabled={!audioUrl}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium",
+                audioUrl
+                  ? "bg-violet-600 text-white hover:bg-violet-700"
+                  : "cursor-not-allowed bg-black/[0.05] text-muted"
+              )}
+            >
+              <Play className="h-3.5 w-3.5" /> Start audio
+            </button>
+          )
+        ) : null}
+        <button
+          type="button"
+          onClick={() => document.documentElement.classList.toggle("dark")}
+          className="rounded-md p-1.5 text-muted hover:bg-black/[0.05]"
+          aria-label="Toggle theme"
+        >
+          <Sun className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          className="rounded-md bg-red-500 px-4 py-1 text-sm font-semibold text-white hover:bg-red-600"
+        >
+          Finish
+        </button>
+      </div>
+    </div>
   );
 }
 
-function PassagePane({ section }: { section: PreviewSection }) {
+function PartBanner({ index, from, to }: { index: number; from: number; to: number }) {
   return (
-    <div className="space-y-3 lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] lg:overflow-auto lg:pr-2">
-      <Card className="p-5">
-        {section.title ? <h3 className="font-semibold text-brand-700">{section.title}</h3> : null}
-        {section.subtitle ? (
-          <p className="mb-2 text-sm font-medium text-foreground">{section.subtitle}</p>
+    <div className="border-b border-border bg-black/[0.03] px-6 py-3">
+      <p className="text-sm font-bold text-foreground">Part {index + 1}</p>
+      <p className="text-sm text-foreground/70">
+        Read the text and answer questions {from} - {to}.
+      </p>
+    </div>
+  );
+}
+
+function PassagePane({ section, index }: { section: PreviewSection; index: number }) {
+  return (
+    <div className="h-full overflow-auto px-6 py-5">
+      <h2 className="text-lg font-bold uppercase text-foreground">
+        {section.title || `Reading Passage ${index + 1}`}
+      </h2>
+      {section.subtitle ? (
+        <p className="mt-3 text-base font-bold italic text-foreground">{section.subtitle}</p>
+      ) : null}
+      <div className="mt-3 space-y-3 text-sm leading-relaxed text-foreground/85">
+        {section.passageBlocks.map((b, i) => (
+          <p key={i}>
+            {b.label ? <span className="mr-2 font-semibold text-foreground">{b.label}</span> : null}
+            {b.text}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GroupsPane({ section }: { section: PreviewSection }) {
+  return (
+    <div className="flex flex-col gap-[var(--space-group)] px-6 py-5">
+      {section.groups.map((g) => (
+        <QuestionGroupRenderer key={g.id} group={g} />
+      ))}
+    </div>
+  );
+}
+
+function ReadingBody({ section, index }: { section: PreviewSection; index: number }) {
+  const [leftPct, setLeftPct] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+
+  return (
+    <div ref={containerRef} className="flex h-[70vh]">
+      <div style={{ width: `${leftPct}%` }} className="h-full border-r border-border">
+        <PassagePane section={section} index={index} />
+      </div>
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        onPointerDown={(e) => {
+          dragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging.current || !containerRef.current) return;
+          const r = containerRef.current.getBoundingClientRect();
+          const pct = ((e.clientX - r.left) / r.width) * 100;
+          setLeftPct(Math.min(70, Math.max(30, pct)));
+        }}
+        onPointerUp={() => {
+          dragging.current = false;
+        }}
+        className="w-1.5 shrink-0 cursor-col-resize bg-border hover:bg-violet-400"
+      />
+      <div className="h-full flex-1 overflow-auto">
+        <GroupsPane section={section} />
+      </div>
+    </div>
+  );
+}
+
+function ListeningBody({ section, index }: { section: PreviewSection; index: number }) {
+  return (
+    <div className="h-[70vh] overflow-auto">
+      <div className="mx-auto max-w-3xl px-6 py-5">
+        <p className="mb-3 text-sm font-bold uppercase text-foreground">Part {index + 1}</p>
+        {section.scenario ? (
+          <p className="mb-3 text-sm italic text-muted">{section.scenario}</p>
         ) : null}
-        <div className="space-y-2 text-sm leading-relaxed text-foreground/80">
-          {section.passageBlocks.map((b, i) => (
-            <p key={i}>
-              {b.label ? <span className="mr-2 font-semibold text-brand-700">{b.label}</span> : null}
-              {b.text}
-            </p>
+        <div className="flex flex-col gap-[var(--space-group)]">
+          {section.groups.map((g) => (
+            <QuestionGroupRenderer key={g.id} group={g} />
           ))}
         </div>
-      </Card>
+      </div>
+    </div>
+  );
+}
+
+function NavCell({
+  n,
+  active,
+  answered,
+  onClick
+}: {
+  n: number;
+  active: boolean;
+  answered: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "h-7 w-7 shrink-0 rounded-full border text-xs font-semibold transition-colors",
+        active
+          ? "border-violet-600 bg-violet-600 text-white"
+          : answered
+            ? "border-violet-300 bg-violet-50 text-violet-700"
+            : "border-border text-muted hover:border-violet-300"
+      )}
+    >
+      {n}
+    </button>
+  );
+}
+
+function BottomNav({
+  exam,
+  entries,
+  answers,
+  activeNum,
+  onPick,
+  onStep
+}: {
+  exam: PreviewExam;
+  entries: Entry[];
+  answers: AnswersMap;
+  activeNum: number;
+  onPick: (n: number) => void;
+  onStep: (dir: -1 | 1) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-t border-border bg-surface px-4 py-2">
+      <div className="flex items-center gap-5 overflow-x-auto">
+        {exam.sections.map((section, si) => {
+          const partEntries = entries.filter((e) => e.section === si);
+          if (partEntries.length === 0) return null;
+          const answeredCount = partEntries.filter((e) => isAnswered(answers, e)).length;
+          const isActive = partEntries.some((e) => e.number === activeNum);
+          return (
+            <div key={section.id} className="flex shrink-0 items-center gap-2">
+              <span className="text-sm font-bold text-foreground">Part {si + 1}</span>
+              {isActive ? (
+                <div className="flex items-center gap-1.5">
+                  {partEntries.map((e) => (
+                    <NavCell
+                      key={e.number}
+                      n={e.number}
+                      active={e.number === activeNum}
+                      answered={isAnswered(answers, e)}
+                      onClick={() => onPick(e.number)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onPick(partEntries[0]!.number)}
+                  className="text-sm text-muted hover:text-foreground"
+                >
+                  {answeredCount} of {partEntries.length}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onStep(-1)}
+          className="rounded-md bg-violet-700 p-2 text-white hover:bg-violet-800"
+          aria-label="Previous question"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onStep(1)}
+          className="rounded-md bg-violet-700 p-2 text-white hover:bg-violet-800"
+          aria-label="Next question"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Shell({ exam, audioUrl }: { exam: PreviewExam; audioUrl: string | null }) {
+  const answers = useAnswers();
+  const entries = useMemo(() => buildEntries(exam), [exam]);
+  const orderedNums = useMemo(() => entries.map((e) => e.number), [entries]);
+  const [activeNum, setActiveNum] = useState(orderedNums[0] ?? 1);
+
+  const activeEntry = entries.find((e) => e.number === activeNum) ?? entries[0];
+  const activePart = activeEntry?.section ?? 0;
+  const section = exam.sections[activePart];
+  const partEntries = entries.filter((e) => e.section === activePart);
+  const partFrom = partEntries.length ? partEntries[0]!.number : 0;
+  const partTo = partEntries.length ? partEntries[partEntries.length - 1]!.number : 0;
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const maxRef = useRef(0);
+  const [audioStarted, setAudioStarted] = useState(false);
+  const [volume, setVolume] = useState(1);
+
+  function step(dir: -1 | 1) {
+    const i = orderedNums.indexOf(activeNum);
+    const next = orderedNums[Math.min(orderedNums.length - 1, Math.max(0, i + dir))];
+    if (next !== undefined) setActiveNum(next);
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+      <TopBar
+        exam={exam}
+        audioUrl={audioUrl}
+        audioStarted={audioStarted}
+        onStartAudio={() => {
+          setAudioStarted(true);
+          void audioRef.current?.play();
+        }}
+        volume={volume}
+        onVolume={(v) => {
+          setVolume(v);
+          if (audioRef.current) audioRef.current.volume = v;
+        }}
+      />
+
+      {exam.module === "listening" && audioUrl ? (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          onTimeUpdate={() => {
+            const t = audioRef.current?.currentTime ?? 0;
+            maxRef.current = Math.max(maxRef.current, t);
+          }}
+          onSeeking={() => {
+            if (audioRef.current && audioRef.current.currentTime > maxRef.current + 0.5) {
+              audioRef.current.currentTime = maxRef.current;
+            }
+          }}
+        />
+      ) : null}
+
+      {exam.module === "reading" ? (
+        <PartBanner index={activePart} from={partFrom} to={partTo} />
+      ) : null}
+
+      {section ? (
+        exam.module === "reading" && section.passageBlocks.length > 0 ? (
+          <ReadingBody section={section} index={activePart} />
+        ) : (
+          <ListeningBody section={section} index={activePart} />
+        )
+      ) : (
+        <div className="p-6 text-sm text-muted">No questions in this exam.</div>
+      )}
+
+      <BottomNav
+        exam={exam}
+        entries={entries}
+        answers={answers}
+        activeNum={activeNum}
+        onPick={setActiveNum}
+        onStep={step}
+      />
     </div>
   );
 }
 
 export function ExamPreview({ exam, audioUrl }: { exam: PreviewExam; audioUrl: string | null }) {
-  const isReading = exam.module === "reading";
   return (
     <AnswersProvider>
-      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-foreground/[0.02] px-4 py-2 text-sm">
-        <span className="font-semibold uppercase tracking-wide text-brand-700">{exam.module}</span>
-        <span className="text-muted">·</span>
-        <span className="text-foreground">{exam.title}</span>
-        <span className="text-muted">·</span>
-        <span className="text-muted">
-          {exam.timerSource === "audio"
-            ? "timer follows audio"
-            : `${exam.timeLimitMinutes ?? "?"} min`}
-        </span>
-      </div>
-
-      {exam.module === "listening" ? (
-        <div className="mb-4">
-          <AudioBar url={audioUrl} />
-        </div>
-      ) : null}
-
-      <div className="space-y-8">
-        {exam.sections.map((section) => (
-          <section key={section.id}>
-            <div className="mb-3 rounded-xl bg-brand-gradient px-4 py-2 text-sm font-semibold text-white">
-              {section.title || section.id}
-              {section.instructions ? (
-                <span className="ml-2 font-normal opacity-90">{section.instructions}</span>
-              ) : null}
-            </div>
-            {isReading && section.passageBlocks.length > 0 ? (
-              <div className="grid gap-6 lg:grid-cols-2">
-                <PassagePane section={section} />
-                <div className="flex flex-col gap-[var(--space-group)]">
-                  {section.groups.map((g) => (
-                    <QuestionGroupRenderer key={g.id} group={g} />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-[var(--space-group)]">
-                {section.scenario ? (
-                  <p className="text-sm italic text-muted">{section.scenario}</p>
-                ) : null}
-                {section.groups.map((g) => (
-                  <QuestionGroupRenderer key={g.id} group={g} />
-                ))}
-              </div>
-            )}
-          </section>
-        ))}
-      </div>
+      <Shell exam={exam} audioUrl={audioUrl} />
     </AnswersProvider>
   );
 }

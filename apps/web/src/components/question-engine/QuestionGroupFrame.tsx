@@ -21,15 +21,17 @@ export function QuestionGroupFrame({
   children: React.ReactNode;
 }) {
   const [from, to] = group.numberRange;
-  const range = from === to ? `Question ${from}` : `Questions ${from}–${to}`;
+  const range = from === to ? `Question ${from}` : `Questions ${from} - ${to}`;
   return (
     <section>
-      <div className="mb-1 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-foreground">{range}</h2>
+      <div className="mb-1 flex items-start justify-between gap-3">
+        <h2 className="text-base font-bold text-foreground">{range}</h2>
         <HelpPopover text={group.helpText} />
       </div>
-      <p className="mb-3 text-sm text-muted">{group.instructions}</p>
-      <div className={cn("rounded-2xl border border-border bg-foreground/[0.02] p-5")}>
+      {group.instructions ? (
+        <p className="mb-3 text-sm italic text-foreground/70">{group.instructions}</p>
+      ) : null}
+      <div className={cn("rounded-md bg-black/[0.04] p-5")}>
         {group.title ? (
           <h3 className="mb-4 text-center text-base font-semibold text-foreground">{group.title}</h3>
         ) : null}
