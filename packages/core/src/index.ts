@@ -3,6 +3,7 @@
 export * from "./types";
 export * from "./scoring/band";
 export * from "./scoring/objective";
+export * from "./scoring/import-scoring";
 export * from "./scoring/tables";
 export * from "./exam/state-machine";
 export * from "./exam/timing";

@@ -1,31 +1,26 @@
 import { prisma, Prisma } from "@ielts/db";
 import { validateExamFile, type ExamFile, type ValidationReport } from "@ielts/validators";
+import type { ImportAnswerKey } from "@ielts/core";
 import { mapExamFile } from "@/lib/exam-import-map";
 
 export type BlueprintState = "draft" | "audio_pending" | "published";
 
-export interface AnswerKeyEntry {
-  number?: number;
-  numbers?: number[];
-  accepted: string[];
-  orderIndependent?: boolean;
-}
-
-export function extractAnswerKey(exam: ExamFile): Record<string, AnswerKeyEntry> {
-  const key: Record<string, AnswerKeyEntry> = {};
+export function extractAnswerKey(exam: ExamFile): Record<string, ImportAnswerKey> {
+  const key: Record<string, ImportAnswerKey> = {};
   for (const section of exam.sections) {
     for (const group of section.groups) {
       for (const q of group.questions) {
         if (q.type === "gap") {
-          key[q.id] = { number: q.number, accepted: q.answer };
+          key[q.id] = { kind: "gap", accepted: q.answer };
         } else if (q.type === "checkbox") {
           key[q.id] = {
-            numbers: q.numbers,
+            kind: "checkbox",
             accepted: q.answer,
+            numbers: q.numbers,
             orderIndependent: q.orderIndependent ?? true
           };
         } else {
-          key[q.id] = { number: q.number, accepted: [q.answer] };
+          key[q.id] = { kind: q.type, accepted: [q.answer] };
         }
       }
     }
