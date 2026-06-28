@@ -2,55 +2,30 @@
 
 import { cn } from "@/lib/cn";
 
-function countWords(text: string): number {
-  const t = text.trim();
-  return t.length === 0 ? 0 : t.split(/\s+/).length;
-}
-
 export function GapInput({
   number,
   value,
-  onChange,
-  wordLimit,
-  allowNumber
+  onChange
 }: {
   number: number;
   value: string;
   onChange: (value: string) => void;
-  wordLimit: number;
-  allowNumber: boolean;
+  wordLimit?: number;
+  allowNumber?: boolean;
 }) {
-  const words = countWords(value);
-  const overLimit = words > wordLimit;
-  const numberViolation = !allowNumber && /\d/.test(value);
-  const invalid = overLimit || numberViolation;
-  const widthCh = Math.max(7, Math.min(22, wordLimit * 7 + 1));
-
   return (
-    <span className="relative inline-block align-baseline">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={String(number)}
-        aria-label={`Answer ${number}`}
-        aria-invalid={invalid}
-        style={{ width: `${widthCh}ch` }}
-        className={cn(
-          "mx-1 inline-block h-8 rounded-md border bg-surface px-2 align-baseline text-sm text-foreground",
-          "placeholder:font-normal placeholder:text-muted/50",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
-          invalid ? "border-red-400 ring-1 ring-red-300" : "border-border"
-        )}
-      />
-      {invalid ? (
-        <span className="absolute left-1 top-full mt-0.5 whitespace-nowrap text-[10px] font-medium text-red-600">
-          {numberViolation
-            ? "No numbers"
-            : `Max ${wordLimit} word${wordLimit > 1 ? "s" : ""}`}
-        </span>
-      ) : null}
-    </span>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={String(number)}
+      aria-label={`Answer ${number}`}
+      className={cn(
+        "mx-1 inline-block h-8 min-w-[7ch] max-w-[24ch] rounded-md border border-border bg-surface px-2 align-baseline text-sm text-foreground",
+        "placeholder:font-normal placeholder:text-muted/50",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+      )}
+    />
   );
 }
 
