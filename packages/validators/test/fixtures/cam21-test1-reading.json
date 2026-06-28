@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "1.0",
+  "examId": "cam21-test1-reading",
+  "module": "reading",
+  "title": "Cambridge 21 Test 1 — Academic Reading",
+  "meta": { "book": "Cambridge IELTS 21", "test": 1, "note": "stand-in fixture; replace with the real file" },
+  "totalQuestions": 13,
+  "timerSource": "fixed",
+  "timeLimitMinutes": 60,
+  "sections": [
+    {
+      "id": "p1",
+      "order": 1,
+      "title": "Reading Passage 1",
+      "instructions": "You should spend about 20 minutes on Questions 1–13.",
+      "passage": {
+        "subtitle": "The history of glass",
+        "blocks": [
+          { "label": "A", "text": "Glass has been used by humans for thousands of years, originally in the form of natural volcanic glass." },
+          { "label": "B", "text": "The Romans were among the first to use glass for windows, a practice that spread across their empire." },
+          { "label": "C", "text": "In modern times, the float glass process transformed manufacturing, lowering costs dramatically." }
+        ],
+        "footnotes": []
+      },
+      "groups": [
+        {
+          "id": "p1-g1",
+          "questionType": "true_false_not_given",
+          "primitive": "radio",
+          "range": [1, 3],
+          "instructions": "Do the following statements agree with the information given in the passage? Write TRUE, FALSE or NOT GIVEN.",
+          "options": [
+            { "value": "TRUE", "label": "TRUE" },
+            { "value": "FALSE", "label": "FALSE" },
+            { "value": "NOT_GIVEN", "label": "NOT GIVEN" }
+          ],
+          "questions": [
+            { "type": "radio", "id": "q1", "number": 1, "prompt": "Glass was first manufactured in Roman times.", "answer": "FALSE" },
+            { "type": "radio", "id": "q2", "number": 2, "prompt": "The Romans used glass for windows.", "answer": "TRUE" },
+            { "type": "radio", "id": "q3", "number": 3, "prompt": "Glass is cheaper to produce than plastic.", "answer": "NOT_GIVEN" }
+          ]
+        },
+        {
+          "id": "p1-g2",
+          "questionType": "matching_information",
+          "primitive": "select",
+          "range": [4, 7],
+          "instructions": "Which paragraph contains the following information? Write the correct letter, A–C. You may use any letter more than once.",
+          "allowReuse": true,
+          "options": [
+            { "value": "A", "text": "Paragraph A" },
+            { "value": "B", "text": "Paragraph B" },
+            { "value": "C", "text": "Paragraph C" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q4", "number": 4, "prompt": "a reference to ancient uses of glass", "answer": "A" },
+            { "type": "select", "id": "q5", "number": 5, "prompt": "details of window production", "answer": "B" },
+            { "type": "select", "id": "q6", "number": 6, "prompt": "a modern manufacturing method", "answer": "C" },
+            { "type": "select", "id": "q7", "number": 7, "prompt": "an early form of the material", "answer": "A" }
+          ]
+        },
+        {
+          "id": "p1-g3",
+          "questionType": "summary_completion",
+          "primitive": "gap",
+          "range": [8, 11],
+          "instructions": "Complete the summary below. Choose ONE WORD ONLY from the passage for each answer.",
+          "template": "Early glass was prized for its {{8}}. Roman builders used it in {{9}}, while later factories improved its {{10}} and reduced its {{11}}.",
+          "questions": [
+            { "type": "gap", "id": "q8", "number": 8, "answer": ["colour", "color"] },
+            { "type": "gap", "id": "q9", "number": 9, "answer": ["windows"] },
+            { "type": "gap", "id": "q10", "number": 10, "answer": ["quality"] },
+            { "type": "gap", "id": "q11", "number": 11, "answer": ["cost", "price"] }
+          ]
+        },
+        {
+          "id": "p1-g4",
+          "questionType": "mc_multiple",
+          "primitive": "checkbox",
+          "range": [12, 13],
+          "instructions": "Choose TWO letters, A–E.",
+          "questions": [
+            {
+              "type": "checkbox",
+              "id": "q12-13",
+              "numbers": [12, 13],
+              "prompt": "Which TWO materials are mentioned as alternatives to glass?",
+              "selectCount": 2,
+              "orderIndependent": true,
+              "options": [
+                { "value": "A", "label": "plastic" },
+                { "value": "B", "label": "metal" },
+                { "value": "C", "label": "clay" },
+                { "value": "D", "label": "wood" },
+                { "value": "E", "label": "paper" }
+              ],
+              "answer": ["A", "C"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

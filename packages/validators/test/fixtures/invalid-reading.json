@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "examId": "broken-reading",
+  "module": "reading",
+  "title": "Deliberately broken sample (error-message demo)",
+  "totalQuestions": 6,
+  "timerSource": "fixed",
+  "timeLimitMinutes": 60,
+  "sections": [
+    {
+      "id": "p1",
+      "order": 1,
+      "title": "Passage 1",
+      "instructions": "demo",
+      "groups": [
+        {
+          "id": "p1-g1",
+          "questionType": "summary_completion",
+          "primitive": "gap",
+          "range": [1, 2],
+          "instructions": "Complete the summary.",
+          "template": "Only number {{1}} has a placeholder in this template.",
+          "questions": [
+            { "type": "gap", "id": "q1", "number": 1, "answer": ["ok"] },
+            { "type": "gap", "id": "q2", "number": 2, "answer": [""] }
+          ]
+        },
+        {
+          "id": "p1-g2",
+          "questionType": "matching_information",
+          "primitive": "select",
+          "range": [3, 4],
+          "instructions": "Match the paragraphs.",
+          "options": [
+            { "value": "A", "text": "Paragraph A" },
+            { "value": "B", "text": "Paragraph B" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q3", "number": 3, "answer": "A" },
+            { "type": "select", "id": "q4", "number": 4, "answer": "Z" }
+          ]
+        },
+        {
+          "id": "p1-g3",
+          "questionType": "mc_multiple",
+          "primitive": "checkbox",
+          "range": [5, 5],
+          "instructions": "Choose TWO letters.",
+          "questions": [
+            {
+              "type": "checkbox",
+              "id": "q5",
+              "numbers": [5],
+              "prompt": "Pick two",
+              "selectCount": 2,
+              "options": [
+                { "value": "A", "label": "alpha" },
+                { "value": "B", "label": "beta" }
+              ],
+              "answer": ["A"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

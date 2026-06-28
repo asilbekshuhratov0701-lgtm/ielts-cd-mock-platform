@@ -72,6 +72,9 @@ export const assignmentSchema = z.object({
 });
 export type AssignmentInput = z.infer<typeof assignmentSchema>;
 
+// --- Exam import (JSON-driven exam builder) ---
+export * from "./exam-import";
+
 // --- Common ---
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),

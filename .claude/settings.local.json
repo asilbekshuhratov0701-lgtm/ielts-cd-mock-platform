@@ -27,7 +27,9 @@
       "Bash(echo \"EXIT: $?\")",
       "Bash(node -e \"const p=require\\('./package.json'\\); for \\(const k of Object.keys\\(p.scripts\\)\\) if\\(k.startsWith\\('db'\\)\\) console.log\\(k,'=>',p.scripts[k]\\);\")",
       "Bash(node -e \"const p=require\\('./packages/db/package.json'\\); console.log\\('seed =>', p.scripts.seed\\); console.log\\('generate =>', p.scripts.generate\\)\")",
-      "Bash(ls -la .localdb/)"
+      "Bash(ls -la .localdb/)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\); console.log\\('devDeps:', JSON.stringify\\(Object.keys\\(p.devDependencies||{}\\)\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/tsx/package.json'\\).version\\)\")"
     ]
   }
 }

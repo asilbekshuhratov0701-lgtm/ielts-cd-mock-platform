@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0",
+  "examId": "cam21-test3-listening",
+  "module": "listening",
+  "title": "Cambridge 21 Test 3 — Listening",
+  "meta": { "book": "Cambridge IELTS 21", "test": 3, "note": "stand-in fixture; replace with the real file" },
+  "totalQuestions": 10,
+  "timerSource": "audio",
+  "timeLimitMinutes": null,
+  "audio": {
+    "ref": "listening_main",
+    "required": true,
+    "boundAtUpload": true,
+    "playOnce": true,
+    "autostartOnSectionStart": true,
+    "note": "One continuous file for the whole module."
+  },
+  "sections": [
+    {
+      "id": "part1",
+      "order": 1,
+      "title": "Part 1",
+      "instructions": "Questions 1–10",
+      "scenario": "A phone call to book a holiday cottage.",
+      "groups": [
+        {
+          "id": "part1-g1",
+          "questionType": "form_completion",
+          "primitive": "gap",
+          "range": [1, 5],
+          "instructions": "Complete the form below. Write ONE WORD AND/OR A NUMBER for each answer.",
+          "template": "Name: {{1}}\nArrival date: {{2}}\nNumber of nights: {{3}}\nCottage name: {{4}}\nDeposit: £{{5}}",
+          "questions": [
+            { "type": "gap", "id": "l1", "number": 1, "answer": ["Henderson"] },
+            { "type": "gap", "id": "l2", "number": 2, "answer": ["12 May", "May 12"] },
+            { "type": "gap", "id": "l3", "number": 3, "answer": ["3", "three"] },
+            { "type": "gap", "id": "l4", "number": 4, "answer": ["Rosewood"] },
+            { "type": "gap", "id": "l5", "number": 5, "answer": ["250", "two hundred and fifty"] }
+          ]
+        },
+        {
+          "id": "part1-g2",
+          "questionType": "mc_single",
+          "primitive": "radio",
+          "range": [6, 7],
+          "instructions": "Choose the correct letter, A, B or C.",
+          "questions": [
+            {
+              "type": "radio",
+              "id": "l6",
+              "number": 6,
+              "prompt": "The cottage is closest to",
+              "answer": "B",
+              "options": [
+                { "value": "A", "label": "the beach" },
+                { "value": "B", "label": "the village" },
+                { "value": "C", "label": "the station" }
+              ]
+            },
+            {
+              "type": "radio",
+              "id": "l7",
+              "number": 7,
+              "prompt": "Breakfast is",
+              "answer": "C",
+              "options": [
+                { "value": "A", "label": "included in the price" },
+                { "value": "B", "label": "available at extra cost" },
+                { "value": "C", "label": "not provided" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "part1-g3",
+          "questionType": "matching_features",
+          "primitive": "select",
+          "range": [8, 10],
+          "instructions": "What feature is mentioned for each room? Choose from the list, A–D.",
+          "allowReuse": false,
+          "options": [
+            { "value": "A", "text": "sea view" },
+            { "value": "B", "text": "open fire" },
+            { "value": "C", "text": "en-suite bathroom" },
+            { "value": "D", "text": "balcony" }
+          ],
+          "questions": [
+            { "type": "select", "id": "l8", "number": 8, "prompt": "Master bedroom", "answer": "A" },
+            { "type": "select", "id": "l9", "number": 9, "prompt": "Living room", "answer": "B" },
+            { "type": "select", "id": "l10", "number": 10, "prompt": "Second bedroom", "answer": "C" }
+          ]
+        }
+      ]
+    }
+  ]
+}
