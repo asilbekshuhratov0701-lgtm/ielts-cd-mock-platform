@@ -44,3 +44,6 @@ coverage/
 /.localdb/
 # Generated SQLite schema variant (derived from schema.prisma)
 packages/db/prisma/schema.sqlite.prisma
+
+# Uploaded media (local-dev storage; prod uses R2)
+apps/web/public/media/

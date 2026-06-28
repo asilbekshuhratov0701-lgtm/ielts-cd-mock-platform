@@ -229,6 +229,7 @@ model Organization {
   importJobs      ImportJob[]
   settings        Setting[]
   auditLogs       AuditLog[]
+  examBlueprints  ExamBlueprint[]
 }
 
 model User {
@@ -759,9 +760,40 @@ model Media {
   passageImages     Passage[]        @relation("PassageImage")
   writingTaskImages WritingTask[]    @relation("WritingImage")
   importArtifacts   ImportArtifact[]
+  blueprintAudios   ExamBlueprint[]  @relation("BlueprintAudio")
 
   @@index([orgId])
   @@index([folderId])
+}
+
+/// JSON-driven exam builder (E-import). Stores a per-skill uploaded exam:
+/// the raw source JSON, the mapped question-engine model the renderer consumes,
+/// and the server-only answer key. State machine: draft | audio_pending | published.
+model ExamBlueprint {
+  id             String       @id @default(cuid())
+  orgId          String
+  org            Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  examKey        String
+  module         String
+  title          String
+  version        Int          @default(1)
+  state          String       @default("draft")
+  totalQuestions Int          @default(0)
+  timerSource    String       @default("fixed")
+  timeLimitMin   Int?
+  audioRef       String?
+  audioMediaId   String?
+  audioMedia     Media?       @relation("BlueprintAudio", fields: [audioMediaId], references: [id], onDelete: SetNull)
+  sourceJson     Json
+  engineJson     Json
+  answerKeyJson  Json
+  createdById    String?
+  publishedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([orgId])
+  @@index([examKey])
 }
 
 // ----------------------------------------------------------------------------

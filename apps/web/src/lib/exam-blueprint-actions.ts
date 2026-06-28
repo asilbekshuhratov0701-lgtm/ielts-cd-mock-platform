@@ -1,0 +1,125 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { prisma, Prisma } from "@ielts/db";
+import { auth } from "@/auth";
+import { createBlueprintFromJson } from "@/lib/exam-blueprint";
+import { saveMediaObject, safeKeySegment } from "@/lib/media-storage";
+
+async function requireStaff() {
+  const session = await auth();
+  if (!session?.user?.id || session.user.role === "CANDIDATE") redirect("/login");
+  return session.user;
+}
+
+async function orgIdFor(userId: string): Promise<string> {
+  const dbUser = await prisma.user.findUnique({ where: { id: userId } });
+  if (!dbUser) redirect("/login");
+  return dbUser.orgId;
+}
+
+function refresh(id?: string) {
+  revalidatePath("/admin/exam-import");
+  if (id) revalidatePath(`/admin/exam-import/${id}`);
+}
+
+export async function importBlueprintAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const raw = String(formData.get("json") ?? "");
+  if (!raw.trim()) redirect("/admin/exam-import?error=empty");
+
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    redirect("/admin/exam-import?error=parse");
+  }
+
+  const result = await createBlueprintFromJson({ orgId, createdById: user.id, rawJson: json });
+  if (!result.ok) redirect("/admin/exam-import?error=invalid");
+  refresh(result.blueprintId);
+  redirect(`/admin/exam-import/${result.blueprintId}`);
+}
+
+export async function publishBlueprintAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  if (!bp || bp.state === "audio_pending") {
+    refresh(id);
+    return;
+  }
+  await prisma.examBlueprint.update({
+    where: { id },
+    data: { state: "published", publishedAt: new Date() }
+  });
+  refresh(id);
+}
+
+export async function unpublishBlueprintAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  if (!bp) return;
+  const next =
+    bp.module === "listening" && bp.audioRef && !bp.audioMediaId ? "audio_pending" : "draft";
+  await prisma.examBlueprint.update({
+    where: { id },
+    data: { state: next, publishedAt: null }
+  });
+  refresh(id);
+}
+
+export async function attachAudioAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const id = String(formData.get("id") ?? "");
+  const file = formData.get("audio");
+  if (!id || !(file instanceof File) || file.size === 0) {
+    refresh(id);
+    return;
+  }
+  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  if (!bp) return;
+
+  const ext = (file.name.split(".").pop() ?? "mp3").toLowerCase();
+  const key = `${safeKeySegment(bp.examKey)}-v${bp.version}-${safeKeySegment(
+    bp.audioRef ?? "audio"
+  )}.${ext}`;
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  await saveMediaObject(key, bytes);
+
+  const media = await prisma.media.create({
+    data: {
+      orgId,
+      r2Key: key,
+      kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
+      mime: file.type || "audio/mpeg",
+      bytes: file.size,
+      originalName: file.name,
+      createdById: user.id
+    }
+  });
+
+  await prisma.examBlueprint.update({
+    where: { id },
+    data: {
+      audioMediaId: media.id,
+      state: bp.state === "audio_pending" ? "draft" : bp.state
+    }
+  });
+  refresh(id);
+}
+
+export async function deleteBlueprintAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await prisma.examBlueprint.delete({ where: { id } });
+  revalidatePath("/admin/exam-import");
+  redirect("/admin/exam-import");
+}
