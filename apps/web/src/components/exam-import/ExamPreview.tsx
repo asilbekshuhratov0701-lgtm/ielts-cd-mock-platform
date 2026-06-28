@@ -1,14 +1,45 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Play, Sun, Volume2 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
+import { saveBlueprintAnswers, submitBlueprintAttemptAction } from "@/lib/blueprint-play-actions";
 import { cn } from "@/lib/cn";
 
+export interface LiveAttempt {
+  attemptId: string;
+  deadlineAt: string;
+  serverNow: string;
+  initialAnswers: AnswersMap;
+}
+
 type Entry = { number: number; key: string; multi: boolean; section: number };
+
+function formatClock(totalSeconds: number): string {
+  const s = Math.max(0, totalSeconds);
+  return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function Autosaver({ attemptId }: { attemptId: string }) {
+  const answers = useAnswers();
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => {
+      void saveBlueprintAnswers(attemptId, answers);
+    }, 800);
+    return () => clearTimeout(timer.current);
+  }, [answers, attemptId]);
+  return null;
+}
 
 function buildEntries(exam: PreviewExam): Entry[] {
   const out: Entry[] = [];
@@ -43,7 +74,9 @@ function TopBar({
   audioStarted,
   onStartAudio,
   volume,
-  onVolume
+  onVolume,
+  remaining,
+  onFinish
 }: {
   exam: PreviewExam;
   audioUrl: string | null;
@@ -51,16 +84,28 @@ function TopBar({
   onStartAudio: () => void;
   volume: number;
   onVolume: (v: number) => void;
+  remaining: number | null;
+  onFinish?: () => void;
 }) {
   const timerLabel =
-    exam.timerSource === "fixed" ? `${exam.timeLimitMinutes ?? 60} minutes left` : "Audio timed";
+    remaining !== null
+      ? `${formatClock(remaining)} left`
+      : exam.timerSource === "fixed"
+        ? `${exam.timeLimitMinutes ?? 60} minutes left`
+        : "Audio timed";
+  const lowTime = remaining !== null && remaining <= 300;
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border bg-surface px-5 py-2.5">
       <span className="text-sm font-bold uppercase tracking-wide text-foreground">
         {exam.module}
       </span>
       <div className="flex items-center gap-3">
-        <span className="rounded-md bg-black/[0.05] px-3 py-1 text-sm font-medium text-foreground">
+        <span
+          className={cn(
+            "rounded-md px-3 py-1 text-sm font-medium tabular-nums",
+            lowTime ? "bg-red-100 text-red-700" : "bg-black/[0.05] text-foreground"
+          )}
+        >
           {timerLabel}
         </span>
         {exam.module === "listening" ? (
@@ -104,6 +149,7 @@ function TopBar({
         </button>
         <button
           type="button"
+          onClick={onFinish}
           className="rounded-md bg-red-500 px-4 py-1 text-sm font-semibold text-white hover:bg-red-600"
         >
           Finish
@@ -310,7 +356,15 @@ function BottomNav({
   );
 }
 
-function Shell({ exam, audioUrl }: { exam: PreviewExam; audioUrl: string | null }) {
+function Shell({
+  exam,
+  audioUrl,
+  live
+}: {
+  exam: PreviewExam;
+  audioUrl: string | null;
+  live?: LiveAttempt;
+}) {
   const answers = useAnswers();
   const entries = useMemo(() => buildEntries(exam), [exam]);
   const orderedNums = useMemo(() => entries.map((e) => e.number), [entries]);
@@ -327,6 +381,37 @@ function Shell({ exam, audioUrl }: { exam: PreviewExam; audioUrl: string | null 
   const maxRef = useRef(0);
   const [audioStarted, setAudioStarted] = useState(false);
   const [volume, setVolume] = useState(1);
+
+  const finishFormRef = useRef<HTMLFormElement>(null);
+  const submittedRef = useRef(false);
+  const offsetRef = useRef(live ? Date.parse(live.serverNow) - Date.now() : 0);
+  const deadlineMs = live ? Date.parse(live.deadlineAt) : 0;
+  const [remaining, setRemaining] = useState<number | null>(
+    live ? Math.max(0, Math.round((deadlineMs - (Date.now() + offsetRef.current)) / 1000)) : null
+  );
+
+  useEffect(() => {
+    if (!live) return;
+    const tick = () => {
+      const rem = Math.max(0, Math.round((deadlineMs - (Date.now() + offsetRef.current)) / 1000));
+      setRemaining(rem);
+      if (rem <= 0 && !submittedRef.current) {
+        submittedRef.current = true;
+        finishFormRef.current?.requestSubmit();
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [live, deadlineMs]);
+
+  const onFinish = live
+    ? () => {
+        if (submittedRef.current) return;
+        submittedRef.current = true;
+        finishFormRef.current?.requestSubmit();
+      }
+    : undefined;
 
   function step(dir: -1 | 1) {
     const i = orderedNums.indexOf(activeNum);
@@ -349,7 +434,18 @@ function Shell({ exam, audioUrl }: { exam: PreviewExam; audioUrl: string | null 
           setVolume(v);
           if (audioRef.current) audioRef.current.volume = v;
         }}
+        remaining={remaining}
+        onFinish={onFinish}
       />
+
+      {live ? (
+        <>
+          <Autosaver attemptId={live.attemptId} />
+          <form ref={finishFormRef} action={submitBlueprintAttemptAction} className="hidden">
+            <input type="hidden" name="attemptId" value={live.attemptId} />
+          </form>
+        </>
+      ) : null}
 
       {exam.module === "listening" && audioUrl ? (
         <audio
@@ -393,10 +489,18 @@ function Shell({ exam, audioUrl }: { exam: PreviewExam; audioUrl: string | null 
   );
 }
 
-export function ExamPreview({ exam, audioUrl }: { exam: PreviewExam; audioUrl: string | null }) {
+export function ExamPreview({
+  exam,
+  audioUrl,
+  live
+}: {
+  exam: PreviewExam;
+  audioUrl: string | null;
+  live?: LiveAttempt;
+}) {
   return (
-    <AnswersProvider>
-      <Shell exam={exam} audioUrl={audioUrl} />
+    <AnswersProvider initial={live?.initialAnswers}>
+      <Shell exam={exam} audioUrl={audioUrl} live={live} />
     </AnswersProvider>
   );
 }

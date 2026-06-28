@@ -251,6 +251,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
 
   attempts           Attempt[]
+  blueprintAttempts  BlueprintAttempt[]   @relation("BlueprintAttempts")
   assignments        ExamAssignment[]
   groupMemberships   CandidateGroupMember[]
   writingEvaluations WritingEvaluation[]
@@ -792,8 +793,34 @@ model ExamBlueprint {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
+  attempts BlueprintAttempt[]
+
   @@index([orgId])
   @@index([examKey])
+}
+
+/// A candidate sitting a published ExamBlueprint. Server-authoritative timer via
+/// deadlineAt; answers autosave to answersJson; submit scores against the blueprint's
+/// answerKeyJson into raw/total + resultJson.
+model BlueprintAttempt {
+  id          String        @id @default(cuid())
+  blueprintId String
+  blueprint   ExamBlueprint @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  candidateId String
+  candidate   User          @relation("BlueprintAttempts", fields: [candidateId], references: [id], onDelete: Cascade)
+  status      String        @default("in_progress")
+  startedAt   DateTime      @default(now())
+  deadlineAt  DateTime
+  submittedAt DateTime?
+  answersJson Json
+  rawScore    Int?
+  totalScore  Int?
+  resultJson  Json?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([blueprintId])
+  @@index([candidateId])
 }
 
 // ----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Music, Send, Trash2, Undo2, Upload } from "lucide-react";
+import { ArrowLeft, Music, Play, Send, Trash2, Undo2, Upload } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
   publishBlueprintAction,
   unpublishBlueprintAction
 } from "@/lib/exam-blueprint-actions";
+import { startBlueprintAttemptAction } from "@/lib/blueprint-play-actions";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -44,12 +45,20 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
       actions={
         <div className="flex items-center gap-2">
           {bp.state === "published" ? (
-            <form action={unpublishBlueprintAction}>
-              <input type="hidden" name="id" value={bp.id} />
-              <Button type="submit" variant="outline">
-                <Undo2 className="h-4 w-4" /> Unpublish
-              </Button>
-            </form>
+            <>
+              <form action={startBlueprintAttemptAction}>
+                <input type="hidden" name="blueprintId" value={bp.id} />
+                <Button type="submit" variant="secondary">
+                  <Play className="h-4 w-4" /> Take exam
+                </Button>
+              </form>
+              <form action={unpublishBlueprintAction}>
+                <input type="hidden" name="id" value={bp.id} />
+                <Button type="submit" variant="outline">
+                  <Undo2 className="h-4 w-4" /> Unpublish
+                </Button>
+              </form>
+            </>
           ) : (
             <form action={publishBlueprintAction}>
               <input type="hidden" name="id" value={bp.id} />

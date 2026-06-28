@@ -9,6 +9,7 @@ const CANDIDATE_PREFIXES = [
   "/analytics",
   "/profile",
   "/exam",
+  "/play",
   "/notifications"
 ];
 const ADMIN_PREFIX = "/admin";
