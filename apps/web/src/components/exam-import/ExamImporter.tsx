@@ -7,6 +7,7 @@ import {
   FileJson,
   Music,
   Play,
+  Save,
   Upload,
   XCircle
 } from "lucide-react";
@@ -14,6 +15,7 @@ import { validateExamFile, type ValidationReport } from "@ielts/validators";
 import { mapExamFile, type PreviewExam, type PreviewSection } from "@/lib/exam-import-map";
 import { AnswersProvider } from "@/components/question-engine/answers-store";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
+import { importBlueprintAction } from "@/lib/exam-blueprint-actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
@@ -211,6 +213,7 @@ function PreviewExamView({ exam, audioUrl }: { exam: PreviewExam; audioUrl: stri
 export function ExamImporter() {
   const [report, setReport] = useState<ValidationReport | null>(null);
   const [exam, setExam] = useState<PreviewExam | null>(null);
+  const [rawText, setRawText] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -220,17 +223,22 @@ export function ExamImporter() {
     setParseError(null);
     setReport(null);
     setExam(null);
+    setRawText(null);
     setFileName(file.name);
+    const text = await file.text();
     let json: unknown;
     try {
-      json = JSON.parse(await file.text());
+      json = JSON.parse(text);
     } catch (e) {
       setParseError(`Could not parse JSON: ${e instanceof Error ? e.message : String(e)}`);
       return;
     }
     const r = validateExamFile(json);
     setReport(r);
-    if (r.ok && r.parsed) setExam(mapExamFile(r.parsed));
+    if (r.ok && r.parsed) {
+      setExam(mapExamFile(r.parsed));
+      setRawText(text);
+    }
   }
 
   function onAudioFile(file: File) {
@@ -272,6 +280,27 @@ export function ExamImporter() {
       </Card>
 
       {report ? <ReportView report={report} /> : null}
+
+      {report?.ok && rawText ? (
+        <Card className="flex flex-wrap items-center justify-between gap-3 border-emerald-200 p-4">
+          <div className="min-w-0">
+            <p className="font-semibold text-foreground">Save to exam library</p>
+            <p className="text-sm text-muted">
+              Persists this exam as a versioned draft
+              {exam?.module === "listening"
+                ? " (audio_pending until you attach the Listening audio)"
+                : ""}
+              . You can review, attach audio, and publish it on the next screen.
+            </p>
+          </div>
+          <form action={importBlueprintAction}>
+            <input type="hidden" name="json" value={rawText} />
+            <Button type="submit" variant="success">
+              <Save className="h-4 w-4" /> Save exam
+            </Button>
+          </form>
+        </Card>
+      ) : null}
 
       {exam && exam.module === "listening" ? (
         <Card className="p-5">
