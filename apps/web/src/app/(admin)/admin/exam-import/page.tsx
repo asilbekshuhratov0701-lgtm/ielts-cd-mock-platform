@@ -7,7 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExamImporter } from "@/components/exam-import/ExamImporter";
-import { createMockAction, MODULE_ORDER } from "@/lib/mock-actions";
+import { createMockAction } from "@/lib/mock-actions";
+import { MODULE_ORDER } from "@/lib/mock";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",

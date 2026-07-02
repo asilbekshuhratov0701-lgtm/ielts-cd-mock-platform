@@ -10,13 +10,7 @@ import {
   type ImportAnswerKey
 } from "@ielts/core";
 import { auth } from "@/auth";
-
-export const MODULE_ORDER = ["listening", "reading", "writing"] as const;
-
-function moduleRank(module: string): number {
-  const i = MODULE_ORDER.indexOf(module as (typeof MODULE_ORDER)[number]);
-  return i === -1 ? MODULE_ORDER.length : i;
-}
+import { MODULE_ORDER, moduleRank } from "@/lib/mock";
 
 function durationSecFor(module: string, timeLimitMin: number | null): number {
   if (timeLimitMin && timeLimitMin > 0) return timeLimitMin * 60;
