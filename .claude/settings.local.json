@@ -32,7 +32,8 @@
       "Bash(node -e \"console.log\\(require\\('./node_modules/tsx/package.json'\\).version\\)\")",
       "Bash(find \"apps/web/src/app/\\(exam\\)\" -type f)",
       "Bash(cat \"apps/web/src/app/\\(exam\\)/layout.tsx\")",
-      "Bash(sed -n '1,40p' \"apps/web/src/app/\\(exam\\)/exam/[attemptId]/page.tsx\")"
+      "Bash(sed -n '1,40p' \"apps/web/src/app/\\(exam\\)/exam/[attemptId]/page.tsx\")",
+      "Bash(pnpm --filter @ielts/validators test)"
     ]
   }
 }

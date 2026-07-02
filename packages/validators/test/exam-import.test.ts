@@ -15,8 +15,8 @@ test("valid reading fixture passes with no errors", () => {
   const report = validateExamFile(load("cam21-test1-reading.json"));
   assert.equal(report.ok, true, formatReport(report));
   assert.equal(report.errors.length, 0);
-  assert.equal(report.questionCount, 13);
-  assert.equal(report.totalQuestions, 13);
+  assert.equal(report.questionCount, 40);
+  assert.equal(report.totalQuestions, 40);
 });
 
 test("valid listening fixture passes and flags audio_pending", () => {

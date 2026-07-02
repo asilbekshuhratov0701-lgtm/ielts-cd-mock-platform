@@ -76,13 +76,14 @@ export interface Gap {
   allowNumber: boolean;
 }
 
+export type NoteItem = string | { text: string; sub?: boolean; plain?: boolean };
 export interface NoteContent {
   title?: string;
-  sections: { heading?: string; items: string[] }[];
+  sections: { heading?: string; items: NoteItem[] }[];
 }
 export interface SummaryContent {
   title?: string;
-  paragraph: string;
+  paragraphs: string[];
 }
 export interface TableContent {
   rows: string[][];
@@ -113,6 +114,7 @@ export interface SelectGroup extends BaseGroup {
   optionBank: { id: string; text: string }[];
   allowReuse: boolean;
   fixedLabels?: boolean;
+  paragraphs?: string[];
 }
 
 export type QuestionGroup = RadioGroup | CheckboxGroup | GapGroup | SelectGroup;

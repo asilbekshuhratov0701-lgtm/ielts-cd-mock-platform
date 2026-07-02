@@ -48,21 +48,32 @@ function NoteLayout({ content, byNumber }: { content: NoteContent; byNumber: Map
   return (
     <div className="rounded-xl border border-border bg-surface p-4">
       {content.title ? (
-        <p className="mb-3 text-center text-sm font-semibold text-foreground">{content.title}</p>
+        <p className="mb-3 text-center text-base font-semibold text-foreground">{content.title}</p>
       ) : null}
       <div className="space-y-4">
         {content.sections.map((section, s) => (
           <div key={s}>
             {section.heading ? (
-              <p className="mb-1.5 text-sm font-semibold text-brand-700">{section.heading}</p>
+              <p className="mb-1.5 text-sm font-bold text-foreground">{section.heading}</p>
             ) : null}
             <ul className="space-y-1.5">
-              {section.items.map((item, i) => (
-                <li key={i} className="flex gap-2 text-sm leading-relaxed text-foreground">
-                  <span className="select-none text-muted">•</span>
-                  <span>{renderText(item, byNumber)}</span>
-                </li>
-              ))}
+              {section.items.map((raw, i) => {
+                const item = typeof raw === "string" ? { text: raw, sub: false, plain: false } : raw;
+                return (
+                  <li
+                    key={i}
+                    className={cn(
+                      "flex gap-2 text-sm leading-relaxed text-foreground",
+                      item.sub && "ml-5"
+                    )}
+                  >
+                    {item.plain ? null : (
+                      <span className="select-none text-muted">{item.sub ? "–" : "•"}</span>
+                    )}
+                    <span>{renderText(item.text, byNumber)}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
@@ -81,11 +92,15 @@ function SummaryLayout({
   return (
     <div>
       {content.title ? (
-        <p className="mb-3 text-center text-sm font-semibold text-foreground">{content.title}</p>
+        <p className="mb-3 text-center text-base font-semibold text-foreground">{content.title}</p>
       ) : null}
-      <p className="text-sm leading-loose text-foreground">
-        {renderText(content.paragraph, byNumber)}
-      </p>
+      <div className="space-y-3">
+        {content.paragraphs.map((p, i) => (
+          <p key={i} className="text-sm leading-loose text-foreground">
+            {renderText(p, byNumber)}
+          </p>
+        ))}
+      </div>
     </div>
   );
 }

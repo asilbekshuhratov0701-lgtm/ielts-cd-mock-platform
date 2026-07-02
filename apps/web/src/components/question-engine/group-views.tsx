@@ -139,21 +139,70 @@ function ConnectedPrompt({
   );
 }
 
+function InlineSelect({
+  promptId,
+  options
+}: {
+  promptId: string;
+  options: { id: string; text: string }[];
+}) {
+  const [value, set] = useAnswer(promptId);
+  return <SelectMatch value={value as string | null} onChange={set} options={options} />;
+}
+
+function OptionsPanel({ options }: { options: { id: string; text: string }[] }) {
+  return (
+    <div className="rounded-xl border border-dashed border-border bg-surface p-3">
+      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Options</p>
+      <ul className="space-y-1 text-sm text-foreground">
+        {options.map((o) => (
+          <li key={o.id}>
+            <span className="mr-1.5 font-semibold text-brand-700">{o.id}</span>
+            {o.text}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function SelectGroupView({ group }: { group: SelectGroup }) {
+  if (group.paragraphs && group.paragraphs.length > 0) {
+    const byNumber = new Map(group.prompts.map((p) => [p.number, p] as const));
+    return (
+      <div className="space-y-4">
+        {group.optionBank.length > 0 ? <OptionsPanel options={group.optionBank} /> : null}
+        <div className="space-y-3 text-sm leading-loose text-foreground">
+          {group.paragraphs.map((para, i) => (
+            <p key={i}>
+              {para.split(/(\{\{\d+\}\})/g).map((part, j) => {
+                const m = part.match(/^\{\{(\d+)\}\}$/);
+                if (m) {
+                  const prompt = byNumber.get(Number(m[1]));
+                  if (prompt) {
+                    return (
+                      <InlineSelect key={j} promptId={prompt.id} options={group.optionBank} />
+                    );
+                  }
+                  return (
+                    <span key={j} className="text-muted">
+                      {part}
+                    </span>
+                  );
+                }
+                return <span key={j}>{part}</span>;
+              })}
+            </p>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {!group.fixedLabels && group.optionBank.length > 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-surface p-3">
-          <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Options</p>
-          <ul className="space-y-1 text-sm text-foreground">
-            {group.optionBank.map((o) => (
-              <li key={o.id}>
-                <span className="mr-1.5 font-semibold text-brand-700">{o.id}</span>
-                {o.text}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <OptionsPanel options={group.optionBank} />
       ) : null}
       <div className="flex flex-col gap-[var(--space-question)]">
         {group.prompts.map((p, i) => (

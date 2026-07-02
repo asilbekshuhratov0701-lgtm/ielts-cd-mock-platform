@@ -108,7 +108,7 @@ function gapContent(layout: GapLayout, template: string, gapNumbers: number[]): 
   const fallback = gapNumbers.map((n) => `{{${n}}}`).join(" ");
   switch (layout) {
     case "summary":
-      return { paragraph: template || fallback } satisfies SummaryContent;
+      return { paragraphs: [template || fallback] } satisfies SummaryContent;
     case "note": {
       const items = template ? lines(template) : gapNumbers.map((n) => `{{${n}}}`);
       return { sections: [{ items }] } satisfies NoteContent;
@@ -142,6 +142,69 @@ function gapContent(layout: GapLayout, template: string, gapNumbers: number[]): 
       return { sentences } satisfies SentenceContent;
     }
   }
+}
+
+function asObject(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function noteContentFromLines(
+  title: string | undefined,
+  rawLines: { style?: string; text?: string }[]
+): NoteContent {
+  const sections: NoteContent["sections"] = [];
+  let current: NoteContent["sections"][number] = { items: [] };
+  let started = false;
+  for (const line of rawLines) {
+    const text = line.text ?? "";
+    if (line.style === "heading") {
+      if (started || current.items.length > 0) sections.push(current);
+      current = { heading: text, items: [] };
+      started = true;
+    } else {
+      current.items.push({ text, sub: line.style === "subbullet", plain: line.style === "plain" });
+    }
+  }
+  sections.push(current);
+  return { title, sections };
+}
+
+function gapLayoutAndContent(group: ExamGroup): { layout: GapLayout; content: unknown } {
+  const t = asObject(group.template);
+  if (t) {
+    if (t.format === "notes" && Array.isArray(t.lines)) {
+      return {
+        layout: "note",
+        content: noteContentFromLines(
+          typeof t.title === "string" ? t.title : undefined,
+          t.lines as { style?: string; text?: string }[]
+        )
+      };
+    }
+    if (t.format === "summary" && Array.isArray(t.paragraphs)) {
+      return {
+        layout: "summary",
+        content: {
+          title: typeof t.title === "string" ? t.title : undefined,
+          paragraphs: (t.paragraphs as unknown[]).map((p) => String(p))
+        } satisfies SummaryContent
+      };
+    }
+  }
+  const layout = gapLayoutOf(group.questionType);
+  const template = typeof group.template === "string" ? group.template : "";
+  const gapNumbers = group.questions.filter((q) => q.type === "gap").flatMap(numbersOf);
+  return { layout, content: gapContent(layout, template, gapNumbers) };
+}
+
+function summaryParagraphs(group: ExamGroup): string[] | undefined {
+  const t = asObject(group.template);
+  if (t && t.format === "summary" && Array.isArray(t.paragraphs)) {
+    return (t.paragraphs as unknown[]).map((p) => String(p));
+  }
+  return undefined;
 }
 
 function mapGroup(group: ExamGroup): QuestionGroup[] {
@@ -197,9 +260,7 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
 
   if (group.primitive === "select") {
     const prompts = group.questions.flatMap((q) =>
-      q.type === "select"
-        ? [{ id: q.id, number: q.number, text: q.prompt ?? `Question ${q.number}` }]
-        : []
+      q.type === "select" ? [{ id: q.id, number: q.number, text: q.prompt ?? "" }] : []
     );
     return [
       {
@@ -212,13 +273,13 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
         prompts,
         optionBank: (group.options ?? []).map((o) => ({ id: optionValue(o), text: optionLabel(o) })),
         allowReuse: group.allowReuse ?? false,
-        fixedLabels: false
+        fixedLabels: false,
+        paragraphs: summaryParagraphs(group)
       }
     ];
   }
 
-  const gapNumbers = group.questions.filter((q) => q.type === "gap").flatMap(numbersOf);
-  const layout = gapLayoutOf(group.questionType);
+  const { layout, content } = gapLayoutAndContent(group);
   return [
     {
       id: group.id,
@@ -227,7 +288,7 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
       instructions: group.instructions ?? "",
       numberRange: range(allNumbers),
       layout,
-      content: gapContent(layout, group.template ?? "", gapNumbers),
+      content,
       gaps: group.questions
         .filter((q) => q.type === "gap")
         .map((q) => ({ id: q.id, number: q.number, wordLimit: 0, allowNumber: true }))

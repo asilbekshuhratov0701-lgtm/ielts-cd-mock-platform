@@ -70,7 +70,7 @@ const groupSchema = z
       .union([z.tuple([z.number(), z.number()]), z.array(z.number()), z.string()])
       .optional(),
     instructions: z.string().optional().default(""),
-    template: z.string().optional(),
+    template: z.union([z.string(), z.object({}).passthrough()]).optional(),
     options: z.array(optionSchema).optional(),
     allowReuse: z.boolean().optional(),
     presentation: z.enum(["inline", "list"]).optional(),
@@ -242,13 +242,19 @@ export function validateExamFile(input: unknown): ValidationReport {
               where,
               message: "gap group has no 'template' to host the {{n}} placeholder"
             });
-          } else if (!group.template.includes(`{{${q.number}}}`)) {
-            errors.push({
-              level: "error",
-              code: "gap_no_placeholder",
-              where,
-              message: `template is missing the {{${q.number}}} placeholder`
-            });
+          } else {
+            const templateText =
+              typeof group.template === "string"
+                ? group.template
+                : JSON.stringify(group.template);
+            if (!templateText.includes(`{{${q.number}}}`)) {
+              errors.push({
+                level: "error",
+                code: "gap_no_placeholder",
+                where,
+                message: `template is missing the {{${q.number}}} placeholder`
+              });
+            }
           }
         }
 
