@@ -78,7 +78,9 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
   const user = await requireStaff();
   const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
+  const mockId = String(formData.get("mockId") ?? "");
   const file = formData.get("audio");
+  if (mockId) revalidatePath(`/admin/exam-import/mock/${mockId}`);
   if (!id || !(file instanceof File) || file.size === 0) {
     refresh(id);
     return;

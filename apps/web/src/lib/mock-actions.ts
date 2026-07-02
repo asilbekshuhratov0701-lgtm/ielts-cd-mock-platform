@@ -92,17 +92,24 @@ export async function publishMockAction(formData: FormData): Promise<void> {
     where: { id },
     include: { parts: { include: { blueprint: true } } }
   });
-  if (!mock) return;
-  const allPublished =
-    mock.parts.length > 0 && mock.parts.every((p) => p.blueprint.state === "published");
-  if (!allPublished) {
+  if (!mock || mock.parts.length === 0) {
     refreshAdmin(id);
     return;
   }
-  await prisma.mockExam.update({
-    where: { id },
-    data: { state: "published", publishedAt: new Date() }
+  const audioReady = mock.parts.every((p) => {
+    const needsAudio = p.blueprint.module === "listening" && Boolean(p.blueprint.audioRef);
+    return !needsAudio || Boolean(p.blueprint.audioMediaId);
   });
+  if (!audioReady) {
+    refreshAdmin(id);
+    return;
+  }
+  const now = new Date();
+  await prisma.examBlueprint.updateMany({
+    where: { id: { in: mock.parts.map((p) => p.blueprintId) }, state: { not: "published" } },
+    data: { state: "published", publishedAt: now }
+  });
+  await prisma.mockExam.update({ where: { id }, data: { state: "published", publishedAt: now } });
   refreshAdmin(id);
 }
 
