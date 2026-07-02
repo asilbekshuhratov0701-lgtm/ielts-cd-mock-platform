@@ -230,6 +230,7 @@ model Organization {
   settings        Setting[]
   auditLogs       AuditLog[]
   examBlueprints  ExamBlueprint[]
+  mockExams       MockExam[]
 }
 
 model User {
@@ -252,6 +253,7 @@ model User {
 
   attempts           Attempt[]
   blueprintAttempts  BlueprintAttempt[]   @relation("BlueprintAttempts")
+  mockAttempts       MockAttempt[]        @relation("MockAttempts")
   assignments        ExamAssignment[]
   groupMemberships   CandidateGroupMember[]
   writingEvaluations WritingEvaluation[]
@@ -793,7 +795,8 @@ model ExamBlueprint {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  attempts BlueprintAttempt[]
+  attempts  BlueprintAttempt[]
+  mockParts MockExamPart[]
 
   @@index([orgId])
   @@index([examKey])
@@ -816,10 +819,72 @@ model BlueprintAttempt {
   rawScore    Int?
   totalScore  Int?
   resultJson  Json?
+  mockAttemptId String?
+  mockAttempt   MockAttempt? @relation("MockPartAttempts", fields: [mockAttemptId], references: [id], onDelete: Cascade)
+  partOrder     Int?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
   @@index([blueprintId])
+  @@index([candidateId])
+  @@index([mockAttemptId])
+}
+
+/// A full IELTS mock: an ordered bundle of published per-skill ExamBlueprints
+/// (Listening + Reading + optional Writing) a candidate sits end-to-end.
+model MockExam {
+  id          String       @id @default(cuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  title       String
+  state       String       @default("draft")
+  createdById String?
+  publishedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  parts    MockExamPart[]
+  attempts MockAttempt[]
+
+  @@index([orgId])
+}
+
+/// One skill part of a MockExam, backed by an ExamBlueprint. Unique per module
+/// within a mock (at most one Listening/Reading/Writing).
+model MockExamPart {
+  id          String        @id @default(cuid())
+  mockExamId  String
+  mockExam    MockExam      @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  blueprintId String
+  blueprint   ExamBlueprint @relation(fields: [blueprintId], references: [id], onDelete: Cascade)
+  module      String
+  order       Int
+
+  @@unique([mockExamId, module])
+  @@index([mockExamId])
+  @@index([blueprintId])
+}
+
+/// A candidate sitting a MockExam. currentIndex tracks which part is active;
+/// each part is played through a linked BlueprintAttempt. resultJson holds the
+/// aggregated per-part scores once every part is submitted.
+model MockAttempt {
+  id           String    @id @default(cuid())
+  mockExamId   String
+  mockExam     MockExam  @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  candidateId  String
+  candidate    User      @relation("MockAttempts", fields: [candidateId], references: [id], onDelete: Cascade)
+  status       String    @default("in_progress")
+  currentIndex Int       @default(0)
+  startedAt    DateTime  @default(now())
+  submittedAt  DateTime?
+  resultJson   Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  partAttempts BlueprintAttempt[] @relation("MockPartAttempts")
+
+  @@index([mockExamId])
   @@index([candidateId])
 }
 
