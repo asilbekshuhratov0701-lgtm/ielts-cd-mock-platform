@@ -7,6 +7,7 @@ import type { AnswersMap } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
 import { saveBlueprintAnswers, submitBlueprintAttemptAction } from "@/lib/blueprint-play-actions";
+import { submitMockPartAction } from "@/lib/mock-actions";
 import { cn } from "@/lib/cn";
 
 export interface LiveAttempt {
@@ -14,6 +15,7 @@ export interface LiveAttempt {
   deadlineAt: string;
   serverNow: string;
   initialAnswers: AnswersMap;
+  mock?: { mockAttemptId: string; index: number; count: number };
 }
 
 type Entry = { number: number; key: string; multi: boolean; section: number };
@@ -76,7 +78,9 @@ function TopBar({
   volume,
   onVolume,
   remaining,
-  onFinish
+  onFinish,
+  partProgress,
+  finishLabel
 }: {
   exam: PreviewExam;
   audioUrl: string | null;
@@ -86,6 +90,8 @@ function TopBar({
   onVolume: (v: number) => void;
   remaining: number | null;
   onFinish?: () => void;
+  partProgress?: { index: number; count: number };
+  finishLabel?: string;
 }) {
   const timerLabel =
     remaining !== null
@@ -96,8 +102,15 @@ function TopBar({
   const lowTime = remaining !== null && remaining <= 300;
   return (
     <div className="flex items-center justify-between gap-4 border-b border-border bg-surface px-5 py-2.5">
-      <span className="text-sm font-bold uppercase tracking-wide text-foreground">
-        {exam.module}
+      <span className="flex items-center gap-2">
+        <span className="text-sm font-bold uppercase tracking-wide text-foreground">
+          {exam.module}
+        </span>
+        {partProgress ? (
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-semibold text-violet-700">
+            Part {partProgress.index + 1} of {partProgress.count}
+          </span>
+        ) : null}
       </span>
       <div className="flex items-center gap-3">
         <span
@@ -152,7 +165,7 @@ function TopBar({
           onClick={onFinish}
           className="rounded-md bg-red-500 px-4 py-1 text-sm font-semibold text-white hover:bg-red-600"
         >
-          Finish
+          {finishLabel ?? "Finish"}
         </button>
       </div>
     </div>
@@ -436,14 +449,29 @@ function Shell({
         }}
         remaining={remaining}
         onFinish={onFinish}
+        partProgress={live?.mock ? { index: live.mock.index, count: live.mock.count } : undefined}
+        finishLabel={
+          live?.mock
+            ? live.mock.index + 1 < live.mock.count
+              ? "Finish part"
+              : "Finish exam"
+            : undefined
+        }
       />
 
       {live ? (
         <>
           <Autosaver attemptId={live.attemptId} />
-          <form ref={finishFormRef} action={submitBlueprintAttemptAction} className="hidden">
-            <input type="hidden" name="attemptId" value={live.attemptId} />
-          </form>
+          {live.mock ? (
+            <form ref={finishFormRef} action={submitMockPartAction} className="hidden">
+              <input type="hidden" name="mockAttemptId" value={live.mock.mockAttemptId} />
+              <input type="hidden" name="attemptId" value={live.attemptId} />
+            </form>
+          ) : (
+            <form ref={finishFormRef} action={submitBlueprintAttemptAction} className="hidden">
+              <input type="hidden" name="attemptId" value={live.attemptId} />
+            </form>
+          )}
         </>
       ) : null}
 
