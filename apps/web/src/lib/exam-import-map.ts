@@ -280,6 +280,8 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
   }
 
   const { layout, content } = gapLayoutAndContent(group);
+  const wordLimit = typeof group.wordLimit === "number" ? group.wordLimit : 0;
+  const allowNumber = group.allowNumber ?? true;
   return [
     {
       id: group.id,
@@ -291,7 +293,7 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
       content,
       gaps: group.questions
         .filter((q) => q.type === "gap")
-        .map((q) => ({ id: q.id, number: q.number, wordLimit: 0, allowNumber: true }))
+        .map((q) => ({ id: q.id, number: q.number, wordLimit, allowNumber }))
     }
   ];
 }

@@ -73,6 +73,8 @@ const groupSchema = z
     template: z.union([z.string(), z.object({}).passthrough()]).optional(),
     options: z.array(optionSchema).optional(),
     allowReuse: z.boolean().optional(),
+    wordLimit: z.number().int().positive().optional(),
+    allowNumber: z.boolean().optional(),
     presentation: z.enum(["inline", "list"]).optional(),
     questions: z.array(examQuestionSchema)
   })
@@ -168,6 +170,14 @@ function questionWhere(groupId: string, q: ExamQuestion): string {
   return `group ${groupId}, ${ns}`;
 }
 
+function minimalWordCount(answer: string): number {
+  const stripped = answer
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return stripped.length === 0 ? 0 : stripped.split(" ").length;
+}
+
 function hasAnswer(q: ExamQuestion): boolean {
   if (q.type === "gap") return q.answer.some((a) => a.trim().length > 0);
   if (q.type === "checkbox") return q.answer.length > 0;
@@ -254,6 +264,20 @@ export function validateExamFile(input: unknown): ValidationReport {
                 where,
                 message: `template is missing the {{${q.number}}} placeholder`
               });
+            }
+          }
+
+          if (typeof group.wordLimit === "number") {
+            for (const answer of q.answer) {
+              const count = minimalWordCount(answer);
+              if (count > group.wordLimit) {
+                warnings.push({
+                  level: "warning",
+                  code: "gap_over_word_limit",
+                  where,
+                  message: `accepted answer '${answer}' needs ${count} words but the group word limit is ${group.wordLimit}`
+                });
+              }
             }
           }
         }

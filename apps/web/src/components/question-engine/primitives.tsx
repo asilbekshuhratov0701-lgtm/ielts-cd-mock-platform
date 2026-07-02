@@ -2,10 +2,23 @@
 
 import { cn } from "@/lib/cn";
 
+export function wordLimitPhrase(wordLimit: number, allowNumber: boolean): string {
+  if (wordLimit === 1) return allowNumber ? "ONE WORD AND/OR A NUMBER" : "ONE WORD ONLY";
+  const words = wordLimit === 2 ? "TWO WORDS" : wordLimit === 3 ? "THREE WORDS" : `${wordLimit} WORDS`;
+  return `NO MORE THAN ${words}${allowNumber ? " AND/OR A NUMBER" : ""}`;
+}
+
+function countWords(value: string): number {
+  const trimmed = value.trim();
+  return trimmed.length === 0 ? 0 : trimmed.split(/\s+/).length;
+}
+
 export function GapInput({
   number,
   value,
-  onChange
+  onChange,
+  wordLimit,
+  allowNumber = true
 }: {
   number: number;
   value: string;
@@ -13,6 +26,7 @@ export function GapInput({
   wordLimit?: number;
   allowNumber?: boolean;
 }) {
+  const overLimit = wordLimit !== undefined && wordLimit > 0 && countWords(value) > wordLimit;
   return (
     <input
       type="text"
@@ -20,10 +34,12 @@ export function GapInput({
       onChange={(e) => onChange(e.target.value)}
       placeholder={String(number)}
       aria-label={`Answer ${number}`}
+      title={wordLimit ? `Write ${wordLimitPhrase(wordLimit, allowNumber)}` : undefined}
       className={cn(
-        "mx-1 inline-block h-8 min-w-[7ch] max-w-[24ch] rounded-md border border-border bg-surface px-2 align-baseline text-sm text-foreground",
+        "mx-1 inline-block h-8 min-w-[7ch] max-w-[24ch] rounded-md border bg-surface px-2 align-baseline text-sm text-foreground",
         "placeholder:font-normal placeholder:text-muted/50",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+        overLimit ? "border-amber-400 ring-1 ring-amber-300" : "border-border"
       )}
     />
   );

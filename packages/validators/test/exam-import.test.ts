@@ -43,6 +43,43 @@ test("broken fixture is rejected with specific, located errors", () => {
   assert.ok(placeholder && placeholder.where.includes("Q2"));
 });
 
+test("word limit flags over-length accepted answers but ignores optional words", () => {
+  const exam = {
+    schemaVersion: 1,
+    examId: "wordlimit-check",
+    module: "reading",
+    title: "Word limit check",
+    totalQuestions: 2,
+    timerSource: "fixed",
+    timeLimitMinutes: 60,
+    sections: [
+      {
+        id: "s1",
+        order: 0,
+        groups: [
+          {
+            id: "g1",
+            questionType: "sentence_completion",
+            primitive: "gap",
+            wordLimit: 1,
+            allowNumber: false,
+            template: "The {{1}} crosses the {{2}}.",
+            questions: [
+              { type: "gap", id: "q1", number: 1, answer: ["(the) canal"] },
+              { type: "gap", id: "q2", number: 2, answer: ["iron bridge"] }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+  const report = validateExamFile(exam);
+  assert.equal(report.ok, true, formatReport(report));
+  const over = report.warnings.filter((w) => w.code === "gap_over_word_limit");
+  assert.equal(over.length, 1, "only the 2-word answer should warn");
+  assert.ok(over[0].where.includes("Q2"));
+});
+
 test("non-object input fails schema validation cleanly", () => {
   const report = validateExamFile("not an exam");
   assert.equal(report.ok, false);

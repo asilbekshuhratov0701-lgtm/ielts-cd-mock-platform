@@ -3,7 +3,7 @@
 import { ArrowDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAnswer } from "./answers-store";
-import { GapInput } from "./primitives";
+import { GapInput, wordLimitPhrase } from "./primitives";
 import type {
   FlowchartContent,
   FormContent,
@@ -222,8 +222,7 @@ function ImageLayout({ group, byNumber }: { group: GapGroup; byNumber: Map<numbe
   );
 }
 
-export function GapGroupView({ group }: { group: GapGroup }) {
-  const byNumber = new Map(group.gaps.map((g) => [g.number, g] as const));
+function GapLayoutBody({ group, byNumber }: { group: GapGroup; byNumber: Map<number, Gap> }) {
   switch (group.layout) {
     case "note":
       return <NoteLayout content={group.content as NoteContent} byNumber={byNumber} />;
@@ -240,4 +239,20 @@ export function GapGroupView({ group }: { group: GapGroup }) {
     case "image":
       return <ImageLayout group={group} byNumber={byNumber} />;
   }
+}
+
+export function GapGroupView({ group }: { group: GapGroup }) {
+  const byNumber = new Map(group.gaps.map((g) => [g.number, g] as const));
+  const first = group.gaps[0];
+  const wordLimit = first?.wordLimit ?? 0;
+  return (
+    <div>
+      {wordLimit > 0 ? (
+        <p className="mb-2 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand-700">
+          Write {wordLimitPhrase(wordLimit, first?.allowNumber ?? true)}
+        </p>
+      ) : null}
+      <GapLayoutBody group={group} byNumber={byNumber} />
+    </div>
+  );
 }
