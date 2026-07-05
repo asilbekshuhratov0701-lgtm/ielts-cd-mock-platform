@@ -43,6 +43,13 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
   });
   if (!mock) notFound();
 
+  const attempts = await prisma.mockAttempt.findMany({
+    where: { mockExamId: id },
+    include: { candidate: { select: { name: true, email: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 200
+  });
+
   const readiness = mock.parts.map((p) => {
     const needsAudio = p.module === "listening" && Boolean(p.blueprint.audioRef);
     const audioOk = !needsAudio || Boolean(p.blueprint.audioMediaId);
@@ -157,6 +164,64 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
             </li>
           ))}
         </ul>
+      </Card>
+
+      <Card className="p-5">
+        <h2 className="mb-3 font-semibold text-foreground">
+          Candidate attempts{" "}
+          <span className="text-sm font-normal text-muted">({attempts.length})</span>
+        </h2>
+        {attempts.length === 0 ? (
+          <p className="text-sm text-muted">No one has taken this mock yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-border text-left text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Candidate</th>
+                  <th className="px-3 py-2 font-medium">Submitted</th>
+                  <th className="px-3 py-2 font-medium">Score</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {attempts.map((a) => {
+                  const r = a.resultJson as unknown as {
+                    rawScore?: number;
+                    totalScore?: number;
+                  } | null;
+                  return (
+                    <tr key={a.id} className="align-middle hover:bg-brand-50/30">
+                      <td className="px-3 py-2 font-medium text-foreground">
+                        {a.candidate.name ?? a.candidate.email}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-muted">
+                        {a.submittedAt ? a.submittedAt.toLocaleString() : "—"}
+                      </td>
+                      <td className="px-3 py-2 tabular-nums">
+                        {a.status === "submitted" ? `${r?.rawScore ?? 0} / ${r?.totalScore ?? 0}` : "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge variant={a.status === "submitted" ? "success" : "warning"}>
+                          {a.status === "submitted" ? "submitted" : "in progress"}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <Link
+                          href={`/admin/exam-import/mock/${mock.id}/attempt/${a.id}`}
+                          className="text-sm text-brand-600 hover:underline"
+                        >
+                          View answers
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </Card>
     </PageShell>
   );
