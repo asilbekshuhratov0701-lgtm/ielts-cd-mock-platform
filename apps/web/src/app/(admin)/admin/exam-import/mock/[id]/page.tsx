@@ -9,8 +9,7 @@ import {
   Send,
   Trash2,
   Undo2,
-  Upload,
-  Users
+  Upload
 } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
@@ -24,7 +23,6 @@ import {
   unpublishMockAction,
   startMockAttemptAction
 } from "@/lib/mock-actions";
-import { MockAssignmentForm } from "@/components/exam-import/MockAssignmentForm";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -40,28 +38,10 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
   const mock = await prisma.mockExam.findUnique({
     where: { id },
     include: {
-      parts: { include: { blueprint: { include: { audioMedia: true } } }, orderBy: { order: "asc" } },
-      assignments: true
+      parts: { include: { blueprint: { include: { audioMedia: true } } }, orderBy: { order: "asc" } }
     }
   });
   if (!mock) notFound();
-
-  const candidates = await prisma.user.findMany({
-    where: { orgId: mock.orgId, role: "CANDIDATE" },
-    orderBy: { email: "asc" },
-    select: { id: true, name: true, email: true }
-  });
-  const groups = await prisma.candidateGroup.findMany({
-    where: { orgId: mock.orgId },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true }
-  });
-  const assignedCandidateIds = new Set(
-    mock.assignments.map((a) => a.candidateId).filter((v): v is string => Boolean(v))
-  );
-  const assignedGroupIds = new Set(
-    mock.assignments.map((a) => a.groupId).filter((v): v is string => Boolean(v))
-  );
 
   const readiness = mock.parts.map((p) => {
     const needsAudio = p.module === "listening" && Boolean(p.blueprint.audioRef);
@@ -177,23 +157,6 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
             </li>
           ))}
         </ul>
-      </Card>
-
-      <Card className="p-5">
-        <h2 className="mb-1 flex items-center gap-2 font-semibold text-foreground">
-          <Users className="h-4 w-4 text-brand-600" /> Assign to candidates &amp; groups
-        </h2>
-        <p className="mb-4 text-sm text-muted">
-          Only assigned candidates can see and take this mock. Currently assigned to{" "}
-          {assignedCandidateIds.size} candidate(s) and {assignedGroupIds.size} group(s).
-        </p>
-        <MockAssignmentForm
-          mockId={mock.id}
-          candidates={candidates}
-          groups={groups}
-          assignedCandidateIds={assignedCandidateIds}
-          assignedGroupIds={assignedGroupIds}
-        />
       </Card>
     </PageShell>
   );
