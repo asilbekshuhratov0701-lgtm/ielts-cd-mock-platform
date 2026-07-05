@@ -29,9 +29,5 @@ export default async function PlayPage({ params }: { params: Promise<{ attemptId
     initialAnswers: (attempt.answersJson as unknown as AnswersMap) ?? {}
   };
 
-  return (
-    <div className="mx-auto max-w-6xl p-3">
-      <ExamPreview exam={exam} audioUrl={audioUrl} live={live} />
-    </div>
-  );
+  return <ExamPreview exam={exam} audioUrl={audioUrl} live={live} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Play, Sun, Volume2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize, Minimize, Play, Sun, Volume2 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
@@ -80,7 +80,9 @@ function TopBar({
   remaining,
   onFinish,
   partProgress,
-  finishLabel
+  finishLabel,
+  isFullscreen,
+  onToggleFullscreen
 }: {
   exam: PreviewExam;
   audioUrl: string | null;
@@ -92,6 +94,8 @@ function TopBar({
   onFinish?: () => void;
   partProgress?: { index: number; count: number };
   finishLabel?: string;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }) {
   const timerLabel =
     remaining !== null
@@ -160,6 +164,16 @@ function TopBar({
         >
           <Sun className="h-4 w-4" />
         </button>
+        {onToggleFullscreen ? (
+          <button
+            type="button"
+            onClick={onToggleFullscreen}
+            className="rounded-md p-1.5 text-muted hover:bg-black/[0.05]"
+            aria-label="Toggle full screen"
+          >
+            {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onFinish}
@@ -214,13 +228,21 @@ function GroupsPane({ section }: { section: PreviewSection }) {
   );
 }
 
-function ReadingBody({ section, index }: { section: PreviewSection; index: number }) {
+function ReadingBody({
+  section,
+  index,
+  fill
+}: {
+  section: PreviewSection;
+  index: number;
+  fill?: boolean;
+}) {
   const [leftPct, setLeftPct] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
   return (
-    <div ref={containerRef} className="flex h-[70vh]">
+    <div ref={containerRef} className={cn("flex", fill ? "h-full" : "h-[70vh]")}>
       <div style={{ width: `${leftPct}%` }} className="h-full border-r border-border">
         <PassagePane section={section} index={index} />
       </div>
@@ -249,9 +271,17 @@ function ReadingBody({ section, index }: { section: PreviewSection; index: numbe
   );
 }
 
-function ListeningBody({ section, index }: { section: PreviewSection; index: number }) {
+function ListeningBody({
+  section,
+  index,
+  fill
+}: {
+  section: PreviewSection;
+  index: number;
+  fill?: boolean;
+}) {
   return (
-    <div className="h-[70vh] overflow-auto">
+    <div className={cn("overflow-auto", fill ? "h-full" : "h-[70vh]")}>
       <div className="mx-auto max-w-3xl px-6 py-5">
         <p className="mb-3 text-sm font-bold uppercase text-foreground">Part {index + 1}</p>
         {section.scenario ? (
@@ -321,26 +351,31 @@ function BottomNav({
           const isActive = partEntries.some((e) => e.number === activeNum);
           return (
             <div key={section.id} className="flex shrink-0 items-center gap-2">
-              <span className="text-sm font-bold text-foreground">Part {si + 1}</span>
               {isActive ? (
-                <div className="flex items-center gap-1.5">
-                  {partEntries.map((e) => (
-                    <NavCell
-                      key={e.number}
-                      n={e.number}
-                      active={e.number === activeNum}
-                      answered={isAnswered(answers, e)}
-                      onClick={() => onPick(e.number)}
-                    />
-                  ))}
-                </div>
+                <>
+                  <span className="text-sm font-bold text-foreground">Part {si + 1}</span>
+                  <div className="flex items-center gap-1.5">
+                    {partEntries.map((e) => (
+                      <NavCell
+                        key={e.number}
+                        n={e.number}
+                        active={e.number === activeNum}
+                        answered={isAnswered(answers, e)}
+                        onClick={() => onPick(e.number)}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : (
                 <button
                   type="button"
                   onClick={() => onPick(partEntries[0]!.number)}
-                  className="text-sm text-muted hover:text-foreground"
+                  className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-black/[0.05]"
                 >
-                  {answeredCount} of {partEntries.length}
+                  <span className="font-bold text-foreground">Part {si + 1}</span>
+                  <span className="text-muted">
+                    {answeredCount} of {partEntries.length}
+                  </span>
                 </button>
               )}
             </div>
@@ -432,8 +467,31 @@ function Shell({
     if (next !== undefined) setActiveNum(next);
   }
 
+  const immersive = Boolean(live);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    if (!immersive) return;
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    void document.documentElement.requestFullscreen?.().catch(() => {});
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
+    };
+  }, [immersive]);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
+    else void document.documentElement.requestFullscreen?.().catch(() => {});
+  };
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-soft">
+    <div
+      className={
+        immersive
+          ? "fixed inset-0 z-50 flex flex-col overflow-hidden bg-surface"
+          : "overflow-hidden rounded-2xl border border-border bg-surface shadow-soft"
+      }
+    >
       <TopBar
         exam={exam}
         audioUrl={audioUrl}
@@ -457,6 +515,8 @@ function Shell({
               : "Finish exam"
             : undefined
         }
+        isFullscreen={immersive ? isFullscreen : undefined}
+        onToggleFullscreen={immersive ? toggleFullscreen : undefined}
       />
 
       {live ? (
@@ -495,15 +555,17 @@ function Shell({
         <PartBanner index={activePart} from={partFrom} to={partTo} />
       ) : null}
 
-      {section ? (
-        exam.module === "reading" && section.passageBlocks.length > 0 ? (
-          <ReadingBody section={section} index={activePart} />
+      <div className={immersive ? "min-h-0 flex-1 overflow-hidden" : ""}>
+        {section ? (
+          exam.module === "reading" && section.passageBlocks.length > 0 ? (
+            <ReadingBody section={section} index={activePart} fill={immersive} />
+          ) : (
+            <ListeningBody section={section} index={activePart} fill={immersive} />
+          )
         ) : (
-          <ListeningBody section={section} index={activePart} />
-        )
-      ) : (
-        <div className="p-6 text-sm text-muted">No questions in this exam.</div>
-      )}
+          <div className="p-6 text-sm text-muted">No questions in this exam.</div>
+        )}
+      </div>
 
       <BottomNav
         exam={exam}

@@ -53,15 +53,5 @@ export default async function MockPlayPage({
     mock: { mockAttemptId, index: mockAttempt.currentIndex, count: parts.length }
   };
 
-  return (
-    <div className="mx-auto max-w-6xl p-3">
-      <div className="mb-2 flex items-center justify-between px-1 text-sm">
-        <span className="font-semibold text-foreground">{mockAttempt.mockExam.title}</span>
-        <span className="text-muted">
-          {parts.map((p) => p.module).join(" → ")}
-        </span>
-      </div>
-      <ExamPreview exam={exam} audioUrl={audioUrl} live={live} />
-    </div>
-  );
+  return <ExamPreview exam={exam} audioUrl={audioUrl} live={live} />;
 }
