@@ -7,6 +7,7 @@ import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buildAnswerRows } from "@/lib/mock-review";
+import { skillBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import type { CandidateAnswer, ImportAnswerKey } from "@ielts/core";
 import { cn } from "@/lib/cn";
@@ -32,8 +33,11 @@ export default async function MockAttemptReviewPage({
   });
   if (!attempt || attempt.mockExam.id !== id || attempt.mockExam.orgId !== me.orgId) notFound();
 
-  const totalRaw = attempt.partAttempts.reduce((s, p) => s + (p.rawScore ?? 0), 0);
-  const totalMax = attempt.partAttempts.reduce((s, p) => s + (p.totalScore ?? 0), 0);
+  const overall = overallBandFrom(
+    attempt.partAttempts.map((p) =>
+      skillBand(p.blueprint.module, p.rawScore ?? 0, p.totalScore ?? 0)
+    )
+  );
 
   return (
     <PageShell
@@ -43,7 +47,7 @@ export default async function MockAttemptReviewPage({
       }`}
       actions={
         <Badge variant={attempt.status === "submitted" ? "success" : "warning"}>
-          {attempt.status === "submitted" ? `${totalRaw} / ${totalMax}` : attempt.status}
+          {attempt.status === "submitted" ? `Overall band ${bandLabel(overall)}` : attempt.status}
         </Badge>
       }
     >
@@ -67,8 +71,20 @@ export default async function MockAttemptReviewPage({
                 <span className="capitalize">{part.blueprint.module}</span>
                 <span className="ml-2 text-sm font-normal text-muted">{part.blueprint.title}</span>
               </h2>
-              <span className="text-sm font-semibold tabular-nums text-foreground">
-                {part.rawScore ?? 0} / {part.totalScore ?? 0}
+              <span className="flex items-center gap-3 text-sm">
+                {part.blueprint.module === "writing" ? (
+                  <span className="text-muted">examiner-marked</span>
+                ) : (
+                  <span className="rounded-md bg-brand-50 px-2 py-0.5 font-semibold text-brand-700">
+                    Band{" "}
+                    {bandLabel(
+                      skillBand(part.blueprint.module, part.rawScore ?? 0, part.totalScore ?? 0)
+                    )}
+                  </span>
+                )}
+                <span className="font-semibold tabular-nums text-foreground">
+                  {part.rawScore ?? 0} / {part.totalScore ?? 0}
+                </span>
               </span>
             </div>
 

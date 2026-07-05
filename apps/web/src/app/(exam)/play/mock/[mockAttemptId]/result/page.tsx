@@ -6,6 +6,7 @@ import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { skillBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 
 interface PartSummary {
   module: string;
@@ -42,8 +43,8 @@ export default async function MockResultPage({
     totalScore?: number;
   } | null;
   const parts = summary?.parts ?? [];
-  const raw = summary?.rawScore ?? 0;
-  const total = summary?.totalScore ?? 0;
+  const partBands = parts.map((p) => ({ ...p, band: skillBand(p.module, p.rawScore, p.totalScore) }));
+  const overall = overallBandFrom(partBands.map((p) => p.band));
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
@@ -53,11 +54,10 @@ export default async function MockResultPage({
         </span>
         <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">Mock completed</h1>
         <p className="mt-1 text-sm text-muted">{attempt.mockExam.title}</p>
-        <p className="mt-6 text-4xl font-bold text-foreground">
-          {raw}
-          <span className="text-2xl font-medium text-muted"> / {total}</span>
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted">
+          Overall band
         </p>
-        <p className="mt-1 text-sm text-muted">objective marks across all parts</p>
+        <p className="text-5xl font-bold text-brand-700">{bandLabel(overall)}</p>
         <div className="mt-6 flex justify-center">
           <Link href="/play">
             <Button variant="outline">Back to exams</Button>
@@ -65,27 +65,30 @@ export default async function MockResultPage({
         </div>
       </Card>
 
-      {parts.length > 0 ? (
-        <Card className="mt-5 divide-y divide-border p-2">
-          {parts.map((p, i) => (
-            <div key={i} className="flex items-center justify-between px-3 py-3">
-              <span className="flex items-center gap-2 text-sm font-medium text-foreground">
+      {partBands.length > 0 ? (
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {partBands.map((p, i) => (
+            <Card key={i} className="p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                 {moduleIcon[p.module] ?? null}
                 <span className="capitalize">{p.module}</span>
-                <span className="text-muted">· {p.title}</span>
-              </span>
-              <span className="text-sm font-semibold text-foreground">
-                {p.module === "writing" ? (
-                  <span className="text-muted">examiner-marked</span>
-                ) : (
-                  <>
-                    {p.rawScore} / {p.totalScore}
-                  </>
-                )}
-              </span>
-            </div>
+              </div>
+              {p.module === "writing" ? (
+                <p className="mt-2 text-2xl font-bold text-muted">
+                  —
+                  <span className="ml-2 align-middle text-xs font-normal">examiner-marked</span>
+                </p>
+              ) : (
+                <>
+                  <p className="mt-2 text-3xl font-bold text-brand-700">{bandLabel(p.band)}</p>
+                  <p className="text-xs text-muted">
+                    {p.rawScore} / {p.totalScore} correct
+                  </p>
+                </>
+              )}
+            </Card>
           ))}
-        </Card>
+        </div>
       ) : null}
     </div>
   );

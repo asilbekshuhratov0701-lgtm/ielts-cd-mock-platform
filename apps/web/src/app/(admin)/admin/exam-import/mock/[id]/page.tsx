@@ -23,6 +23,7 @@ import {
   unpublishMockAction,
   startMockAttemptAction
 } from "@/lib/mock-actions";
+import { skillBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -180,7 +181,7 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                 <tr>
                   <th className="px-3 py-2 font-medium">Candidate</th>
                   <th className="px-3 py-2 font-medium">Submitted</th>
-                  <th className="px-3 py-2 font-medium">Score</th>
+                  <th className="px-3 py-2 font-medium">Overall band</th>
                   <th className="px-3 py-2 font-medium">Status</th>
                   <th className="px-3 py-2" />
                 </tr>
@@ -188,9 +189,11 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
               <tbody className="divide-y divide-border">
                 {attempts.map((a) => {
                   const r = a.resultJson as unknown as {
-                    rawScore?: number;
-                    totalScore?: number;
+                    parts?: { module: string; rawScore: number; totalScore: number }[];
                   } | null;
+                  const overall = overallBandFrom(
+                    (r?.parts ?? []).map((p) => skillBand(p.module, p.rawScore, p.totalScore))
+                  );
                   return (
                     <tr key={a.id} className="align-middle hover:bg-brand-50/30">
                       <td className="px-3 py-2 font-medium text-foreground">
@@ -199,8 +202,8 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                       <td className="whitespace-nowrap px-3 py-2 text-muted">
                         {a.submittedAt ? a.submittedAt.toLocaleString() : "—"}
                       </td>
-                      <td className="px-3 py-2 tabular-nums">
-                        {a.status === "submitted" ? `${r?.rawScore ?? 0} / ${r?.totalScore ?? 0}` : "—"}
+                      <td className="px-3 py-2 font-semibold tabular-nums text-brand-700">
+                        {a.status === "submitted" ? bandLabel(overall) : "—"}
                       </td>
                       <td className="px-3 py-2">
                         <Badge variant={a.status === "submitted" ? "success" : "warning"}>

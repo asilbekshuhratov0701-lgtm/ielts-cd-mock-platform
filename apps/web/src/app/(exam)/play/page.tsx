@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { startMockAttemptAction } from "@/lib/mock-actions";
+import { skillBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 
 const moduleIcon = {
   reading: <BookOpen className="h-4 w-4 text-violet-600" />,
@@ -109,7 +110,12 @@ export default async function PlayListPage() {
           </h2>
           <div className="space-y-2">
             {submitted.map((a) => {
-              const r = a.resultJson as unknown as { rawScore?: number; totalScore?: number } | null;
+              const r = a.resultJson as unknown as {
+                parts?: { module: string; rawScore: number; totalScore: number }[];
+              } | null;
+              const overall = overallBandFrom(
+                (r?.parts ?? []).map((p) => skillBand(p.module, p.rawScore, p.totalScore))
+              );
               return (
                 <Link key={a.id} href={`/play/mock/${a.id}/result`}>
                   <Card className="flex items-center justify-between p-3 text-sm transition-colors hover:bg-brand-50/40">
@@ -118,7 +124,7 @@ export default async function PlayListPage() {
                       {a.submittedAt ? ` · ${new Date(a.submittedAt).toLocaleDateString()}` : ""}
                     </span>
                     <span className="font-semibold text-foreground">
-                      {r?.rawScore ?? 0} / {r?.totalScore ?? 0}
+                      Band {bandLabel(overall)}
                     </span>
                   </Card>
                 </Link>
