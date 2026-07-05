@@ -254,6 +254,7 @@ model User {
   attempts           Attempt[]
   blueprintAttempts  BlueprintAttempt[]   @relation("BlueprintAttempts")
   mockAttempts       MockAttempt[]        @relation("MockAttempts")
+  mockAssignments    MockAssignment[]     @relation("MockAssignmentCandidate")
   assignments        ExamAssignment[]
   groupMemberships   CandidateGroupMember[]
   writingEvaluations WritingEvaluation[]
@@ -553,7 +554,8 @@ model CandidateGroup {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
-  members CandidateGroupMember[]
+  members         CandidateGroupMember[]
+  mockAssignments MockAssignment[]
 
   @@index([orgId])
 }
@@ -843,10 +845,31 @@ model MockExam {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
-  parts    MockExamPart[]
-  attempts MockAttempt[]
+  parts       MockExamPart[]
+  attempts    MockAttempt[]
+  assignments MockAssignment[]
 
   @@index([orgId])
+}
+
+/// Targets a published MockExam at a specific candidate OR a candidate group.
+/// Exactly one of candidateId / groupId is set per row. A candidate sees a mock
+/// only if it is assigned to them directly or to a group they belong to.
+model MockAssignment {
+  id          String          @id @default(cuid())
+  mockExamId  String
+  mockExam    MockExam        @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
+  candidateId String?
+  candidate   User?           @relation("MockAssignmentCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
+  groupId     String?
+  group       CandidateGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt   DateTime        @default(now())
+
+  @@unique([mockExamId, candidateId])
+  @@unique([mockExamId, groupId])
+  @@index([mockExamId])
+  @@index([candidateId])
+  @@index([groupId])
 }
 
 /// One skill part of a MockExam, backed by an ExamBlueprint. Unique per module

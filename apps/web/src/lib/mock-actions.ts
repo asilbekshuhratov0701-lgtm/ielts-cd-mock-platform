@@ -124,6 +124,41 @@ export async function deleteMockAction(formData: FormData): Promise<void> {
   redirect("/admin/exam-import");
 }
 
+export async function setMockAssignmentsAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const mockExamId = String(formData.get("mockExamId") ?? "");
+  if (!mockExamId) return;
+  const mock = await prisma.mockExam.findFirst({ where: { id: mockExamId, orgId } });
+  if (!mock) return;
+
+  const candidateIds = formData.getAll("candidateId").map(String).filter(Boolean);
+  const groupIds = formData.getAll("groupId").map(String).filter(Boolean);
+  const rows = [
+    ...candidateIds.map((candidateId) => ({ mockExamId, candidateId })),
+    ...groupIds.map((groupId) => ({ mockExamId, groupId }))
+  ];
+
+  await prisma.$transaction([
+    prisma.mockAssignment.deleteMany({ where: { mockExamId } }),
+    ...(rows.length > 0 ? [prisma.mockAssignment.createMany({ data: rows })] : [])
+  ]);
+  refreshAdmin(mockExamId);
+}
+
+async function candidateSeesMock(userId: string, mockExamId: string): Promise<boolean> {
+  const groupIds = (
+    await prisma.candidateGroupMember.findMany({
+      where: { candidateId: userId },
+      select: { groupId: true }
+    })
+  ).map((g) => g.groupId);
+  const hit = await prisma.mockAssignment.findFirst({
+    where: { mockExamId, OR: [{ candidateId: userId }, { groupId: { in: groupIds } }] }
+  });
+  return Boolean(hit);
+}
+
 async function createPartAttempt(
   mockAttemptId: string,
   candidateId: string,
@@ -147,7 +182,9 @@ async function createPartAttempt(
 }
 
 export async function startMockAttemptAction(formData: FormData): Promise<void> {
-  const userId = await requireUserId();
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
+  const userId = session.user.id;
   const mockExamId = String(formData.get("mockExamId") ?? "");
   if (!mockExamId) redirect("/play");
 
@@ -156,6 +193,10 @@ export async function startMockAttemptAction(formData: FormData): Promise<void> 
     include: { parts: { include: { blueprint: true }, orderBy: { order: "asc" } } }
   });
   if (!mock || mock.state !== "published" || mock.parts.length === 0) redirect("/play");
+
+  if (session.user.role === "CANDIDATE" && !(await candidateSeesMock(userId, mockExamId))) {
+    redirect("/play");
+  }
 
   const existing = await prisma.mockAttempt.findFirst({
     where: { mockExamId, candidateId: userId, status: "in_progress" }

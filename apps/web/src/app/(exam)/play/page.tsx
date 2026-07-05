@@ -20,8 +20,19 @@ export default async function PlayListPage() {
   const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
   if (!dbUser) redirect("/login");
 
+  const groupIds = (
+    await prisma.candidateGroupMember.findMany({
+      where: { candidateId: dbUser.id },
+      select: { groupId: true }
+    })
+  ).map((g) => g.groupId);
+
   const mocks = await prisma.mockExam.findMany({
-    where: { orgId: dbUser.orgId, state: "published" },
+    where: {
+      orgId: dbUser.orgId,
+      state: "published",
+      assignments: { some: { OR: [{ candidateId: dbUser.id }, { groupId: { in: groupIds } }] } }
+    },
     include: {
       parts: {
         include: { blueprint: { select: { module: true, totalQuestions: true } } },
