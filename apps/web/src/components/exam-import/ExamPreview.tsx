@@ -14,9 +14,18 @@ import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
-import { saveBlueprintAnswers, submitBlueprintAttemptAction } from "@/lib/blueprint-play-actions";
+import {
+  saveBlueprintAnswers,
+  saveBlueprintAnnotations,
+  submitBlueprintAttemptAction
+} from "@/lib/blueprint-play-actions";
 import { submitMockPartAction } from "@/lib/mock-actions";
-import { SelectionLayer, type ExamNote } from "@/components/exam-import/SelectionLayer";
+import {
+  SelectionLayer,
+  type Annotations,
+  type ExamNote,
+  type SerializedHighlight
+} from "@/components/exam-import/SelectionLayer";
 import { cn } from "@/lib/cn";
 
 export interface LiveAttempt {
@@ -24,6 +33,7 @@ export interface LiveAttempt {
   deadlineAt: string;
   serverNow: string;
   initialAnswers: AnswersMap;
+  initialAnnotations?: Annotations;
   mock?: { mockAttemptId: string; index: number; count: number };
 }
 
@@ -208,7 +218,11 @@ function PassagePane({ section, index }: { section: PreviewSection; index: numbe
       {section.subtitle ? (
         <p className="mt-3 text-lg font-bold italic text-foreground">{section.subtitle}</p>
       ) : null}
-      <div className="mt-3 space-y-3 text-[15px] leading-relaxed text-foreground/85">
+      <div
+        data-hl
+        data-hl-id={`p:${section.id}`}
+        className="mt-3 space-y-3 text-[15px] leading-relaxed text-foreground/85"
+      >
         {section.passageBlocks.map((b, i) => (
           <p key={i}>
             {b.label ? <span className="mr-2 font-semibold text-foreground">{b.label}</span> : null}
@@ -487,9 +501,25 @@ function Shell({
 
   const immersive = Boolean(live);
   const bodyRef = useRef<HTMLDivElement>(null);
-  const [notes, setNotes] = useState<ExamNote[]>([]);
+  const [notes, setNotes] = useState<ExamNote[]>(live?.initialAnnotations?.notes ?? []);
+  const [highlights, setHighlights] = useState<SerializedHighlight[]>(
+    live?.initialAnnotations?.highlights ?? []
+  );
   const [notesOpen, setNotesOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const annotationsFirst = useRef(true);
+  useEffect(() => {
+    if (!live) return;
+    if (annotationsFirst.current) {
+      annotationsFirst.current = false;
+      return;
+    }
+    const t = setTimeout(() => {
+      void saveBlueprintAnnotations(live.attemptId, { notes, highlights } satisfies Annotations);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [notes, highlights, live]);
   useEffect(() => {
     if (!immersive) return;
     const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -589,8 +619,11 @@ function Shell({
       {immersive ? (
         <SelectionLayer
           containerRef={bodyRef}
+          rev={activePart}
           notes={notes}
           setNotes={setNotes}
+          highlights={highlights}
+          setHighlights={setHighlights}
           panelOpen={notesOpen}
           setPanelOpen={setNotesOpen}
         />

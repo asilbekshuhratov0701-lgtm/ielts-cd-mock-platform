@@ -31,7 +31,7 @@ export function QuestionGroupFrame({
       {group.instructions ? (
         <p className="mb-3 text-base italic text-foreground/70">{group.instructions}</p>
       ) : null}
-      <div className={cn("rounded-md bg-black/[0.04] p-5")}>
+      <div className={cn("rounded-md bg-black/[0.04] p-5")} data-hl data-hl-id={group.id}>
         {group.title ? (
           <h3 className="mb-4 text-center text-base font-semibold text-foreground">{group.title}</h3>
         ) : null}

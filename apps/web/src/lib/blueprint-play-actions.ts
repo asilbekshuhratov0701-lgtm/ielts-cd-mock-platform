@@ -73,6 +73,22 @@ export async function saveBlueprintAnswers(
   return { ok: !expired, remainingSec: remainingSeconds(attempt.deadlineAt), expired };
 }
 
+export async function saveBlueprintAnnotations(
+  attemptId: string,
+  annotations: unknown
+): Promise<{ ok: boolean }> {
+  const userId = await requireUserId();
+  const attempt = await prisma.blueprintAttempt.findUnique({ where: { id: attemptId } });
+  if (!attempt || attempt.candidateId !== userId || attempt.status !== "in_progress") {
+    return { ok: false };
+  }
+  await prisma.blueprintAttempt.update({
+    where: { id: attemptId },
+    data: { annotationsJson: annotations as Prisma.InputJsonValue }
+  });
+  return { ok: true };
+}
+
 export async function submitBlueprintAttemptAction(formData: FormData): Promise<void> {
   const userId = await requireUserId();
   const attemptId = String(formData.get("attemptId") ?? "");

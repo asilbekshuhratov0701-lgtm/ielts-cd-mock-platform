@@ -5,6 +5,7 @@ import { ExamPreview, type LiveAttempt } from "@/components/exam-import/ExamPrev
 import { mediaPublicUrl } from "@/lib/media-storage";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
+import type { Annotations } from "@/components/exam-import/SelectionLayer";
 
 export default async function PlayPage({ params }: { params: Promise<{ attemptId: string }> }) {
   const { attemptId } = await params;
@@ -26,8 +27,12 @@ export default async function PlayPage({ params }: { params: Promise<{ attemptId
     attemptId: attempt.id,
     deadlineAt: attempt.deadlineAt.toISOString(),
     serverNow: new Date().toISOString(),
-    initialAnswers: (attempt.answersJson as unknown as AnswersMap) ?? {}
+    initialAnswers: (attempt.answersJson as unknown as AnswersMap) ?? {},
+    initialAnnotations: (attempt.annotationsJson as unknown as Annotations) ?? {
+      notes: [],
+      highlights: []
+    }
   };
 
-  return <ExamPreview exam={exam} audioUrl={audioUrl} live={live} />;
+  return <ExamPreview key={live.attemptId} exam={exam} audioUrl={audioUrl} live={live} />;
 }

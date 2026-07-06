@@ -818,6 +818,7 @@ model BlueprintAttempt {
   deadlineAt  DateTime
   submittedAt DateTime?
   answersJson Json
+  annotationsJson Json?
   rawScore    Int?
   totalScore  Int?
   resultJson  Json?

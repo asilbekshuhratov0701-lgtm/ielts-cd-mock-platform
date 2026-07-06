@@ -18,6 +18,19 @@ export interface ExamNote {
   text: string;
 }
 
+export interface SerializedHighlight {
+  id: string;
+  regionId: string;
+  start: number;
+  end: number;
+  color: string;
+}
+
+export interface Annotations {
+  notes: ExamNote[];
+  highlights: SerializedHighlight[];
+}
+
 const COLORS = [
   { key: "yellow", swatch: "bg-yellow-300" },
   { key: "green", swatch: "bg-green-300" },
@@ -25,22 +38,75 @@ const COLORS = [
   { key: "blue", swatch: "bg-blue-300" }
 ] as const;
 
+function closestRegion(node: Node | null, container: Element): Element | null {
+  let el: Element | null =
+    node && node.nodeType === Node.TEXT_NODE ? node.parentElement : (node as Element | null);
+  while (el && el !== container.parentElement) {
+    if (el.hasAttribute("data-hl-id")) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function offsetInRegion(region: Element, node: Node, nodeOffset: number): number {
+  const range = document.createRange();
+  range.selectNodeContents(region);
+  range.setEnd(node, nodeOffset);
+  return range.toString().length;
+}
+
+function rangeFromOffsets(region: Element, start: number, end: number): Range | null {
+  const walker = document.createTreeWalker(region, NodeFilter.SHOW_TEXT);
+  let offset = 0;
+  let startNode: Text | null = null;
+  let startLocal = 0;
+  let endNode: Text | null = null;
+  let endLocal = 0;
+  let cur = walker.nextNode() as Text | null;
+  while (cur) {
+    const len = cur.data.length;
+    if (startNode === null && offset + len >= start) {
+      startNode = cur;
+      startLocal = start - offset;
+    }
+    if (endNode === null && offset + len >= end) {
+      endNode = cur;
+      endLocal = end - offset;
+      break;
+    }
+    offset += len;
+    cur = walker.nextNode() as Text | null;
+  }
+  if (!startNode || !endNode) return null;
+  const range = document.createRange();
+  range.setStart(startNode, startLocal);
+  range.setEnd(endNode, endLocal);
+  return range;
+}
+
 export function SelectionLayer({
   containerRef,
+  rev,
   notes,
   setNotes,
+  highlights,
+  setHighlights,
   panelOpen,
   setPanelOpen
 }: {
   containerRef: RefObject<HTMLElement | null>;
+  rev: number;
   notes: ExamNote[];
   setNotes: Dispatch<SetStateAction<ExamNote[]>>;
+  highlights: SerializedHighlight[];
+  setHighlights: Dispatch<SetStateAction<SerializedHighlight[]>>;
   panelOpen: boolean;
   setPanelOpen: Dispatch<SetStateAction<boolean>>;
 }) {
   const [toolbar, setToolbar] = useState<{ x: number; y: number } | null>(null);
-  const rangeRef = useRef<Range | null>(null);
-  const buckets = useRef<Record<string, Range[]>>({ yellow: [], green: [], pink: [], blue: [] });
+  const captureRef = useRef<{ regionId: string; start: number; end: number; snippet: string } | null>(
+    null
+  );
   const [noteDraft, setNoteDraft] = useState<{ snippet: string; text: string } | null>(null);
 
   const captureSelection = useCallback(() => {
@@ -51,16 +117,24 @@ export function SelectionLayer({
       return;
     }
     const range = sel.getRangeAt(0);
-    if (!container.contains(range.commonAncestorContainer)) {
+    const region = closestRegion(range.commonAncestorContainer, container);
+    if (!region) {
+      setToolbar(null);
+      return;
+    }
+    const start = offsetInRegion(region, range.startContainer, range.startOffset);
+    const end = offsetInRegion(region, range.endContainer, range.endOffset);
+    if (end <= start) {
       setToolbar(null);
       return;
     }
     const rect = range.getBoundingClientRect();
-    if (rect.width === 0 && rect.height === 0) {
-      setToolbar(null);
-      return;
-    }
-    rangeRef.current = range.cloneRange();
+    captureRef.current = {
+      regionId: region.getAttribute("data-hl-id") ?? "",
+      start,
+      end,
+      snippet: range.toString().replace(/\s+/g, " ").trim().slice(0, 160)
+    };
     setToolbar({ x: rect.left + rect.width / 2, y: rect.top });
   }, [containerRef]);
 
@@ -74,32 +148,41 @@ export function SelectionLayer({
     };
   }, [captureSelection]);
 
-  function rebuild() {
+  useEffect(() => {
     const g = globalThis as unknown as {
-      CSS?: { highlights?: Map<string, unknown> };
+      CSS?: { highlights?: Map<string, unknown> & { clear?: () => void } };
       Highlight?: new (...ranges: Range[]) => unknown;
     };
-    if (!g.CSS?.highlights || typeof g.Highlight !== "function") return;
-    for (const c of COLORS) {
-      const ranges = buckets.current[c.key] ?? [];
-      if (ranges.length > 0) g.CSS.highlights.set(`hl-${c.key}`, new g.Highlight(...ranges));
+    const container = containerRef.current;
+    if (!g.CSS?.highlights || typeof g.Highlight !== "function" || !container) return;
+    const byColor: Record<string, Range[]> = { yellow: [], green: [], pink: [], blue: [] };
+    for (const h of highlights) {
+      const region = container.querySelector(`[data-hl-id="${h.regionId}"]`);
+      if (!region) continue;
+      const range = rangeFromOffsets(region, h.start, h.end);
+      if (range && byColor[h.color]) byColor[h.color]!.push(range);
     }
-  }
+    for (const c of COLORS) {
+      const ranges = byColor[c.key] ?? [];
+      if (ranges.length > 0) g.CSS.highlights.set(`hl-${c.key}`, new g.Highlight(...ranges));
+      else g.CSS.highlights.delete(`hl-${c.key}`);
+    }
+  }, [highlights, rev, containerRef]);
 
-  function highlight(colorKey: string) {
-    const range = rangeRef.current;
-    if (range) {
-      buckets.current[colorKey]?.push(range.cloneRange());
-      rebuild();
+  function addHighlight(colorKey: string) {
+    const cap = captureRef.current;
+    if (cap) {
+      setHighlights((hs) => [
+        ...hs,
+        { id: `${Date.now()}-${hs.length}`, regionId: cap.regionId, start: cap.start, end: cap.end, color: colorKey }
+      ]);
     }
     window.getSelection()?.removeAllRanges();
     setToolbar(null);
   }
 
   function startNote() {
-    const range = rangeRef.current;
-    const snippet = range ? range.toString().replace(/\s+/g, " ").trim().slice(0, 160) : "";
-    setNoteDraft({ snippet, text: "" });
+    setNoteDraft({ snippet: captureRef.current?.snippet ?? "", text: "" });
     setToolbar(null);
   }
 
@@ -126,7 +209,7 @@ export function SelectionLayer({
               key={c.key}
               type="button"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => highlight(c.key)}
+              onClick={() => addHighlight(c.key)}
               className={cn("h-6 w-6 rounded-full ring-1 ring-black/10 hover:scale-110", c.swatch)}
               aria-label={`Highlight ${c.key}`}
             />
