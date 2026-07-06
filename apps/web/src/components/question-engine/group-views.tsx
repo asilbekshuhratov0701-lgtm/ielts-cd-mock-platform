@@ -3,7 +3,56 @@
 import { useAnswer } from "./answers-store";
 import { CheckboxInput, RadioInput, SelectMatch } from "./primitives";
 import { NumberBadge } from "./QuestionGroupFrame";
-import type { CheckboxGroup, RadioGroup, RadioQuestion, SelectGroup } from "./types";
+import type {
+  CheckboxGroup,
+  EssayGroup,
+  EssayTask,
+  RadioGroup,
+  RadioQuestion,
+  SelectGroup
+} from "./types";
+import { cn } from "@/lib/cn";
+
+function EssayField({ task }: { task: EssayTask }) {
+  const [value, set] = useAnswer(task.id);
+  const text = (value as string) ?? "";
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const under = typeof task.minWords === "number" && words < task.minWords;
+  return (
+    <div className="space-y-3">
+      <div className="whitespace-pre-wrap text-base leading-relaxed text-foreground">
+        {task.prompt}
+      </div>
+      {task.imageUrl ? (
+        <img
+          src={task.imageUrl}
+          alt={`Task ${task.number}`}
+          className="max-h-80 rounded-lg border border-border"
+        />
+      ) : null}
+      <textarea
+        value={text}
+        onChange={(e) => set(e.target.value)}
+        placeholder="Write your answer here…"
+        className="min-h-[320px] w-full rounded-lg border border-border bg-surface p-4 text-base leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+      />
+      <p className={cn("text-sm font-medium", under ? "text-amber-600" : "text-muted")}>
+        {words} {words === 1 ? "word" : "words"}
+        {typeof task.minWords === "number" ? ` · minimum ${task.minWords}` : ""}
+      </p>
+    </div>
+  );
+}
+
+export function EssayGroupView({ group }: { group: EssayGroup }) {
+  return (
+    <div className="space-y-6">
+      {group.tasks.map((t) => (
+        <EssayField key={t.id} task={t} />
+      ))}
+    </div>
+  );
+}
 
 function ConnectedRadio({ question, boxed }: { question: RadioQuestion; boxed: boolean }) {
   const [value, set] = useAnswer(question.id);

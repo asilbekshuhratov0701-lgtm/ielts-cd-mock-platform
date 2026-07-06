@@ -19,7 +19,7 @@ export function extractAnswerKey(exam: ExamFile): Record<string, ImportAnswerKey
             numbers: q.numbers,
             orderIndependent: q.orderIndependent ?? true
           };
-        } else {
+        } else if (q.type === "radio" || q.type === "select") {
           key[q.id] = { kind: q.type, accepted: [q.answer] };
         }
       }

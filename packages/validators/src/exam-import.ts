@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const examPrimitive = z.enum(["radio", "checkbox", "gap", "select"]);
+export const examPrimitive = z.enum(["radio", "checkbox", "gap", "select", "essay"]);
 export const examModule = z.enum(["reading", "listening", "writing"]);
 
 const optionSchema = z
@@ -53,11 +53,21 @@ const selectQuestion = z.object({
   answer: z.string()
 });
 
+const essayQuestion = z.object({
+  type: z.literal("essay"),
+  id: z.string().min(1),
+  number: z.number().int().positive(),
+  prompt: z.string().min(1),
+  minWords: z.number().int().positive().optional(),
+  imageUrl: z.string().optional()
+});
+
 export const examQuestionSchema = z.discriminatedUnion("type", [
   gapQuestion,
   radioQuestion,
   checkboxQuestion,
-  selectQuestion
+  selectQuestion,
+  essayQuestion
 ]);
 export type ExamQuestion = z.infer<typeof examQuestionSchema>;
 
@@ -179,6 +189,7 @@ function minimalWordCount(answer: string): number {
 }
 
 function hasAnswer(q: ExamQuestion): boolean {
+  if (q.type === "essay") return true;
   if (q.type === "gap") return q.answer.some((a) => a.trim().length > 0);
   if (q.type === "checkbox") return q.answer.length > 0;
   return q.answer.trim().length > 0;

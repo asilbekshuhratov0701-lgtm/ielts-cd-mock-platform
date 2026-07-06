@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "examId": "cam-writing-1",
+  "module": "writing",
+  "title": "Writing – Academic",
+  "totalQuestions": 2,
+  "timerSource": "fixed",
+  "timeLimitMinutes": 60,
+  "sections": [
+    {
+      "id": "w-s1",
+      "order": 0,
+      "title": "Writing Task 1",
+      "groups": [
+        {
+          "id": "w-g1",
+          "questionType": "writing_task_1",
+          "primitive": "essay",
+          "instructions": "You should spend about 20 minutes on this task. Write at least 150 words.",
+          "questions": [
+            {
+              "type": "essay",
+              "id": "task1",
+              "number": 1,
+              "prompt": "The chart below shows the number of visitors to three museums between 2007 and 2012. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
+              "minWords": 150
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "w-s2",
+      "order": 1,
+      "title": "Writing Task 2",
+      "groups": [
+        {
+          "id": "w-g2",
+          "questionType": "writing_task_2",
+          "primitive": "essay",
+          "instructions": "You should spend about 40 minutes on this task. Write at least 250 words.",
+          "questions": [
+            {
+              "type": "essay",
+              "id": "task2",
+              "number": 2,
+              "prompt": "Some people believe that unpaid community service should be a compulsory part of high school programmes. To what extent do you agree or disagree?",
+              "minWords": 250
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

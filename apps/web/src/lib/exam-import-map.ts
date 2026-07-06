@@ -279,6 +279,32 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
     ];
   }
 
+  if (group.primitive === "essay") {
+    const tasks = group.questions.flatMap((q) =>
+      q.type === "essay"
+        ? [
+            {
+              id: q.id,
+              number: q.number,
+              prompt: q.prompt,
+              minWords: q.minWords,
+              imageUrl: q.imageUrl
+            }
+          ]
+        : []
+    );
+    return [
+      {
+        id: group.id,
+        questionType,
+        inputKind: "essay",
+        instructions: group.instructions ?? "",
+        numberRange: range(allNumbers),
+        tasks
+      }
+    ];
+  }
+
   const { layout, content } = gapLayoutAndContent(group);
   const wordLimit = typeof group.wordLimit === "number" ? group.wordLimit : 0;
   const allowNumber = group.allowNumber ?? true;

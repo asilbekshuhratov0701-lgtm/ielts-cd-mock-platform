@@ -43,6 +43,15 @@ test("broken fixture is rejected with specific, located errors", () => {
   assert.ok(placeholder && placeholder.where.includes("Q2"));
 });
 
+test("valid writing fixture passes (essay tasks, no answer keys)", () => {
+  const report = validateExamFile(load("writing-sample.json"));
+  assert.equal(report.ok, true, formatReport(report));
+  assert.equal(report.errors.length, 0);
+  assert.equal(report.module, "writing");
+  assert.equal(report.questionCount, 2);
+  assert.equal(report.totalQuestions, 2);
+});
+
 test("word limit flags over-length accepted answers but ignores optional words", () => {
   const exam = {
     schemaVersion: 1,

@@ -1,7 +1,7 @@
 "use client";
 
 import { GapGroupView } from "./GapGroupView";
-import { CheckboxGroupView, RadioGroupView, SelectGroupView } from "./group-views";
+import { CheckboxGroupView, EssayGroupView, RadioGroupView, SelectGroupView } from "./group-views";
 import { QuestionGroupFrame } from "./QuestionGroupFrame";
 import type { QuestionGroup } from "./types";
 
@@ -15,6 +15,8 @@ function GroupBody({ group }: { group: QuestionGroup }) {
       return <GapGroupView group={group} />;
     case "select":
       return <SelectGroupView group={group} />;
+    case "essay":
+      return <EssayGroupView group={group} />;
   }
 }
 

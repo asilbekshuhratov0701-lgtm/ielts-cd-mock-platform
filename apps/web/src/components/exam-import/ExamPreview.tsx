@@ -71,6 +71,8 @@ function buildEntries(exam: PreviewExam): Entry[] {
         for (const r of g.rows ?? []) out.push({ number: r.number, key: r.id, multi: false, section: si });
       } else if (g.inputKind === "gap") {
         for (const gap of g.gaps) out.push({ number: gap.number, key: gap.id, multi: false, section: si });
+      } else if (g.inputKind === "essay") {
+        for (const t of g.tasks) out.push({ number: t.number, key: t.id, multi: false, section: si });
       } else if (g.inputKind === "select") {
         for (const p of g.prompts) out.push({ number: p.number, key: p.id, multi: false, section: si });
       } else {

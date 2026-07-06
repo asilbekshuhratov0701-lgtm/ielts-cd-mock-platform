@@ -17,7 +17,7 @@ export type QuestionType =
   | "map_labelling"
   | "diagram_labelling";
 
-export type InputKind = "radio" | "checkbox" | "gap" | "select";
+export type InputKind = "radio" | "checkbox" | "gap" | "select" | "essay";
 
 export type GapLayout =
   | "note"
@@ -117,7 +117,20 @@ export interface SelectGroup extends BaseGroup {
   paragraphs?: string[];
 }
 
-export type QuestionGroup = RadioGroup | CheckboxGroup | GapGroup | SelectGroup;
+export interface EssayTask {
+  id: string;
+  number: number;
+  prompt: string;
+  minWords?: number;
+  imageUrl?: string;
+}
+
+export interface EssayGroup extends BaseGroup {
+  inputKind: "essay";
+  tasks: EssayTask[];
+}
+
+export type QuestionGroup = RadioGroup | CheckboxGroup | GapGroup | SelectGroup | EssayGroup;
 
 export type AnswerValue = string | string[] | null;
 export type AnswersMap = Record<string, AnswerValue>;
