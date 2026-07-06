@@ -37,6 +37,31 @@ export default async function MockResultPage({
   if (!attempt || attempt.candidateId !== session.user.id) notFound();
   if (attempt.status !== "submitted") redirect(`/play/mock/${mockAttemptId}`);
 
+  if (!attempt.resultsReleased) {
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-12">
+        <Card className="p-8 text-center shadow-card">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <CheckCircle2 className="h-7 w-7" />
+          </span>
+          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+            Exam submitted
+          </h1>
+          <p className="mt-1 text-sm text-muted">{attempt.mockExam.title}</p>
+          <p className="mt-6 text-sm text-muted">
+            Your responses have been received. Your result is being reviewed and will appear here
+            once your examiner releases it.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link href="/play">
+              <Button variant="outline">Back to exams</Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   const summary = attempt.resultJson as unknown as {
     parts?: PartSummary[];
     rawScore?: number;

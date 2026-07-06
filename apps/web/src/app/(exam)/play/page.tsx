@@ -122,7 +122,7 @@ export default async function PlayListPage() {
                       {a.submittedAt ? ` · ${new Date(a.submittedAt).toLocaleDateString()}` : ""}
                     </span>
                     <span className="font-semibold text-foreground">
-                      Band {bandLabel(overall)}
+                      {a.resultsReleased ? `Band ${bandLabel(overall)}` : "Pending review"}
                     </span>
                   </Card>
                 </Link>

@@ -898,13 +898,15 @@ model MockAttempt {
   mockExam     MockExam  @relation(fields: [mockExamId], references: [id], onDelete: Cascade)
   candidateId  String
   candidate    User      @relation("MockAttempts", fields: [candidateId], references: [id], onDelete: Cascade)
-  status       String    @default("in_progress")
-  currentIndex Int       @default(0)
-  startedAt    DateTime  @default(now())
-  submittedAt  DateTime?
-  resultJson   Json?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  status          String    @default("in_progress")
+  currentIndex    Int       @default(0)
+  startedAt       DateTime  @default(now())
+  submittedAt     DateTime?
+  resultJson      Json?
+  resultsReleased Boolean   @default(false)
+  releasedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   partAttempts BlueprintAttempt[] @relation("MockPartAttempts")
 

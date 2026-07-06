@@ -192,6 +192,28 @@ export async function saveMockWritingMarkAction(formData: FormData): Promise<voi
   }
 }
 
+export async function releaseMockResultAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await prisma.mockAttempt.update({
+    where: { id },
+    data: { resultsReleased: true, releasedAt: new Date() }
+  });
+  revalidatePath("/admin/results");
+}
+
+export async function holdMockResultAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await prisma.mockAttempt.update({
+    where: { id },
+    data: { resultsReleased: false, releasedAt: null }
+  });
+  revalidatePath("/admin/results");
+}
+
 export async function setMockAssignmentsAction(formData: FormData): Promise<void> {
   const user = await requireStaff();
   const orgId = await orgIdFor(user.id);
