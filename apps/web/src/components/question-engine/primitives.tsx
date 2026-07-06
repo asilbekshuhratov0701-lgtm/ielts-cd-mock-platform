@@ -36,7 +36,7 @@ export function GapInput({
       aria-label={`Answer ${number}`}
       title={wordLimit ? `Write ${wordLimitPhrase(wordLimit, allowNumber)}` : undefined}
       className={cn(
-        "mx-1 inline-block h-8 min-w-[7ch] max-w-[24ch] rounded-md border bg-surface px-2 align-baseline text-sm text-foreground",
+        "mx-1 inline-block h-8 min-w-[7ch] max-w-[24ch] rounded-md border bg-surface px-2 align-baseline text-base text-foreground",
         "placeholder:font-normal placeholder:text-muted/50",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
         overLimit ? "border-amber-400 ring-1 ring-amber-300" : "border-border"
@@ -64,7 +64,7 @@ export function RadioInput({
           <label
             key={opt.value}
             className={cn(
-              "flex cursor-pointer items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors",
+              "flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-2.5 text-base transition-colors",
               selected
                 ? "border-brand-300 bg-brand-50 text-brand-800"
                 : "border-border hover:bg-brand-50/50"
@@ -75,7 +75,7 @@ export function RadioInput({
               name={name}
               checked={selected}
               onChange={() => onChange(opt.value)}
-              className="mt-0.5 text-brand-600"
+              className="mt-0.5 h-4 w-4 text-brand-600"
             />
             <span>
               <span className="mr-1.5 font-semibold text-brand-700">{opt.value}</span>
@@ -109,7 +109,7 @@ export function CheckboxInput({
           <label
             key={opt.value}
             className={cn(
-              "flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition-colors",
+              "flex items-start gap-3 rounded-lg border px-4 py-2.5 text-base transition-colors",
               checked
                 ? "border-brand-300 bg-brand-50 text-brand-800"
                 : "border-border hover:bg-brand-50/50",
@@ -125,7 +125,7 @@ export function CheckboxInput({
                   checked ? value.filter((v) => v !== opt.value) : [...value, opt.value]
                 )
               }
-              className="mt-0.5 rounded text-brand-600"
+              className="mt-0.5 h-4 w-4 rounded text-brand-600"
             />
             <span>
               <span className="mr-1.5 font-semibold text-brand-700">{opt.value}</span>
@@ -154,7 +154,7 @@ export function SelectMatch({
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || null)}
       className={cn(
-        "inline-block h-8 max-w-[16rem] rounded-md border bg-surface px-2 align-baseline text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+        "inline-block h-8 max-w-[16rem] rounded-md border bg-surface px-2 align-baseline text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
         value ? "border-brand-300 text-brand-800" : "border-border text-muted"
       )}
     >

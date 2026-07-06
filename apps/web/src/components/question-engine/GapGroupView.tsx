@@ -54,7 +54,7 @@ function NoteLayout({ content, byNumber }: { content: NoteContent; byNumber: Map
         {content.sections.map((section, s) => (
           <div key={s}>
             {section.heading ? (
-              <p className="mb-1.5 text-sm font-bold text-foreground">{section.heading}</p>
+              <p className="mb-1.5 text-base font-bold text-foreground">{section.heading}</p>
             ) : null}
             <ul className="space-y-1.5">
               {section.items.map((raw, i) => {
@@ -63,7 +63,7 @@ function NoteLayout({ content, byNumber }: { content: NoteContent; byNumber: Map
                   <li
                     key={i}
                     className={cn(
-                      "flex gap-2 text-sm leading-relaxed text-foreground",
+                      "flex gap-2 text-base leading-relaxed text-foreground",
                       item.sub && "ml-5"
                     )}
                   >
@@ -96,7 +96,7 @@ function SummaryLayout({
       ) : null}
       <div className="space-y-3">
         {content.paragraphs.map((p, i) => (
-          <p key={i} className="text-sm leading-loose text-foreground">
+          <p key={i} className="text-base leading-loose text-foreground">
             {renderText(p, byNumber)}
           </p>
         ))}
@@ -108,7 +108,7 @@ function SummaryLayout({
 function TableLayout({ content, byNumber }: { content: TableContent; byNumber: Map<number, Gap> }) {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
+      <table className="w-full border-collapse text-base">
         <tbody>
           {content.rows.map((row, r) => (
             <tr key={r}>
@@ -141,7 +141,7 @@ function FormLayout({ content, byNumber }: { content: FormContent; byNumber: Map
   return (
     <div className="divide-y divide-border rounded-xl border border-border">
       {content.rows.map((row, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-sm">
+        <div key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-base">
           <span className="min-w-32 font-medium text-muted">{row.label}</span>
           <span className="text-foreground">{renderText(row.value, byNumber)}</span>
         </div>
@@ -161,7 +161,7 @@ function FlowchartLayout({
     <div>
       {content.nodes.map((node, i) => (
         <div key={node.id} className="flex flex-col items-center">
-          <div className="w-full max-w-md rounded-xl border border-border bg-surface px-4 py-3 text-center text-sm leading-relaxed text-foreground">
+          <div className="w-full max-w-md rounded-xl border border-border bg-surface px-4 py-3 text-center text-base leading-relaxed text-foreground">
             {renderText(node.text, byNumber)}
           </div>
           {i < content.nodes.length - 1 ? (
@@ -183,7 +183,7 @@ function SentenceLayout({
   return (
     <div className="flex flex-col gap-[var(--space-question)]">
       {content.sentences.map((sentence, i) => (
-        <p key={i} className="text-sm leading-loose text-foreground">
+        <p key={i} className="text-base leading-loose text-foreground">
           {renderText(sentence, byNumber)}
         </p>
       ))}
@@ -207,12 +207,12 @@ function ImageLayout({ group, byNumber }: { group: GapGroup; byNumber: Map<numbe
       <div className="flex flex-col gap-[var(--space-question)]">
         {content.items
           ? content.items.map((item, i) => (
-              <p key={i} className="text-sm leading-relaxed text-foreground">
+              <p key={i} className="text-base leading-relaxed text-foreground">
                 {renderText(item, byNumber)}
               </p>
             ))
           : group.gaps.map((gap) => (
-              <p key={gap.id} className="flex items-center gap-2 text-sm text-foreground">
+              <p key={gap.id} className="flex items-center gap-2 text-base text-foreground">
                 <span className="font-bold">{gap.number}.</span>
                 <GapSlot gap={gap} />
               </p>

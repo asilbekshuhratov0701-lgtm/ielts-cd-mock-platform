@@ -5,7 +5,7 @@ import type { BaseGroup } from "./types";
 export function NumberBadge({ n, boxed }: { n: number; boxed?: boolean }) {
   if (boxed) {
     return (
-      <span className="mr-2 inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-brand-400 px-1 text-xs font-semibold text-brand-700">
+      <span className="mr-2 inline-flex h-7 min-w-7 items-center justify-center rounded-md border border-brand-400 px-1 text-sm font-semibold text-brand-700">
         {n}
       </span>
     );
@@ -25,11 +25,11 @@ export function QuestionGroupFrame({
   return (
     <section>
       <div className="mb-1 flex items-start justify-between gap-3">
-        <h2 className="text-base font-bold text-foreground">{range}</h2>
+        <h2 className="text-lg font-bold text-foreground">{range}</h2>
         <HelpPopover text={group.helpText} />
       </div>
       {group.instructions ? (
-        <p className="mb-3 text-sm italic text-foreground/70">{group.instructions}</p>
+        <p className="mb-3 text-base italic text-foreground/70">{group.instructions}</p>
       ) : null}
       <div className={cn("rounded-md bg-black/[0.04] p-5")}>
         {group.title ? (

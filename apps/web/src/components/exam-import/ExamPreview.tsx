@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Maximize, Minimize, Play, Sun, Volume2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize, Minimize, Sun, Volume2 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
@@ -73,8 +73,6 @@ function isAnswered(answers: AnswersMap, e: Entry): boolean {
 function TopBar({
   exam,
   audioUrl,
-  audioStarted,
-  onStartAudio,
   volume,
   onVolume,
   remaining,
@@ -86,8 +84,6 @@ function TopBar({
 }: {
   exam: PreviewExam;
   audioUrl: string | null;
-  audioStarted: boolean;
-  onStartAudio: () => void;
   volume: number;
   onVolume: (v: number) => void;
   remaining: number | null;
@@ -125,36 +121,20 @@ function TopBar({
         >
           {timerLabel}
         </span>
-        {exam.module === "listening" ? (
-          audioStarted ? (
-            <span className="flex items-center gap-1.5">
-              <Volume2 className="h-4 w-4 text-muted" />
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={volume}
-                onChange={(e) => onVolume(Number(e.target.value))}
-                className="h-1 w-24 accent-violet-600"
-                aria-label="Volume"
-              />
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={onStartAudio}
-              disabled={!audioUrl}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1 text-sm font-medium",
-                audioUrl
-                  ? "bg-violet-600 text-white hover:bg-violet-700"
-                  : "cursor-not-allowed bg-black/[0.05] text-muted"
-              )}
-            >
-              <Play className="h-3.5 w-3.5" /> Start audio
-            </button>
-          )
+        {exam.module === "listening" && audioUrl ? (
+          <span className="flex items-center gap-1.5">
+            <Volume2 className="h-4 w-4 text-muted" />
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={volume}
+              onChange={(e) => onVolume(Number(e.target.value))}
+              className="h-1 w-24 accent-violet-600"
+              aria-label="Volume"
+            />
+          </span>
         ) : null}
         <button
           type="button"
@@ -199,14 +179,14 @@ function PartBanner({ index, from, to }: { index: number; from: number; to: numb
 
 function PassagePane({ section, index }: { section: PreviewSection; index: number }) {
   return (
-    <div className="h-full overflow-auto px-6 py-5">
-      <h2 className="text-lg font-bold uppercase text-foreground">
+    <div className="h-full overflow-auto px-8 py-6">
+      <h2 className="text-xl font-bold uppercase text-foreground">
         {section.title || `Reading Passage ${index + 1}`}
       </h2>
       {section.subtitle ? (
-        <p className="mt-3 text-base font-bold italic text-foreground">{section.subtitle}</p>
+        <p className="mt-3 text-lg font-bold italic text-foreground">{section.subtitle}</p>
       ) : null}
-      <div className="mt-3 space-y-3 text-sm leading-relaxed text-foreground/85">
+      <div className="mt-3 space-y-3 text-[15px] leading-relaxed text-foreground/85">
         {section.passageBlocks.map((b, i) => (
           <p key={i}>
             {b.label ? <span className="mr-2 font-semibold text-foreground">{b.label}</span> : null}
@@ -220,7 +200,7 @@ function PassagePane({ section, index }: { section: PreviewSection; index: numbe
 
 function GroupsPane({ section }: { section: PreviewSection }) {
   return (
-    <div className="flex flex-col gap-[var(--space-group)] px-6 py-5">
+    <div className="flex flex-col gap-[var(--space-group)] px-8 py-6 text-[15px] leading-relaxed">
       {section.groups.map((g) => (
         <QuestionGroupRenderer key={g.id} group={g} />
       ))}
@@ -282,10 +262,10 @@ function ListeningBody({
 }) {
   return (
     <div className={cn("overflow-auto", fill ? "h-full" : "h-[70vh]")}>
-      <div className="mx-auto max-w-3xl px-6 py-5">
-        <p className="mb-3 text-sm font-bold uppercase text-foreground">Part {index + 1}</p>
+      <div className="mx-auto max-w-4xl px-8 py-8 text-[15px] leading-relaxed">
+        <p className="mb-3 text-base font-bold uppercase text-foreground">Part {index + 1}</p>
         {section.scenario ? (
-          <p className="mb-3 text-sm italic text-muted">{section.scenario}</p>
+          <p className="mb-4 text-base italic text-muted">{section.scenario}</p>
         ) : null}
         <div className="flex flex-col gap-[var(--space-group)]">
           {section.groups.map((g) => (
@@ -313,12 +293,12 @@ function NavCell({
       type="button"
       onClick={onClick}
       className={cn(
-        "h-7 w-7 shrink-0 rounded-full border text-xs font-semibold transition-colors",
+        "h-9 w-9 shrink-0 rounded-lg border text-sm font-semibold transition-colors",
         active
           ? "border-violet-600 bg-violet-600 text-white"
           : answered
             ? "border-violet-300 bg-violet-50 text-violet-700"
-            : "border-border text-muted hover:border-violet-300"
+            : "border-border text-foreground hover:border-violet-400"
       )}
     >
       {n}
@@ -342,8 +322,8 @@ function BottomNav({
   onStep: (dir: -1 | 1) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-border bg-surface px-4 py-2">
-      <div className="flex items-center gap-5 overflow-x-auto">
+    <div className="flex items-center justify-between gap-4 border-t border-border bg-surface px-6 py-3">
+      <div className="flex flex-1 items-center gap-8 overflow-x-auto">
         {exam.sections.map((section, si) => {
           const partEntries = entries.filter((e) => e.section === si);
           if (partEntries.length === 0) return null;
@@ -353,8 +333,8 @@ function BottomNav({
             <div key={section.id} className="flex shrink-0 items-center gap-2">
               {isActive ? (
                 <>
-                  <span className="text-sm font-bold text-foreground">Part {si + 1}</span>
-                  <div className="flex items-center gap-1.5">
+                  <span className="text-base font-bold text-foreground">Part {si + 1}</span>
+                  <div className="flex items-center gap-2">
                     {partEntries.map((e) => (
                       <NavCell
                         key={e.number}
@@ -370,10 +350,10 @@ function BottomNav({
                 <button
                   type="button"
                   onClick={() => onPick(partEntries[0]!.number)}
-                  className="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-black/[0.05]"
+                  className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-base transition-colors hover:bg-black/[0.05]"
                 >
                   <span className="font-bold text-foreground">Part {si + 1}</span>
-                  <span className="text-muted">
+                  <span className="text-sm text-muted">
                     {answeredCount} of {partEntries.length}
                   </span>
                 </button>
@@ -386,18 +366,18 @@ function BottomNav({
         <button
           type="button"
           onClick={() => onStep(-1)}
-          className="rounded-md bg-violet-700 p-2 text-white hover:bg-violet-800"
+          className="rounded-lg bg-violet-700 p-2.5 text-white hover:bg-violet-800"
           aria-label="Previous question"
         >
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-5 w-5" />
         </button>
         <button
           type="button"
           onClick={() => onStep(1)}
-          className="rounded-md bg-violet-700 p-2 text-white hover:bg-violet-800"
+          className="rounded-lg bg-violet-700 p-2.5 text-white hover:bg-violet-800"
           aria-label="Next question"
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-5 w-5" />
         </button>
       </div>
     </div>
@@ -427,7 +407,6 @@ function Shell({
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const maxRef = useRef(0);
-  const [audioStarted, setAudioStarted] = useState(false);
   const [volume, setVolume] = useState(1);
 
   const finishFormRef = useRef<HTMLFormElement>(null);
@@ -467,6 +446,23 @@ function Shell({
     if (next !== undefined) setActiveNum(next);
   }
 
+  useEffect(() => {
+    if (exam.module !== "listening" || !audioUrl) return;
+    const el = audioRef.current;
+    if (!el) return;
+    el.volume = volume;
+    const tryPlay = () => {
+      void el.play().catch(() => {});
+    };
+    tryPlay();
+    const onFirstInput = () => {
+      if (el.paused && el.currentTime === 0) tryPlay();
+      window.removeEventListener("pointerdown", onFirstInput);
+    };
+    window.addEventListener("pointerdown", onFirstInput);
+    return () => window.removeEventListener("pointerdown", onFirstInput);
+  }, [audioUrl, exam.module, volume]);
+
   const immersive = Boolean(live);
   const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
@@ -495,11 +491,6 @@ function Shell({
       <TopBar
         exam={exam}
         audioUrl={audioUrl}
-        audioStarted={audioStarted}
-        onStartAudio={() => {
-          setAudioStarted(true);
-          void audioRef.current?.play();
-        }}
         volume={volume}
         onVolume={(v) => {
           setVolume(v);
@@ -539,6 +530,7 @@ function Shell({
         <audio
           ref={audioRef}
           src={audioUrl}
+          autoPlay
           onTimeUpdate={() => {
             const t = audioRef.current?.currentTime ?? 0;
             maxRef.current = Math.max(maxRef.current, t);

@@ -9,7 +9,7 @@ function ConnectedRadio({ question, boxed }: { question: RadioQuestion; boxed: b
   const [value, set] = useAnswer(question.id);
   return (
     <div>
-      <p className="mb-2 text-sm text-foreground">
+      <p className="mb-2 text-base text-foreground">
         <NumberBadge n={question.number} boxed={boxed} />
         {question.stem}
       </p>
@@ -57,7 +57,7 @@ export function RadioGroupView({ group }: { group: RadioGroup }) {
           )}
         </div>
         <div className="overflow-x-auto">
-          <table className="border-collapse text-sm">
+          <table className="border-collapse text-base">
             <thead>
               <tr>
                 <th className="border border-border bg-brand-50 px-3 py-2 text-left" />
@@ -102,7 +102,7 @@ export function CheckboxGroupView({ group }: { group: CheckboxGroup }) {
   const [from] = group.numberRange;
   return (
     <div>
-      <p className="mb-2 text-sm text-foreground">
+      <p className="mb-2 text-base text-foreground">
         <NumberBadge n={from} boxed />
         {group.stem}
       </p>
@@ -131,7 +131,7 @@ function ConnectedPrompt({
 }) {
   const [value, set] = useAnswer(promptId);
   return (
-    <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
+    <div className="flex flex-wrap items-center gap-2 text-base text-foreground">
       <NumberBadge n={number} boxed={boxed} />
       <span className="flex-1">{text}</span>
       <SelectMatch value={value as string | null} onChange={set} options={options} />
@@ -154,7 +154,7 @@ function OptionsPanel({ options }: { options: { id: string; text: string }[] }) 
   return (
     <div className="rounded-xl border border-dashed border-border bg-surface p-3">
       <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Options</p>
-      <ul className="space-y-1 text-sm text-foreground">
+      <ul className="space-y-1 text-base text-foreground">
         {options.map((o) => (
           <li key={o.id}>
             <span className="mr-1.5 font-semibold text-brand-700">{o.id}</span>
@@ -172,7 +172,7 @@ export function SelectGroupView({ group }: { group: SelectGroup }) {
     return (
       <div className="space-y-4">
         {group.optionBank.length > 0 ? <OptionsPanel options={group.optionBank} /> : null}
-        <div className="space-y-3 text-sm leading-loose text-foreground">
+        <div className="space-y-3 text-base leading-loose text-foreground">
           {group.paragraphs.map((para, i) => (
             <p key={i}>
               {para.split(/(\{\{\d+\}\})/g).map((part, j) => {
