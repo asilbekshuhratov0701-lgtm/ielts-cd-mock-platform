@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Maximize, Minimize, Sun, Volume2 } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Maximize,
+  Minimize,
+  StickyNote,
+  Sun,
+  Volume2
+} from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
 import { saveBlueprintAnswers, submitBlueprintAttemptAction } from "@/lib/blueprint-play-actions";
 import { submitMockPartAction } from "@/lib/mock-actions";
+import { SelectionLayer, type ExamNote } from "@/components/exam-import/SelectionLayer";
 import { cn } from "@/lib/cn";
 
 export interface LiveAttempt {
@@ -80,7 +89,9 @@ function TopBar({
   partProgress,
   finishLabel,
   isFullscreen,
-  onToggleFullscreen
+  onToggleFullscreen,
+  noteCount = 0,
+  onOpenNotes
 }: {
   exam: PreviewExam;
   audioUrl: string | null;
@@ -92,6 +103,8 @@ function TopBar({
   finishLabel?: string;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  noteCount?: number;
+  onOpenNotes?: () => void;
 }) {
   const timerLabel =
     remaining !== null
@@ -135,6 +148,15 @@ function TopBar({
               aria-label="Volume"
             />
           </span>
+        ) : null}
+        {noteCount > 0 && onOpenNotes ? (
+          <button
+            type="button"
+            onClick={onOpenNotes}
+            className="inline-flex items-center gap-1.5 rounded-md bg-brand-50 px-3 py-1 text-sm font-medium text-brand-700 hover:bg-brand-100"
+          >
+            <StickyNote className="h-4 w-4" /> Written Notes ({noteCount})
+          </button>
         ) : null}
         <button
           type="button"
@@ -464,6 +486,9 @@ function Shell({
   }, [audioUrl, exam.module, volume]);
 
   const immersive = Boolean(live);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [notes, setNotes] = useState<ExamNote[]>([]);
+  const [notesOpen, setNotesOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
     if (!immersive) return;
@@ -508,6 +533,8 @@ function Shell({
         }
         isFullscreen={immersive ? isFullscreen : undefined}
         onToggleFullscreen={immersive ? toggleFullscreen : undefined}
+        noteCount={immersive ? notes.length : 0}
+        onOpenNotes={immersive ? () => setNotesOpen(true) : undefined}
       />
 
       {live ? (
@@ -547,7 +574,7 @@ function Shell({
         <PartBanner index={activePart} from={partFrom} to={partTo} />
       ) : null}
 
-      <div className={immersive ? "min-h-0 flex-1 overflow-hidden" : ""}>
+      <div ref={bodyRef} className={immersive ? "min-h-0 flex-1 overflow-hidden" : ""}>
         {section ? (
           exam.module === "reading" && section.passageBlocks.length > 0 ? (
             <ReadingBody section={section} index={activePart} fill={immersive} />
@@ -558,6 +585,16 @@ function Shell({
           <div className="p-6 text-sm text-muted">No questions in this exam.</div>
         )}
       </div>
+
+      {immersive ? (
+        <SelectionLayer
+          containerRef={bodyRef}
+          notes={notes}
+          setNotes={setNotes}
+          panelOpen={notesOpen}
+          setPanelOpen={setNotesOpen}
+        />
+      ) : null}
 
       <BottomNav
         exam={exam}
