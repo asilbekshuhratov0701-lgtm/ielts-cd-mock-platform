@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma, Prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { createBlueprintFromJson } from "@/lib/exam-blueprint";
-import { saveMediaObject, safeKeySegment } from "@/lib/media-storage";
+import { saveMediaObject, safeKeySegment, mediaPublicUrl } from "@/lib/media-storage";
 
 async function requireStaff() {
   const session = await auth();
@@ -39,6 +39,72 @@ export async function importBlueprintAction(formData: FormData): Promise<void> {
 
   const result = await createBlueprintFromJson({ orgId, createdById: user.id, rawJson: json });
   if (!result.ok) redirect("/admin/exam-import?error=invalid");
+  refresh(result.blueprintId);
+  redirect(`/admin/exam-import/${result.blueprintId}`);
+}
+
+export async function createWritingExamAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const title = String(formData.get("title") ?? "").trim();
+  const task1 = String(formData.get("task1") ?? "").trim();
+  const task2 = String(formData.get("task2") ?? "").trim();
+  if (!title || !task1 || !task2) redirect("/admin/exam-import?error=writing_incomplete");
+
+  let imageUrl: string | undefined;
+  const file = formData.get("task1Image");
+  if (file instanceof File && file.size > 0) {
+    const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
+    const key = `writing-${safeKeySegment(title)}-${Date.now()}.${ext}`;
+    await saveMediaObject(key, new Uint8Array(await file.arrayBuffer()));
+    imageUrl = mediaPublicUrl(key);
+  }
+
+  const examId = `writing-${safeKeySegment(title)}-${Date.now()}`;
+  const json = {
+    schemaVersion: 1,
+    examId,
+    module: "writing",
+    title,
+    totalQuestions: 2,
+    timerSource: "fixed",
+    timeLimitMinutes: 60,
+    sections: [
+      {
+        id: "w-s1",
+        order: 0,
+        title: "Writing Task 1",
+        groups: [
+          {
+            id: "w-g1",
+            questionType: "writing_task_1",
+            primitive: "essay",
+            instructions: "You should spend about 20 minutes on this task.",
+            questions: [
+              { type: "essay", id: "task1", number: 1, prompt: task1, minWords: 150, imageUrl }
+            ]
+          }
+        ]
+      },
+      {
+        id: "w-s2",
+        order: 1,
+        title: "Writing Task 2",
+        groups: [
+          {
+            id: "w-g2",
+            questionType: "writing_task_2",
+            primitive: "essay",
+            instructions: "You should spend about 40 minutes on this task.",
+            questions: [{ type: "essay", id: "task2", number: 2, prompt: task2, minWords: 250 }]
+          }
+        ]
+      }
+    ]
+  };
+
+  const result = await createBlueprintFromJson({ orgId, createdById: user.id, rawJson: json });
+  if (!result.ok) redirect("/admin/exam-import?error=writing_invalid");
   refresh(result.blueprintId);
   redirect(`/admin/exam-import/${result.blueprintId}`);
 }

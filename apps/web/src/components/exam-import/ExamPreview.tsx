@@ -11,8 +11,8 @@ import {
   Volume2
 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
-import type { AnswersMap } from "@/components/question-engine/types";
-import { AnswersProvider, useAnswers } from "@/components/question-engine/answers-store";
+import type { AnswersMap, EssayGroup } from "@/components/question-engine/types";
+import { AnswersProvider, useAnswer, useAnswers } from "@/components/question-engine/answers-store";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
 import {
   saveBlueprintAnswers,
@@ -315,6 +315,98 @@ function ListeningBody({
   );
 }
 
+function EssayEditor({ taskId, index }: { taskId: string; index: number }) {
+  const [value, set] = useAnswer(taskId);
+  const text = (value as string) ?? "";
+  const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  return (
+    <div className="flex h-full flex-col px-6 py-5">
+      <textarea
+        value={text}
+        onChange={(e) => set(e.target.value)}
+        placeholder={`Write part ${index + 1} here...`}
+        className="w-full flex-1 resize-none rounded-xl border border-border bg-surface p-4 text-base leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+      />
+      <p className="mt-2 shrink-0 text-right text-sm font-medium text-muted">Words: {wordCount}</p>
+    </div>
+  );
+}
+
+function WritingTaskPane({ group }: { group: EssayGroup }) {
+  const task = group.tasks[0];
+  if (!task) return <div className="p-6 text-sm text-muted">No task.</div>;
+  return (
+    <div className="h-full overflow-auto px-8 py-6">
+      <h2 className="text-base font-bold uppercase text-foreground">Writing Task {task.number}</h2>
+      {group.instructions ? (
+        <p className="mt-1 text-sm italic text-muted">{group.instructions}</p>
+      ) : null}
+      <div className="mt-3 rounded-lg border border-border p-4 text-base font-semibold leading-relaxed text-foreground">
+        <p className="whitespace-pre-wrap">{task.prompt}</p>
+        {typeof task.minWords === "number" ? (
+          <p className="mt-3">Write at least {task.minWords} words.</p>
+        ) : null}
+      </div>
+      {task.imageUrl ? (
+        <img
+          src={task.imageUrl}
+          alt={`Task ${task.number}`}
+          className="mt-4 max-w-full rounded-lg border border-border"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function WritingBody({
+  section,
+  index,
+  fill
+}: {
+  section: PreviewSection;
+  index: number;
+  fill?: boolean;
+}) {
+  const [leftPct, setLeftPct] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const group = section.groups.find((g): g is EssayGroup => g.inputKind === "essay");
+  const task = group?.tasks[0];
+
+  return (
+    <div ref={containerRef} className={cn("flex", fill ? "h-full" : "h-[70vh]")}>
+      <div style={{ width: `${leftPct}%` }} className="h-full border-r border-border">
+        {group ? (
+          <WritingTaskPane group={group} />
+        ) : (
+          <div className="p-6 text-sm text-muted">No writing task.</div>
+        )}
+      </div>
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        onPointerDown={(e) => {
+          dragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!dragging.current || !containerRef.current) return;
+          const r = containerRef.current.getBoundingClientRect();
+          const pct = ((e.clientX - r.left) / r.width) * 100;
+          setLeftPct(Math.min(70, Math.max(30, pct)));
+        }}
+        onPointerUp={() => {
+          dragging.current = false;
+        }}
+        className="w-1.5 shrink-0 cursor-col-resize bg-border hover:bg-violet-400"
+      />
+      <div className="h-full flex-1 overflow-hidden">
+        {task ? <EssayEditor taskId={task.id} index={index} /> : null}
+      </div>
+    </div>
+  );
+}
+
 function NavCell({
   n,
   active,
@@ -605,10 +697,22 @@ function Shell({
       {exam.module === "reading" ? (
         <PartBanner index={activePart} from={partFrom} to={partTo} />
       ) : null}
+      {exam.module === "writing" && section ? (
+        <div className="border-b border-border bg-black/[0.03] px-6 py-3">
+          <p className="text-sm font-bold text-foreground">Part {activePart + 1}</p>
+          {section.groups.find((g): g is EssayGroup => g.inputKind === "essay")?.instructions ? (
+            <p className="text-sm text-foreground/70">
+              {section.groups.find((g): g is EssayGroup => g.inputKind === "essay")?.instructions}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       <div ref={bodyRef} className={immersive ? "min-h-0 flex-1 overflow-hidden" : ""}>
         {section ? (
-          exam.module === "reading" && section.passageBlocks.length > 0 ? (
+          exam.module === "writing" ? (
+            <WritingBody section={section} index={activePart} fill={immersive} />
+          ) : exam.module === "reading" && section.passageBlocks.length > 0 ? (
             <ReadingBody section={section} index={activePart} fill={immersive} />
           ) : (
             <ListeningBody section={section} index={activePart} fill={immersive} />

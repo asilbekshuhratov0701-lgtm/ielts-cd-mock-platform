@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Layers, Plus } from "lucide-react";
+import { ChevronRight, Layers, PenLine, Plus } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { PageShell } from "@/components/Shell";
@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExamImporter } from "@/components/exam-import/ExamImporter";
+import { createWritingExamAction } from "@/lib/exam-blueprint-actions";
 import { createMockAction } from "@/lib/mock-actions";
 import { MODULE_ORDER } from "@/lib/mock";
 
@@ -20,11 +21,15 @@ const errorText: Record<string, string> = {
   empty: "No JSON was submitted.",
   parse: "The file was not valid JSON.",
   invalid: "The exam did not pass validation — fix the errors and try again.",
-  mock_incomplete: "Give the mock a title and pick at least one part."
+  mock_incomplete: "Give the mock a title and pick at least one part.",
+  writing_incomplete: "Give the writing exam a title and both task topics.",
+  writing_invalid: "Could not create the writing exam — please try again."
 };
 
 const field =
   "h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground";
+const textArea =
+  "w-full rounded-lg border border-border bg-surface p-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40";
 
 export default async function ExamImportPage({
   searchParams
@@ -64,6 +69,54 @@ export default async function ExamImportPage({
       ) : null}
 
       <ExamImporter />
+
+      <Card className="p-5">
+        <h2 className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+          <PenLine className="h-4 w-4 text-brand-600" /> Create a writing exam
+        </h2>
+        <p className="mb-4 text-sm text-muted">
+          No JSON needed. Add a Task 1 topic with a chart/diagram image, and a Task 2 topic. Creates
+          a Writing exam you can add to a full mock below.
+        </p>
+        <form action={createWritingExamAction} className="space-y-4">
+          <input type="text" name="title" placeholder="Title (e.g. Writing – Test 4)" className={field} required />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Task 1 — topic + image
+              </span>
+              <textarea
+                name="task1"
+                rows={4}
+                required
+                placeholder="The chart below shows… Summarise the information…"
+                className={textArea}
+              />
+              <input
+                type="file"
+                name="task1Image"
+                accept="image/*"
+                className={`${field} file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-brand-700`}
+              />
+            </div>
+            <div className="space-y-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+                Task 2 — topic
+              </span>
+              <textarea
+                name="task2"
+                rows={4}
+                required
+                placeholder="Some people believe… To what extent do you agree or disagree?"
+                className={textArea}
+              />
+            </div>
+          </div>
+          <Button type="submit" variant="secondary">
+            <PenLine className="h-4 w-4" /> Create writing exam
+          </Button>
+        </form>
+      </Card>
 
       <Card className="p-5">
         <h2 className="mb-3 font-semibold text-foreground">Uploaded parts</h2>
