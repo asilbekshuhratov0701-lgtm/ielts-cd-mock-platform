@@ -13,7 +13,6 @@ import {
   ScrollText,
   Settings,
   Shield,
-  Sparkles,
   Users,
   type LucideIcon
 } from "lucide-react";
@@ -33,8 +32,7 @@ const NAV: NavItem[] = [
   { href: "/admin/live", label: "Live Exam Center", icon: Activity },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/question-bank", label: "Question Bank", icon: Library },
-  { href: "/admin/exam-import", label: "Exam Import (JSON)", icon: FileJson },
-  { href: "/admin/imports", label: "AI Import", icon: Sparkles },
+  { href: "/admin/exam-import", label: "Exam Builder", icon: FileJson },
   { href: "/admin/media", label: "Media Library", icon: ImageIcon },
   { href: "/admin/users", label: "Users & Roles", icon: Shield },
   { href: "/admin/reports", label: "Reports", icon: FileBarChart },
