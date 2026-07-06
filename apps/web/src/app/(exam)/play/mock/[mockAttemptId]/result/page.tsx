@@ -6,7 +6,7 @@ import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { skillBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
+import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 
 interface PartSummary {
   module: string;
@@ -43,7 +43,7 @@ export default async function MockResultPage({
     totalScore?: number;
   } | null;
   const parts = summary?.parts ?? [];
-  const partBands = parts.map((p) => ({ ...p, band: skillBand(p.module, p.rawScore, p.totalScore) }));
+  const partBands = parts.map((p) => ({ ...p, band: partSummaryBand(p) }));
   const overall = overallBandFrom(partBands.map((p) => p.band));
 
   return (
@@ -74,10 +74,19 @@ export default async function MockResultPage({
                 <span className="capitalize">{p.module}</span>
               </div>
               {p.module === "writing" ? (
-                <p className="mt-2 text-2xl font-bold text-muted">
-                  —
-                  <span className="ml-2 align-middle text-xs font-normal">examiner-marked</span>
-                </p>
+                p.band === null ? (
+                  <p className="mt-2 text-2xl font-bold text-muted">
+                    —
+                    <span className="ml-2 align-middle text-xs font-normal">
+                      examiner-marked (pending)
+                    </span>
+                  </p>
+                ) : (
+                  <>
+                    <p className="mt-2 text-3xl font-bold text-brand-700">{bandLabel(p.band)}</p>
+                    <p className="text-xs text-muted">examiner-marked</p>
+                  </>
+                )
               ) : (
                 <>
                   <p className="mt-2 text-3xl font-bold text-brand-700">{bandLabel(p.band)}</p>

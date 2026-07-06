@@ -13,6 +13,18 @@ export function skillBand(module: string, raw: number, total: number): number | 
   return bandFromRaw(table, equivalent);
 }
 
+export interface SummaryPart {
+  module: string;
+  rawScore: number;
+  totalScore: number;
+  band?: number | null;
+}
+
+export function partSummaryBand(p: SummaryPart): number | null {
+  if (p.module === "writing") return typeof p.band === "number" ? p.band : null;
+  return skillBand(p.module, p.rawScore, p.totalScore);
+}
+
 export function overallBandFrom(bands: (number | null)[]): number | null {
   const present = bands.filter((b): b is number => b !== null);
   if (present.length === 0) return null;

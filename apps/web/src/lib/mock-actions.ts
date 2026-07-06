@@ -5,9 +5,12 @@ import { redirect } from "next/navigation";
 import { prisma, Prisma } from "@ielts/db";
 import {
   computeDeadline,
+  overallWritingBand,
   scoreImportedExam,
+  writingTaskBand,
   type CandidateAnswer,
-  type ImportAnswerKey
+  type ImportAnswerKey,
+  type WritingCriteria
 } from "@ielts/core";
 import { auth } from "@/auth";
 import { MODULE_ORDER, moduleRank } from "@/lib/mock";
@@ -122,6 +125,71 @@ export async function deleteMockAction(formData: FormData): Promise<void> {
   await prisma.mockExam.delete({ where: { id } });
   revalidatePath("/admin/exam-import");
   redirect("/admin/exam-import");
+}
+
+export async function saveMockWritingMarkAction(formData: FormData): Promise<void> {
+  await requireStaff();
+  const attemptId = String(formData.get("attemptId") ?? "");
+  if (!attemptId) return;
+  const part = await prisma.blueprintAttempt.findUnique({
+    where: { id: attemptId },
+    include: { blueprint: true }
+  });
+  if (!part || part.blueprint.module !== "writing") return;
+
+  const engine = part.blueprint.engineJson as unknown as {
+    sections?: { groups?: { inputKind?: string; tasks?: { number: number }[] }[] }[];
+  };
+  const taskNumbers = (engine.sections ?? [])
+    .flatMap((s) => s.groups ?? [])
+    .filter((g) => g.inputKind === "essay")
+    .flatMap((g) => g.tasks ?? [])
+    .map((t) => t.number)
+    .sort((a, b) => a - b);
+
+  const num = (name: string) => {
+    const v = Number(formData.get(name));
+    return Number.isFinite(v) ? Math.max(0, Math.min(9, v)) : 0;
+  };
+  const tasks = taskNumbers.map((n) => {
+    const criteria: WritingCriteria = {
+      taskResponse: num(`t${n}_tr`),
+      coherenceCohesion: num(`t${n}_cc`),
+      lexicalResource: num(`t${n}_lr`),
+      grammaticalRange: num(`t${n}_gr`)
+    };
+    return { taskNumber: n, criteria, taskBand: writingTaskBand(criteria) };
+  });
+
+  let writingBand: number;
+  if (tasks.length >= 2) writingBand = overallWritingBand(tasks[0]!.taskBand, tasks[1]!.taskBand);
+  else if (tasks.length === 1) writingBand = tasks[0]!.taskBand;
+  else writingBand = 0;
+
+  await prisma.blueprintAttempt.update({
+    where: { id: attemptId },
+    data: {
+      rawScore: null,
+      totalScore: null,
+      resultJson: { kind: "writing", tasks, writingBand } as unknown as Prisma.InputJsonValue
+    }
+  });
+
+  if (part.mockAttemptId) {
+    const ma = await prisma.mockAttempt.findUnique({ where: { id: part.mockAttemptId } });
+    const summary = ma?.resultJson as unknown as {
+      parts?: { module: string; band?: number | null }[];
+    } | null;
+    if (ma && summary?.parts) {
+      for (const p of summary.parts) if (p.module === "writing") p.band = writingBand;
+      await prisma.mockAttempt.update({
+        where: { id: ma.id },
+        data: { resultJson: summary as unknown as Prisma.InputJsonValue }
+      });
+    }
+    revalidatePath(`/admin/exam-import/mock/${ma?.mockExamId}/attempt/${part.mockAttemptId}`);
+    revalidatePath(`/admin/exam-import/mock/${ma?.mockExamId}`);
+  }
 }
 
 export async function setMockAssignmentsAction(formData: FormData): Promise<void> {
