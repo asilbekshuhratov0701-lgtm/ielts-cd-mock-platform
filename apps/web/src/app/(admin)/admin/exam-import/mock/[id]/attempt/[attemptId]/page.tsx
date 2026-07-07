@@ -109,7 +109,8 @@ export default async function MockAttemptReviewPage({
 
         if (part.blueprint.module === "writing") {
           const tasks = essayTasks(engine);
-          const mark = part.resultJson as WritingResult | null;
+          const rj = part.resultJson as unknown as Partial<WritingResult> | null;
+          const mark = rj && Array.isArray(rj.tasks) ? (rj as WritingResult) : null;
           return (
             <Card key={part.id} className="p-5">
               <div className="mb-3 flex items-center justify-between gap-3">
