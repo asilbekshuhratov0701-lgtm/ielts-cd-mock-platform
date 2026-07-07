@@ -3,8 +3,6 @@ import Link from "next/link";
 import {
   BarChart3,
   Bell,
-  BookOpen,
-  FileText,
   LayoutDashboard,
   Play,
   User,
@@ -20,9 +18,7 @@ type NavItem = { href: string; label: string; icon: LucideIcon; exact?: boolean 
 
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/exams", label: "Exams", icon: BookOpen },
-  { href: "/play", label: "Take a Mock", icon: Play },
-  { href: "/results", label: "Results", icon: FileText },
+  { href: "/play", label: "Exams", icon: Play },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/profile", label: "Profile", icon: User }
 ];
