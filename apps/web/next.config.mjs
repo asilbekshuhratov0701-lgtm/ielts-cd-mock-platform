@@ -4,7 +4,14 @@ const nextConfig = {
   // Consume workspace packages from source (no pre-build step).
   transpilePackages: ["@ielts/ui", "@ielts/core", "@ielts/db", "@ielts/ai", "@ielts/validators"],
   // Native / server-only deps must not be bundled into client/edge output.
-  serverExternalPackages: ["@prisma/client", "@node-rs/argon2", "@anthropic-ai/sdk", "unpdf"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "@node-rs/argon2",
+    "@anthropic-ai/sdk",
+    "unpdf",
+    "exceljs",
+    "pdf-lib"
+  ],
   experimental: {
     // Listening audio uploads (attachAudioAction) are large. Two separate
     // limits gate them: the Server Action body limit (default 1 MB) and, because
