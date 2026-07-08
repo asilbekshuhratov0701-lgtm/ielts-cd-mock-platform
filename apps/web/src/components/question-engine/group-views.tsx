@@ -196,7 +196,9 @@ function InlineSelect({
   options: { id: string; text: string }[];
 }) {
   const [value, set] = useAnswer(promptId);
-  return <SelectMatch value={value as string | null} onChange={set} options={options} />;
+  return (
+    <SelectMatch value={value as string | null} onChange={set} options={options} letterOnly={false} />
+  );
 }
 
 function OptionsPanel({ options }: { options: { id: string; text: string }[] }) {

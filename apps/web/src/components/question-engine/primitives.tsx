@@ -60,6 +60,8 @@ export function RadioInput({
     <div className="flex flex-col gap-[var(--space-option)]">
       {options.map((opt) => {
         const selected = value === opt.value;
+        const norm = (s: string) => s.trim().toUpperCase().replace(/[_\s]+/g, " ");
+        const sameAsLabel = norm(opt.value) === norm(opt.label);
         return (
           <label
             key={opt.value}
@@ -77,10 +79,14 @@ export function RadioInput({
               onChange={() => onChange(opt.value)}
               className="mt-0.5 h-4 w-4 text-brand-600"
             />
-            <span>
-              <span className="mr-1.5 font-semibold text-brand-700">{opt.value}</span>
-              {opt.label}
-            </span>
+            {sameAsLabel ? (
+              <span className="font-semibold text-brand-700">{opt.label.replace(/_/g, " ")}</span>
+            ) : (
+              <span>
+                <span className="mr-1.5 font-semibold text-brand-700">{opt.value}</span>
+                {opt.label}
+              </span>
+            )}
           </label>
         );
       })}
@@ -142,12 +148,14 @@ export function SelectMatch({
   value,
   onChange,
   options,
-  placeholder = "Select"
+  placeholder = "Select",
+  letterOnly = true
 }: {
   value: string | null;
   onChange: (value: string | null) => void;
   options: { id: string; text: string }[];
   placeholder?: string;
+  letterOnly?: boolean;
 }) {
   return (
     <select
@@ -161,7 +169,7 @@ export function SelectMatch({
       <option value="">{placeholder}</option>
       {options.map((o) => (
         <option key={o.id} value={o.id} className="text-foreground">
-          {o.text}
+          {letterOnly ? o.id : o.text}
         </option>
       ))}
     </select>
