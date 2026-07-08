@@ -56,7 +56,7 @@ function csvCell(value: string | number | null): string {
 function toCsv(columns: string[], rows: (string | number | null)[][]): string {
   const lines = [columns.map(csvCell).join(",")];
   for (const row of rows) lines.push(row.map(csvCell).join(","));
-  return `﻿${lines.join("\r\n")}`;
+  return `\ufeff${lines.join("\r\n")}`;
 }
 
 async function toXlsx(sheetName: string, columns: string[], rows: (string | number | null)[][]): Promise<Buffer> {

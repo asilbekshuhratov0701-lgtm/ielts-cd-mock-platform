@@ -12,7 +12,7 @@ function pdfSafe(text: string): string {
     .replace(/[“”„″]/g, '"')
     .replace(/[–—]/g, "-")
     .replace(/…/g, "...")
-    .replace(/[ \t]/g, " ")
+    .replace(/[\u00A0\t]/g, " ")
     .replace(/[^\n\x20-\x7E\xA0-\xFF]/g, "?");
 }
 

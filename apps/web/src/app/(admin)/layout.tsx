@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import {
   Activity,
   BarChart3,
+  Boxes,
   ClipboardCheck,
   FileBarChart,
   FileJson,
@@ -25,6 +26,7 @@ type NavItem = { href: string; label: string; icon: LucideIcon; exact?: boolean 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/candidates", label: "Candidates", icon: Users },
+  { href: "/admin/groups", label: "Groups", icon: Boxes },
   { href: "/admin/exams", label: "Exams", icon: FileText },
   { href: "/admin/writing", label: "Writing Evaluation", icon: PenLine },
   { href: "/admin/results", label: "Results", icon: ClipboardCheck },

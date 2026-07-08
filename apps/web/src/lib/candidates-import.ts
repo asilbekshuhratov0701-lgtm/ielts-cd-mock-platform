@@ -125,7 +125,7 @@ function csvToMatrix(text: string, delimiter: string): string[][] {
 }
 
 function parseCsv(text: string): Record<string, string>[] {
-  const trimmed = text.replace(/^﻿/, "");
+  const trimmed = text.replace(/^\ufeff/, "");
   const firstLine = trimmed.split(/\r?\n/, 1)[0] ?? "";
   const matrix = csvToMatrix(trimmed, detectDelimiter(firstLine));
   if (matrix.length === 0) return [];
