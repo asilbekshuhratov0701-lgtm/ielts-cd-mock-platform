@@ -5,8 +5,10 @@ export const metadata = { title: "Login" };
 export default function LoginPage() {
   return (
     <div>
-      <h1 className="text-xl font-semibold text-foreground">Welcome back</h1>
-      <p className="mt-1 text-sm text-muted">Log in to continue your IELTS practice.</p>
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Login</h1>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted">
+        Enter your email and password below to log into your account.
+      </p>
       <div className="mt-6">
         <LoginForm />
       </div>

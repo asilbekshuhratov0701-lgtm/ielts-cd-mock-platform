@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { GraduationCap } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 export function Logo({ className, href = "/" }: { className?: string; href?: string }) {
@@ -8,11 +7,14 @@ export function Logo({ className, href = "/" }: { className?: string; href?: str
       href={href}
       className={cn("inline-flex items-center gap-2 font-bold text-foreground", className)}
     >
-      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-gradient text-white shadow-soft">
-        <GraduationCap className="h-5 w-5" />
+      <span
+        className="flex h-8 w-8 items-center justify-center rounded-xl font-extrabold text-white shadow-soft"
+        style={{ background: "linear-gradient(135deg,#2563EB,#7C5CFC)" }}
+      >
+        Z
       </span>
       <span className="tracking-tight">
-        IELTS<span className="text-brand-600"> Mock</span>
+        Ziyo<span className="text-brand-600">Mock</span>
       </span>
     </Link>
   );
