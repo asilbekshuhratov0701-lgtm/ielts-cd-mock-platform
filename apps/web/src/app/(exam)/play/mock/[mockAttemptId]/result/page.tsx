@@ -39,25 +39,51 @@ export default async function MockResultPage({
 
   if (!attempt.resultsReleased) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-12">
-        <Card className="p-8 text-center shadow-card">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
-            <CheckCircle2 className="h-7 w-7" />
-          </span>
-          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
-            Exam submitted
+      <div className="relative flex min-h-[82vh] items-center justify-center overflow-hidden px-6 py-16">
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+@keyframes zm-thanks-grad{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes zm-thanks-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes zm-thanks-rise{0%{opacity:0;transform:translateY(18px) scale(.98)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.zm-thanks-bg{background:linear-gradient(120deg,#eaf1ff,#f0eaff,#e6f6ff,#efe8ff,#eaf1ff);background-size:300% 300%;animation:zm-thanks-grad 16s ease infinite;}
+.zm-thanks-emoji{animation:zm-thanks-float 3.5s ease-in-out infinite;}
+.zm-thanks-title{background:linear-gradient(135deg,#2563EB,#7C5CFC);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.zm-thanks-card{animation:zm-thanks-rise .7s cubic-bezier(.16,1,.3,1) both;}
+@media (prefers-reduced-motion: reduce){.zm-thanks-bg,.zm-thanks-emoji,.zm-thanks-card{animation:none!important;}}
+            `
+          }}
+        />
+        <div className="zm-thanks-bg absolute inset-0 -z-10" />
+        <div className="absolute -left-24 top-6 -z-10 h-72 w-72 rounded-full bg-brand-300/30 blur-3xl" />
+        <div className="absolute -right-24 bottom-6 -z-10 h-72 w-72 rounded-full bg-violet-300/30 blur-3xl" />
+
+        <div className="zm-thanks-card w-full max-w-xl rounded-3xl border border-white/60 bg-white/70 p-10 text-center shadow-[0_24px_60px_rgba(37,99,235,0.16)] backdrop-blur-xl sm:p-14">
+          <div
+            className="zm-thanks-emoji mx-auto mb-6 text-7xl sm:text-8xl"
+            role="img"
+            aria-label="smiling face"
+          >
+            😊
+          </div>
+          <h1 className="zm-thanks-title text-3xl font-extrabold italic leading-tight tracking-tight sm:text-4xl">
+            Thank you for completing the mock exam.
           </h1>
-          <p className="mt-1 text-sm text-muted">{attempt.mockExam.title}</p>
-          <p className="mt-6 text-sm text-muted">
-            Your responses have been received. Your result is being reviewed and will appear here
-            once your examiner releases it.
+          <p className="mt-4 text-lg italic text-slate-600 sm:text-xl">
+            Your results will be available soon!
           </p>
-          <div className="mt-6 flex justify-center">
+          <p className="mt-6 text-sm text-muted">{attempt.mockExam.title}</p>
+          <div className="mt-8 flex justify-center">
             <Link href="/play">
-              <Button variant="outline">Back to exams</Button>
+              <Button
+                className="h-11 px-7 text-white"
+                style={{ background: "linear-gradient(135deg,#2563EB,#7C5CFC)" }}
+              >
+                Back to exams
+              </Button>
             </Link>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
