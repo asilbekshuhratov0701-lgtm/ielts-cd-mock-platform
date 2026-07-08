@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Headphones, BookOpen, PenLine, Play } from "lucide-react";
+import { Headphones, BookOpen, PenLine, Play, Monitor, ClipboardCheck } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
@@ -53,11 +53,17 @@ export default async function PlayListPage() {
   const submitted = mockAttempts.filter((a) => a.status === "submitted");
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Available exams</h1>
+    <div className="mx-auto max-w-4xl px-6 py-10">
+      <p className="text-sm text-muted">
+        <Link href="/dashboard" className="hover:text-brand-700">
+          Home
+        </Link>{" "}
+        <span className="mx-1 text-muted/60">›</span> Exams
+      </p>
+      <h1 className="mt-1 text-3xl font-bold tracking-tight text-foreground">Available Exams</h1>
       <p className="mt-1 text-sm text-muted">Full IELTS mock exams you can take end-to-end.</p>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-6 space-y-4">
         {mocks.length === 0 ? (
           <Card className="p-6 text-sm text-muted">No published mock exams yet.</Card>
         ) : (
@@ -68,35 +74,63 @@ export default async function PlayListPage() {
               0
             );
             return (
-              <Card key={mock.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground">{mock.title}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {mock.parts.map((p) => (
-                      <Badge key={p.id} variant="muted">
-                        <span className="mr-1 inline-flex align-middle">
-                          {moduleIcon[p.module as keyof typeof moduleIcon] ?? null}
+              <Card
+                key={mock.id}
+                className="overflow-hidden p-0 transition-shadow hover:shadow-card"
+              >
+                <div className="flex flex-col sm:flex-row">
+                  <div
+                    className="flex shrink-0 flex-col items-center justify-center gap-0.5 px-6 py-6 text-white sm:w-32"
+                    style={{ background: "linear-gradient(135deg,#2563EB,#7C5CFC)" }}
+                  >
+                    <span className="text-4xl font-extrabold leading-none">{totalQuestions}</span>
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-white/80">
+                      questions
+                    </span>
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-3 p-5">
+                    <div>
+                      <p className="text-lg font-semibold text-foreground">{mock.title}</p>
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        {mock.parts.map((p) => (
+                          <Badge key={p.id} variant="muted">
+                            <span className="mr-1 inline-flex align-middle">
+                              {moduleIcon[p.module as keyof typeof moduleIcon] ?? null}
+                            </span>
+                            <span className="capitalize">{p.module}</span>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+                      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Monitor className="h-4 w-4 text-violet-600" /> IELTS on computer
                         </span>
-                        {p.module}
-                      </Badge>
-                    ))}
-                    <span className="text-xs text-muted">{totalQuestions} questions</span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <ClipboardCheck className="h-4 w-4 text-violet-600" /> Reviewed by an
+                          examiner
+                        </span>
+                      </div>
+                      {resume ? (
+                        <Link href={`/play/mock/${resume.id}`}>
+                          <Button>
+                            <Play className="h-4 w-4" /> Resume
+                          </Button>
+                        </Link>
+                      ) : (
+                        <form action={startMockAttemptAction}>
+                          <input type="hidden" name="mockExamId" value={mock.id} />
+                          <Button type="submit">
+                            <Play className="h-4 w-4" /> Start exam
+                          </Button>
+                        </form>
+                      )}
+                    </div>
                   </div>
                 </div>
-                {resume ? (
-                  <Link href={`/play/mock/${resume.id}`}>
-                    <Button>
-                      <Play className="h-4 w-4" /> Resume
-                    </Button>
-                  </Link>
-                ) : (
-                  <form action={startMockAttemptAction}>
-                    <input type="hidden" name="mockExamId" value={mock.id} />
-                    <Button type="submit">
-                      <Play className="h-4 w-4" /> Start exam
-                    </Button>
-                  </form>
-                )}
               </Card>
             );
           })
