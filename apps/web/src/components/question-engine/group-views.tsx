@@ -201,6 +201,10 @@ function InlineSelect({
   );
 }
 
+function isBareLetterBank(options: { id: string; text: string }[]): boolean {
+  return options.length > 0 && options.every((o) => o.text.trim() === o.id.trim());
+}
+
 function OptionsPanel({ options }: { options: { id: string; text: string }[] }) {
   return (
     <div className="rounded-xl border border-dashed border-border bg-surface p-3">
@@ -222,7 +226,9 @@ export function SelectGroupView({ group }: { group: SelectGroup }) {
     const byNumber = new Map(group.prompts.map((p) => [p.number, p] as const));
     return (
       <div className="space-y-4">
-        {group.optionBank.length > 0 ? <OptionsPanel options={group.optionBank} /> : null}
+        {group.optionBank.length > 0 && !isBareLetterBank(group.optionBank) ? (
+          <OptionsPanel options={group.optionBank} />
+        ) : null}
         <div className="space-y-3 text-base leading-loose text-foreground">
           {group.paragraphs.map((para, i) => (
             <p key={i}>
@@ -252,7 +258,7 @@ export function SelectGroupView({ group }: { group: SelectGroup }) {
 
   return (
     <div className="space-y-4">
-      {!group.fixedLabels && group.optionBank.length > 0 ? (
+      {!group.fixedLabels && group.optionBank.length > 0 && !isBareLetterBank(group.optionBank) ? (
         <OptionsPanel options={group.optionBank} />
       ) : null}
       <div className="flex flex-col gap-[var(--space-question)]">

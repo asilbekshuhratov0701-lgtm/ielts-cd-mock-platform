@@ -54,7 +54,9 @@ function NoteLayout({ content, byNumber }: { content: NoteContent; byNumber: Map
         {content.sections.map((section, s) => (
           <div key={s}>
             {section.heading ? (
-              <p className="mb-1.5 text-base font-bold text-foreground">{section.heading}</p>
+              <p className="mb-1.5 text-base font-bold text-foreground">
+                {renderText(section.heading, byNumber)}
+              </p>
             ) : null}
             <ul className="space-y-1.5">
               {section.items.map((raw, i) => {
