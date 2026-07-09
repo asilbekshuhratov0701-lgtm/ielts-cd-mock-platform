@@ -183,6 +183,71 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
   refresh(id);
 }
 
+function setGroupImage(root: unknown, groupId: string, url: string): boolean {
+  if (!root || typeof root !== "object") return false;
+  const sections = (root as { sections?: unknown }).sections;
+  if (!Array.isArray(sections)) return false;
+  let changed = false;
+  for (const section of sections) {
+    const groups = (section as { groups?: unknown }).groups;
+    if (!Array.isArray(groups)) continue;
+    for (const group of groups) {
+      if (group && typeof group === "object" && (group as { id?: unknown }).id === groupId) {
+        (group as Record<string, unknown>).imageUrl = url;
+        changed = true;
+      }
+    }
+  }
+  return changed;
+}
+
+export async function attachGroupImageAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const id = String(formData.get("id") ?? "");
+  const groupId = String(formData.get("groupId") ?? "");
+  const mockId = String(formData.get("mockId") ?? "");
+  const file = formData.get("image");
+  if (mockId) revalidatePath(`/admin/exam-import/mock/${mockId}`);
+  if (!id || !groupId || !(file instanceof File) || file.size === 0) {
+    refresh(id);
+    return;
+  }
+  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  if (!bp) return;
+
+  const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
+  const key = `${safeKeySegment(bp.examKey)}-v${bp.version}-${safeKeySegment(groupId)}-${Date.now()}.${ext}`;
+  await saveMediaObject(key, new Uint8Array(await file.arrayBuffer()));
+  const url = mediaPublicUrl(key);
+
+  await prisma.media.create({
+    data: {
+      orgId,
+      r2Key: key,
+      kind: "IMAGE" as Prisma.MediaCreateInput["kind"],
+      mime: file.type || "image/png",
+      bytes: file.size,
+      originalName: file.name,
+      createdById: user.id
+    }
+  });
+
+  const engine = structuredClone(bp.engineJson) as unknown;
+  const source = structuredClone(bp.sourceJson) as unknown;
+  setGroupImage(engine, groupId, url);
+  setGroupImage(source, groupId, url);
+
+  await prisma.examBlueprint.update({
+    where: { id },
+    data: {
+      engineJson: engine as Prisma.InputJsonValue,
+      sourceJson: source as Prisma.InputJsonValue
+    }
+  });
+  refresh(id);
+}
+
 export async function deleteBlueprintAction(formData: FormData): Promise<void> {
   await requireStaff();
   const id = String(formData.get("id") ?? "");

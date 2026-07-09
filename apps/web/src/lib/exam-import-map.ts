@@ -68,6 +68,11 @@ function optionLabel(o: ExamOption): string {
   return o.label ?? o.text ?? optionValue(o);
 }
 
+function groupImageUrl(group: ExamGroup): string | undefined {
+  const value = (group as Record<string, unknown>).imageUrl;
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
 function numbersOf(q: ExamQuestion): number[] {
   return q.type === "checkbox" ? q.numbers : [q.number];
 }
@@ -274,7 +279,8 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
         optionBank: (group.options ?? []).map((o) => ({ id: optionValue(o), text: optionLabel(o) })),
         allowReuse: group.allowReuse ?? false,
         fixedLabels: false,
-        paragraphs: summaryParagraphs(group)
+        paragraphs: summaryParagraphs(group),
+        imageUrl: groupImageUrl(group)
       }
     ];
   }
@@ -317,6 +323,7 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
       numberRange: range(allNumbers),
       layout,
       content,
+      imageUrl: groupImageUrl(group),
       gaps: group.questions
         .filter((q) => q.type === "gap")
         .map((q) => ({ id: q.id, number: q.number, wordLimit, allowNumber }))

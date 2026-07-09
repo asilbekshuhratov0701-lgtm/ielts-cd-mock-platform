@@ -256,23 +256,40 @@ export function SelectGroupView({ group }: { group: SelectGroup }) {
     );
   }
 
+  const prompts = (
+    <div className="flex flex-col gap-[var(--space-question)]">
+      {group.prompts.map((p, i) => (
+        <ConnectedPrompt
+          key={p.id}
+          promptId={p.id}
+          number={p.number}
+          text={p.text}
+          options={group.optionBank}
+          boxed={i === 0}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       {!group.fixedLabels && group.optionBank.length > 0 && !isBareLetterBank(group.optionBank) ? (
         <OptionsPanel options={group.optionBank} />
       ) : null}
-      <div className="flex flex-col gap-[var(--space-question)]">
-        {group.prompts.map((p, i) => (
-          <ConnectedPrompt
-            key={p.id}
-            promptId={p.id}
-            number={p.number}
-            text={p.text}
-            options={group.optionBank}
-            boxed={i === 0}
-          />
-        ))}
-      </div>
+      {group.imageUrl ? (
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="overflow-hidden rounded-xl border border-border bg-foreground/[0.02]">
+            <img
+              src={group.imageUrl}
+              alt="Map / diagram"
+              className="h-full w-full object-contain"
+            />
+          </div>
+          {prompts}
+        </div>
+      ) : (
+        prompts
+      )}
     </div>
   );
 }

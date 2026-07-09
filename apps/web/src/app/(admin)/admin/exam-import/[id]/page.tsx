@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Music, Play, Send, Trash2, Undo2, Upload } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Music, Play, Send, Trash2, Undo2, Upload } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { mediaPublicUrl } from "@/lib/media-storage";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import {
   attachAudioAction,
+  attachGroupImageAction,
   deleteBlueprintAction,
   publishBlueprintAction,
   unpublishBlueprintAction
@@ -37,6 +38,18 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
   const exam = bp.engineJson as unknown as PreviewExam;
   const audioUrl = bp.audioMedia ? mediaPublicUrl(bp.audioMedia.r2Key) : null;
   const needsAudio = bp.module === "listening" && Boolean(bp.audioRef);
+
+  const imageGroups = (exam.sections ?? []).flatMap((section) =>
+    section.groups
+      .filter((g) => g.questionType === "map_labelling" || g.questionType === "diagram_labelling")
+      .map((g) => ({
+        id: g.id,
+        questionType: g.questionType,
+        range: g.numberRange,
+        imageUrl: (g as { imageUrl?: string }).imageUrl
+      }))
+  );
+  const typeLabel = (t: string) => (t === "map_labelling" ? "Map labelling" : "Diagram labelling");
 
   return (
     <PageShell
@@ -111,6 +124,59 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
               <Upload className="h-4 w-4" /> {bp.audioMedia ? "Replace audio" : "Attach audio"}
             </Button>
           </form>
+        </Card>
+      ) : null}
+
+      {imageGroups.length > 0 ? (
+        <Card className="p-5">
+          <h2 className="mb-1 flex items-center gap-2 font-semibold text-foreground">
+            <ImageIcon className="h-4 w-4 text-brand-600" /> Map / diagram images
+          </h2>
+          <p className="mb-3 text-sm text-muted">
+            Upload the picture candidates see for each labelling task. Answers stay as dropdowns.
+          </p>
+          <div className="space-y-4">
+            {imageGroups.map((g) => (
+              <div key={g.id} className="rounded-lg border border-border p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {typeLabel(g.questionType)}
+                    <span className="ml-2 text-xs font-normal text-muted">
+                      Q{g.range[0]}
+                      {g.range[1] !== g.range[0] ? `–${g.range[1]}` : ""}
+                    </span>
+                  </span>
+                  <Badge variant={g.imageUrl ? "success" : "warning"}>
+                    {g.imageUrl ? "image attached" : "no image"}
+                  </Badge>
+                </div>
+                {g.imageUrl ? (
+                  <img
+                    src={g.imageUrl}
+                    alt="Uploaded map or diagram"
+                    className="mt-3 max-h-48 rounded-lg border border-border"
+                  />
+                ) : null}
+                <form
+                  action={attachGroupImageAction}
+                  className="mt-3 flex flex-wrap items-center gap-2"
+                >
+                  <input type="hidden" name="id" value={bp.id} />
+                  <input type="hidden" name="groupId" value={g.id} />
+                  <input
+                    type="file"
+                    name="image"
+                    accept="image/*"
+                    className={`${field} max-w-md`}
+                    required
+                  />
+                  <Button type="submit" size="sm" variant="secondary">
+                    <Upload className="h-4 w-4" /> {g.imageUrl ? "Replace image" : "Upload image"}
+                  </Button>
+                </form>
+              </div>
+            ))}
+          </div>
         </Card>
       ) : null}
 

@@ -115,6 +115,7 @@ export interface SelectGroup extends BaseGroup {
   allowReuse: boolean;
   fixedLabels?: boolean;
   paragraphs?: string[];
+  imageUrl?: string;
 }
 
 export interface EssayTask {
