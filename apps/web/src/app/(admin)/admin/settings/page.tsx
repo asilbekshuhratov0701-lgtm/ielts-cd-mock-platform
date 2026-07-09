@@ -1,3 +1,4 @@
+import { Database, FileJson, FileSpreadsheet } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@ielts/db";
 import { SETTING_KEYS, getNumberSetting, getReleaseMode } from "@/lib/settings";
@@ -87,6 +88,42 @@ export default async function AdminSettingsPage() {
 
           <Button type="submit">Save settings</Button>
         </form>
+      </Card>
+
+      <Card className="max-w-2xl p-6">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+            <Database className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="font-semibold text-foreground">Backup data</h2>
+            <p className="mt-1 text-sm text-muted">
+              Export all of this centre&apos;s data — candidates, groups, exams, assignments, and
+              results — for safekeeping or transfer.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <a
+            href="/api/admin/exports/backup?format=json"
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-brand-600 px-4 text-sm font-medium text-white shadow-soft transition-colors hover:bg-brand-700"
+          >
+            <FileJson className="h-4 w-4" /> Full backup (JSON)
+          </a>
+          <a
+            href="/api/admin/exports/backup?format=xlsx"
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-border bg-surface px-4 text-sm font-medium text-foreground transition-colors hover:bg-brand-50 hover:text-brand-700"
+          >
+            <FileSpreadsheet className="h-4 w-4" /> Readable copy (Excel)
+          </a>
+        </div>
+
+        <p className="mt-3 text-xs text-muted">
+          The <strong>JSON</strong> file is a complete backup (including exam content and answers)
+          suitable for restoring — keep it secure. The <strong>Excel</strong> workbook is a
+          human-readable summary across sheets, ideal for sharing.
+        </p>
       </Card>
 
       <p className="text-xs text-muted">
