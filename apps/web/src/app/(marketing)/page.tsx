@@ -50,6 +50,8 @@ const CSS = `
 .zm-btn-lg.zm-btn-primary:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(37,99,235,0.45);}
 .zm-btn-md{padding:11px 26px;font-size:15px;}
 .zm-btn-sm{padding:10px 22px;font-size:15px;}
+.zm-btn-white{background:#fff;color:var(--accent);border:1px solid rgba(37,99,235,0.14);box-shadow:0 10px 26px rgba(16,26,48,0.14);}
+.zm-btn-white:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(16,26,48,0.22);color:var(--accent2);}
 .zm-blob{position:absolute;border-radius:50%;pointer-events:none;filter:blur(10px);}
 .zm-hero-card{border-radius:32px;padding:64px 60px 72px;background:linear-gradient(120deg,#dce9ff,#ebe4ff,#d6f0ff,#e6e0ff,#dce9ff);background-size:300% 300%;animation:zm-gradient 14s ease infinite;box-shadow:0 24px 60px rgba(37,99,235,0.14),0 2px 8px rgba(16,26,48,0.05);position:relative;overflow:hidden;}
 .zm-h1{margin:0 0 26px;font-family:var(--font-sora),sans-serif;font-weight:800;font-size:clamp(52px,7.5vw,96px);line-height:1.02;letter-spacing:-2px;color:#0d1530;}
@@ -222,10 +224,10 @@ export default function LandingPage() {
                   improve with confidence.
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                  <Link href="/play" className="zm-btn zm-btn-primary zm-btn-lg">
+                  <Link href="/play" className="zm-btn zm-btn-white zm-btn-lg">
                     Enter Exam Dashboard
                   </Link>
-                  <Link href="/register" className="zm-btn zm-btn-hero-ghost zm-btn-lg">
+                  <Link href="/register" className="zm-btn zm-btn-white zm-btn-lg">
                     Sign up
                   </Link>
                 </div>
