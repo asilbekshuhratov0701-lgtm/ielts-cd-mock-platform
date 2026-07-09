@@ -21,16 +21,26 @@ export async function registerAction(
   _prev: AuthFormState,
   formData: FormData
 ): Promise<AuthFormState> {
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  const name = [firstName, lastName].filter(Boolean).join(" ");
+
+  if (password !== confirmPassword) {
+    return { error: "Passwords do not match." };
+  }
+
   const parsed = registerSchema.safeParse({
-    name: formData.get("name"),
+    name,
     email: formData.get("email"),
-    password: formData.get("password")
+    password
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const { name, email, password } = parsed.data;
+  const { email } = parsed.data;
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return { error: "An account with that email already exists." };
 

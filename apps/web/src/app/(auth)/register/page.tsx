@@ -1,12 +1,14 @@
 import { RegisterForm } from "@/components/RegisterForm";
 
-export const metadata = { title: "Sign Up" };
+export const metadata = { title: "Register" };
 
 export default function RegisterPage() {
   return (
     <div>
-      <h1 className="text-xl font-semibold text-foreground">Create your account</h1>
-      <p className="mt-1 text-sm text-muted">Start taking full IELTS mock exams.</p>
+      <h1 className="text-2xl font-semibold tracking-tight text-foreground">Register</h1>
+      <p className="mt-1.5 text-sm leading-relaxed text-muted">
+        Enter your credentials below to register an account.
+      </p>
       <div className="mt-6">
         <RegisterForm />
       </div>
