@@ -9,6 +9,7 @@ export type AnalyticsData = {
   };
   skillAverages: { skill: string; band: number }[];
   bandDistribution: { band: string; count: number }[];
+  bandTrend: { label: string; band: number }[];
   statusBreakdown: { status: string; count: number }[];
   activity: { date: string; submissions: number }[];
 };
@@ -25,7 +26,13 @@ export async function getAnalytics(orgId: string): Promise<AnalyticsData> {
   const [scores, attempts] = await Promise.all([
     prisma.score.findMany({
       where: { attempt: { exam: { orgId } } },
-      select: { listeningBand: true, readingBand: true, writingBand: true, overallBand: true }
+      select: {
+        listeningBand: true,
+        readingBand: true,
+        writingBand: true,
+        overallBand: true,
+        createdAt: true
+      }
     }),
     prisma.attempt.findMany({
       where: { exam: { orgId } },
@@ -52,6 +59,24 @@ export async function getAnalytics(orgId: string): Promise<AnalyticsData> {
     if (buckets.has(key)) buckets.set(key, (buckets.get(key) ?? 0) + 1);
   }
   const bandDistribution = [...buckets.entries()].map(([band, count]) => ({ band, count }));
+
+  const months: { label: string; key: string; bands: number[] }[] = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      label: d.toLocaleDateString(undefined, { month: "short" }),
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      bands: []
+    });
+  }
+  const byMonth = new Map(months.map((m) => [m.key, m]));
+  for (const s of scores) {
+    if (s.overallBand == null) continue;
+    const key = `${s.createdAt.getFullYear()}-${String(s.createdAt.getMonth() + 1).padStart(2, "0")}`;
+    byMonth.get(key)?.bands.push(s.overallBand);
+  }
+  const bandTrend = months.map((m) => ({ label: m.label, band: round1(avg(m.bands)) ?? 0 }));
 
   const statusMap = new Map<string, number>();
   for (const a of attempts) statusMap.set(a.status, (statusMap.get(a.status) ?? 0) + 1);
@@ -86,6 +111,7 @@ export async function getAnalytics(orgId: string): Promise<AnalyticsData> {
     },
     skillAverages,
     bandDistribution,
+    bandTrend,
     statusBreakdown,
     activity
   };

@@ -8,6 +8,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import {
   ActivityChart,
   BandDistributionChart,
+  BandTrendChart,
   SkillAveragesChart,
   StatusChart
 } from "@/components/analytics-charts";
@@ -36,6 +37,15 @@ export default async function AdminAnalyticsPage() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle>Average overall band (last 6 months)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BandTrendChart data={data.bandTrend} />
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Overall band distribution</CardTitle>
