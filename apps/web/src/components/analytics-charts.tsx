@@ -10,6 +10,7 @@ import {
   Legend,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -74,7 +75,13 @@ export function ActivityChart({ data }: { data: { date: string; submissions: num
   );
 }
 
-export function BandTrendChart({ data }: { data: { label: string; band: number }[] }) {
+export function BandTrendChart({
+  data,
+  target
+}: {
+  data: { label: string; band: number }[];
+  target?: number | null;
+}) {
   return (
     <ResponsiveContainer width="100%" height={240}>
       <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
@@ -88,6 +95,14 @@ export function BandTrendChart({ data }: { data: { label: string; band: number }
         <XAxis dataKey="label" tick={axis} tickLine={false} axisLine={false} />
         <YAxis domain={[0, 9]} tick={axis} tickLine={false} axisLine={false} />
         <Tooltip />
+        {target != null ? (
+          <ReferenceLine
+            y={target}
+            stroke="#10b981"
+            strokeDasharray="4 4"
+            label={{ value: `Target ${target.toFixed(1)}`, position: "insideTopRight", fontSize: 11, fill: "#10b981" }}
+          />
+        ) : null}
         <Area type="monotone" dataKey="band" stroke={BRAND} strokeWidth={2} fill="url(#bandFill)" />
       </AreaChart>
     </ResponsiveContainer>
