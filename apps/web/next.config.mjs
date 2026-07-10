@@ -1,6 +1,13 @@
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Pin the workspace root (a stray home-dir lockfile otherwise misleads Next's inference).
+  outputFileTracingRoot: repoRoot,
   // Consume workspace packages from source (no pre-build step).
   transpilePackages: ["@ielts/ui", "@ielts/core", "@ielts/db", "@ielts/ai", "@ielts/validators"],
   // Native / server-only deps must not be bundled into client/edge output.
