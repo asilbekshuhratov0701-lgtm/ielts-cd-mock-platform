@@ -29,7 +29,8 @@ const FEATURES = [
 
 const CSS = `
 .zm-root{min-height:100vh;background:#F4F7FE;color:#101a30;overflow-x:hidden;--accent:#2563EB;--accent2:#7C5CFC;font-family:var(--font-manrope),sans-serif;}
-.zm-root a{color:#2563EB;text-decoration:none;}
+.zm-root a{text-decoration:none;}
+.zm-root a:not(.zm-btn){color:#2563EB;}
 .zm-sora{font-family:var(--font-sora),sans-serif;}
 .zm-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,0.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(37,99,235,0.10);}
 .zm-navrow{max-width:1200px;margin:0 auto;padding:14px 32px;display:flex;align-items:center;justify-content:space-between;gap:24px;}
