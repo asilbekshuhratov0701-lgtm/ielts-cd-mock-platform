@@ -13,7 +13,7 @@ import {
   type WritingCriteria
 } from "@ielts/core";
 import { auth } from "@/auth";
-import { MODULE_ORDER, moduleRank } from "@/lib/mock";
+import { MODULE_ORDER, moduleRank, isMockCompleted } from "@/lib/mock";
 
 function durationSecFor(module: string, timeLimitMin: number | null): number {
   if (timeLimitMin && timeLimitMin > 0) return timeLimitMin * 60;
@@ -249,6 +249,21 @@ async function candidateSeesMock(userId: string, mockExamId: string): Promise<bo
   return Boolean(hit);
 }
 
+async function latestAssignmentAt(userId: string, mockExamId: string): Promise<Date | null> {
+  const groupIds = (
+    await prisma.candidateGroupMember.findMany({
+      where: { candidateId: userId },
+      select: { groupId: true }
+    })
+  ).map((g) => g.groupId);
+  const assignment = await prisma.mockAssignment.findFirst({
+    where: { mockExamId, OR: [{ candidateId: userId }, { groupId: { in: groupIds } }] },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true }
+  });
+  return assignment?.createdAt ?? null;
+}
+
 async function createPartAttempt(
   mockAttemptId: string,
   candidateId: string,
@@ -292,6 +307,17 @@ export async function startMockAttemptAction(formData: FormData): Promise<void> 
     where: { mockExamId, candidateId: userId, status: "in_progress" }
   });
   if (existing) redirect(`/play/mock/${existing.id}`);
+
+  const lastSubmitted = await prisma.mockAttempt.findFirst({
+    where: { mockExamId, candidateId: userId, status: "submitted" },
+    orderBy: { submittedAt: "desc" },
+    select: { submittedAt: true }
+  });
+  if (
+    isMockCompleted(lastSubmitted?.submittedAt, await latestAssignmentAt(userId, mockExamId))
+  ) {
+    redirect("/play");
+  }
 
   const attempt = await prisma.mockAttempt.create({
     data: { mockExamId, candidateId: userId, status: "in_progress", currentIndex: 0 }

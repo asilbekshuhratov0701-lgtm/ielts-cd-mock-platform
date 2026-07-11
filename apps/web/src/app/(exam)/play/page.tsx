@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Headphones, BookOpen, PenLine, Play, Monitor, ClipboardCheck } from "lucide-react";
+import {
+  Headphones,
+  BookOpen,
+  PenLine,
+  Play,
+  Monitor,
+  ClipboardCheck,
+  CheckCircle2
+} from "lucide-react";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { startMockAttemptAction } from "@/lib/mock-actions";
+import { StartMockButton } from "@/components/exam/StartMockButton";
+import { isMockCompleted } from "@/lib/mock";
 import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 
 const moduleIcon = {
@@ -38,6 +47,12 @@ export default async function PlayListPage() {
       parts: {
         include: { blueprint: { select: { module: true } } },
         orderBy: { order: "asc" }
+      },
+      assignments: {
+        where: { OR: [{ candidateId: dbUser.id }, { groupId: { in: groupIds } }] },
+        select: { createdAt: true },
+        orderBy: { createdAt: "desc" },
+        take: 1
       }
     },
     orderBy: { publishedAt: "desc" }
@@ -51,6 +66,12 @@ export default async function PlayListPage() {
     mockAttempts.filter((a) => a.status === "in_progress").map((a) => [a.mockExamId, a])
   );
   const submitted = mockAttempts.filter((a) => a.status === "submitted");
+  const lastSubmittedByMock = new Map<string, Date>();
+  for (const a of submitted) {
+    if (!a.submittedAt) continue;
+    const prev = lastSubmittedByMock.get(a.mockExamId);
+    if (!prev || a.submittedAt > prev) lastSubmittedByMock.set(a.mockExamId, a.submittedAt);
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-6 py-10">
@@ -70,6 +91,10 @@ export default async function PlayListPage() {
           mocks.map((mock) => {
             const resume = inProgress.get(mock.id);
             const mockDate = mock.publishedAt ?? mock.createdAt;
+            const completed = isMockCompleted(
+              lastSubmittedByMock.get(mock.id) ?? null,
+              mock.assignments[0]?.createdAt ?? null
+            );
             return (
               <Card
                 key={mock.id}
@@ -130,13 +155,12 @@ export default async function PlayListPage() {
                             <Play className="h-4 w-4" /> Resume
                           </Button>
                         </Link>
+                      ) : completed ? (
+                        <span className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+                          <CheckCircle2 className="h-4 w-4" /> Mock Completed
+                        </span>
                       ) : (
-                        <form action={startMockAttemptAction}>
-                          <input type="hidden" name="mockExamId" value={mock.id} />
-                          <Button type="submit">
-                            <Play className="h-4 w-4" /> Start exam
-                          </Button>
-                        </form>
+                        <StartMockButton mockExamId={mock.id} />
                       )}
                     </div>
                   </div>
