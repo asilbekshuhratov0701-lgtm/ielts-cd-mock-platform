@@ -191,9 +191,9 @@ function TopBar({
         <button
           type="button"
           onClick={onFinish}
-          className="rounded-md bg-red-500 px-4 py-1 text-sm font-semibold text-white hover:bg-red-600"
+          className="rounded-md bg-violet-700 px-5 py-1.5 text-sm font-bold text-white shadow-sm hover:bg-violet-800"
         >
-          {finishLabel ?? "Finish"}
+          {finishLabel ?? "Submit"}
         </button>
       </div>
     </div>
@@ -617,12 +617,12 @@ function Shell({
   useEffect(() => {
     if (!immersive) return;
     const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    onChange();
     document.addEventListener("fullscreenchange", onChange);
-    void document.documentElement.requestFullscreen?.().catch(() => {});
-    return () => {
-      document.removeEventListener("fullscreenchange", onChange);
-      if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
-    };
+    if (!document.fullscreenElement) {
+      void document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+    return () => document.removeEventListener("fullscreenchange", onChange);
   }, [immersive]);
   const toggleFullscreen = () => {
     if (document.fullscreenElement) void document.exitFullscreen?.().catch(() => {});
@@ -630,6 +630,7 @@ function Shell({
   };
 
   return (
+    <>
     <div
       className={
         immersive
@@ -651,8 +652,8 @@ function Shell({
         finishLabel={
           live?.mock
             ? live.mock.index + 1 < live.mock.count
-              ? "Finish part"
-              : "Finish exam"
+              ? "Submit"
+              : "Submit exam"
             : undefined
         }
         isFullscreen={immersive ? isFullscreen : undefined}
@@ -744,6 +745,33 @@ function Shell({
         onStep={step}
       />
     </div>
+
+      {immersive && !isFullscreen ? (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/70 p-4 backdrop-blur-xl">
+          <div className="max-w-md rounded-2xl border border-border bg-surface p-8 text-center shadow-2xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 text-violet-700">
+              <Maximize className="h-8 w-8" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground">
+              The mock exam must be in full screen
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted">
+              Please return to full screen to continue. Your answers are saved automatically and the
+              timer keeps running.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                void document.documentElement.requestFullscreen?.().catch(() => {});
+              }}
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-violet-700 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-violet-800"
+            >
+              <Maximize className="h-4 w-4" /> Enter full screen
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </>
   );
 }
 

@@ -6,6 +6,7 @@ import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ExitFullscreen } from "@/components/exam/ExitFullscreen";
 import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 
 interface PartSummary {
@@ -40,6 +41,7 @@ export default async function MockResultPage({
   if (!attempt.resultsReleased) {
     return (
       <div className="relative flex min-h-[82vh] items-center justify-center overflow-hidden px-6 py-16">
+        <ExitFullscreen />
         <style
           dangerouslySetInnerHTML={{
             __html: `
@@ -99,6 +101,7 @@ export default async function MockResultPage({
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
+      <ExitFullscreen />
       <Card className="p-8 text-center shadow-card">
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
           <CheckCircle2 className="h-7 w-7" />
