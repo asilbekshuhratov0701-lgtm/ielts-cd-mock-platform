@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "examId": "sample-writing-tasks",
+  "module": "writing",
+  "title": "Sample Writing — Task 1 & Task 2",
+  "totalQuestions": 2,
+  "timerSource": "fixed",
+  "timeLimitMinutes": 60,
+  "sections": [
+    {
+      "id": "w1",
+      "order": 0,
+      "title": "Writing",
+      "instructions": "You should answer both tasks. Task 2 contributes twice as much to the Writing band as Task 1.",
+      "groups": [
+        {
+          "id": "wg1",
+          "questionType": "essay",
+          "primitive": "essay",
+          "instructions": "",
+          "questions": [
+            {
+              "type": "essay",
+              "id": "wt1",
+              "number": 1,
+              "prompt": "The chart below shows the number of cups of tea and coffee consumed per person per week in a country over a ten-year period. Summarise the information by selecting and reporting the main features, and make comparisons where relevant. Write at least 150 words.",
+              "minWords": 150
+            },
+            {
+              "type": "essay",
+              "id": "wt2",
+              "number": 2,
+              "prompt": "Some people believe that traditional drinks like tea are being replaced by modern alternatives, and that this is a positive development. To what extent do you agree or disagree? Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words.",
+              "minWords": 250
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

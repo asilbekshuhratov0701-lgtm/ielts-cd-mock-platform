@@ -1,0 +1,317 @@
+{
+  "schemaVersion": 1,
+  "examId": "sample-reading-all-types",
+  "module": "reading",
+  "title": "Sample Reading — All Question Types",
+  "totalQuestions": 34,
+  "timerSource": "fixed",
+  "timeLimitMinutes": 60,
+  "sections": [
+    {
+      "id": "s1",
+      "order": 0,
+      "title": "Reading Passage 1",
+      "instructions": "You should spend about 20 minutes on Questions 1–34, which are based on the passage below.",
+      "passage": {
+        "subtitle": "The History of Tea",
+        "blocks": [
+          { "label": "A", "text": "Tea was first consumed in ancient China, where its leaves were dried and steeped in hot water. Early records describe it primarily as a medicinal drink rather than a daily beverage." },
+          { "label": "B", "text": "As overland and maritime trade routes opened, tea spread westward. Merchants carried it along caravan roads and later by sea, and demand grew quickly in Europe." },
+          { "label": "C", "text": "Today tea is one of the most widely consumed drinks in the world, sold in supermarkets everywhere and produced on large commercial estates." },
+          { "label": "D", "text": "Processing tea involves several careful steps, from withering the freshly picked leaves to heating them to halt oxidation before packaging." },
+          { "label": "E", "text": "On a typical estate, buildings are arranged around a central yard, with a warehouse for storage and a separate shed used for drying the leaves." }
+        ]
+      },
+      "groups": [
+        {
+          "id": "g1",
+          "questionType": "mc_single",
+          "primitive": "radio",
+          "instructions": "Choose the correct letter, A, B, C or D.",
+          "questions": [
+            {
+              "type": "radio",
+              "id": "q1",
+              "number": 1,
+              "prompt": "According to the passage, tea was first used as a",
+              "options": [
+                { "value": "A", "label": "medicine." },
+                { "value": "B", "label": "daily beverage." },
+                { "value": "C", "label": "form of currency." },
+                { "value": "D", "label": "dye." }
+              ],
+              "answer": "A"
+            },
+            {
+              "type": "radio",
+              "id": "q2",
+              "number": 2,
+              "prompt": "Tea spread westward mainly because of",
+              "options": [
+                { "value": "A", "label": "war." },
+                { "value": "B", "label": "new roads only." },
+                { "value": "C", "label": "growing demand." },
+                { "value": "D", "label": "taxation." }
+              ],
+              "answer": "C"
+            }
+          ]
+        },
+        {
+          "id": "g2",
+          "questionType": "true_false_not_given",
+          "primitive": "radio",
+          "instructions": "Do the following statements agree with the information given in the passage? Write TRUE, FALSE or NOT GIVEN.",
+          "options": [
+            { "value": "TRUE", "label": "TRUE" },
+            { "value": "FALSE", "label": "FALSE" },
+            { "value": "NOT GIVEN", "label": "NOT GIVEN" }
+          ],
+          "questions": [
+            { "type": "radio", "id": "q3", "number": 3, "prompt": "Tea originated in China.", "answer": "TRUE" },
+            { "type": "radio", "id": "q4", "number": 4, "prompt": "Tea was cheaper than coffee in the year 1700.", "answer": "NOT GIVEN" }
+          ]
+        },
+        {
+          "id": "g3",
+          "questionType": "yes_no_not_given",
+          "primitive": "radio",
+          "instructions": "Do the following statements agree with the views of the writer? Write YES, NO or NOT GIVEN.",
+          "options": [
+            { "value": "YES", "label": "YES" },
+            { "value": "NO", "label": "NO" },
+            { "value": "NOT GIVEN", "label": "NOT GIVEN" }
+          ],
+          "questions": [
+            { "type": "radio", "id": "q5", "number": 5, "prompt": "The writer believes trade helped tea become popular.", "answer": "YES" },
+            { "type": "radio", "id": "q6", "number": 6, "prompt": "The writer considers coffee superior to tea.", "answer": "NO" }
+          ]
+        },
+        {
+          "id": "g4",
+          "questionType": "mc_multiple",
+          "primitive": "checkbox",
+          "instructions": "Choose TWO letters, A–E.",
+          "questions": [
+            {
+              "type": "checkbox",
+              "id": "q7_8",
+              "numbers": [7, 8],
+              "prompt": "Which TWO factors does the passage say helped tea spread?",
+              "selectCount": 2,
+              "options": [
+                { "value": "A", "label": "favourable climate" },
+                { "value": "B", "label": "trade routes" },
+                { "value": "C", "label": "growing demand" },
+                { "value": "D", "label": "warfare" },
+                { "value": "E", "label": "the printing press" }
+              ],
+              "answer": ["B", "C"],
+              "orderIndependent": true
+            }
+          ]
+        },
+        {
+          "id": "g5",
+          "questionType": "matching_information",
+          "primitive": "select",
+          "allowReuse": true,
+          "instructions": "Which paragraph contains the following information? Write the correct letter, A–E. You may use any letter more than once.",
+          "options": [
+            { "value": "A", "label": "A" },
+            { "value": "B", "label": "B" },
+            { "value": "C", "label": "C" },
+            { "value": "D", "label": "D" },
+            { "value": "E", "label": "E" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q9", "number": 9, "prompt": "a description of how tea leaves are processed", "answer": "D" },
+            { "type": "select", "id": "q10", "number": 10, "prompt": "a reference to tea being sold in shops today", "answer": "C" }
+          ]
+        },
+        {
+          "id": "g6",
+          "questionType": "matching_headings",
+          "primitive": "select",
+          "allowReuse": false,
+          "instructions": "Choose the correct heading for paragraphs A, B and C from the list of headings below.",
+          "options": [
+            { "value": "i", "label": "Origins of tea" },
+            { "value": "ii", "label": "The spread of trade" },
+            { "value": "iii", "label": "Modern consumption" },
+            { "value": "iv", "label": "Health effects of tea" },
+            { "value": "v", "label": "Traditional tea ceremonies" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q11", "number": 11, "prompt": "Paragraph A", "answer": "i" },
+            { "type": "select", "id": "q12", "number": 12, "prompt": "Paragraph B", "answer": "ii" },
+            { "type": "select", "id": "q13", "number": 13, "prompt": "Paragraph C", "answer": "iii" }
+          ]
+        },
+        {
+          "id": "g7",
+          "questionType": "matching_features",
+          "primitive": "select",
+          "allowReuse": true,
+          "instructions": "Match each statement with the correct era, A, B or C. You may use any letter more than once.",
+          "options": [
+            { "value": "A", "label": "the ancient era" },
+            { "value": "B", "label": "the medieval era" },
+            { "value": "C", "label": "the modern era" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q14", "number": 14, "prompt": "Tea was mainly used as a medicine.", "answer": "A" },
+            { "type": "select", "id": "q15", "number": 15, "prompt": "Tea is grown on large commercial estates.", "answer": "C" }
+          ]
+        },
+        {
+          "id": "g8",
+          "questionType": "matching_sentence_endings",
+          "primitive": "select",
+          "allowReuse": false,
+          "instructions": "Complete each sentence with the correct ending, A–E.",
+          "options": [
+            { "value": "A", "label": "before it became a daily drink." },
+            { "value": "B", "label": "because supplies were limited." },
+            { "value": "C", "label": "as trade routes expanded." },
+            { "value": "D", "label": "to stop the leaves oxidising." },
+            { "value": "E", "label": "only in royal households." }
+          ],
+          "questions": [
+            { "type": "select", "id": "q16", "number": 16, "prompt": "Tea reached Europe", "answer": "C" },
+            { "type": "select", "id": "q17", "number": 17, "prompt": "The leaves are heated", "answer": "D" }
+          ]
+        },
+        {
+          "id": "g9",
+          "questionType": "sentence_completion",
+          "primitive": "gap",
+          "wordLimit": 2,
+          "allowNumber": false,
+          "instructions": "Complete the sentences below. Choose NO MORE THAN TWO WORDS from the passage for each answer.",
+          "template": "In ancient China, tea leaves were {{18}} and then steeped in hot water.\nDemand for tea grew quickly in {{19}}.",
+          "questions": [
+            { "type": "gap", "id": "q18", "number": 18, "answer": ["dried"] },
+            { "type": "gap", "id": "q19", "number": 19, "answer": ["Europe"] }
+          ]
+        },
+        {
+          "id": "g10",
+          "questionType": "note_completion",
+          "primitive": "gap",
+          "wordLimit": 1,
+          "instructions": "Complete the notes below. Write ONE WORD ONLY for each answer.",
+          "template": {
+            "format": "notes",
+            "title": "Tea Processing",
+            "lines": [
+              { "style": "heading", "text": "Main steps" },
+              { "style": "bullet", "text": "Freshly picked leaves are {{20}}." },
+              { "style": "bullet", "text": "The leaves are then {{21}} to stop oxidation." }
+            ]
+          },
+          "questions": [
+            { "type": "gap", "id": "q20", "number": 20, "answer": ["withered"] },
+            { "type": "gap", "id": "q21", "number": 21, "answer": ["heated"] }
+          ]
+        },
+        {
+          "id": "g11",
+          "questionType": "table_completion",
+          "primitive": "gap",
+          "wordLimit": 2,
+          "instructions": "Complete the table below. Choose NO MORE THAN TWO WORDS for each answer.",
+          "template": "Stage | Description\nStorage | kept in the {{22}}\nDrying | done in a separate {{23}}",
+          "questions": [
+            { "type": "gap", "id": "q22", "number": 22, "answer": ["warehouse"] },
+            { "type": "gap", "id": "q23", "number": 23, "answer": ["shed", "drying shed"] }
+          ]
+        },
+        {
+          "id": "g12",
+          "questionType": "summary_completion",
+          "primitive": "gap",
+          "wordLimit": 2,
+          "instructions": "Complete the summary below. Choose NO MORE THAN TWO WORDS for each answer.",
+          "template": {
+            "format": "summary",
+            "title": "Summary",
+            "paragraphs": [
+              "Tea trade expanded rapidly once {{24}} routes opened, and by the eighteenth century tea had become a {{25}} commodity across the world."
+            ]
+          },
+          "questions": [
+            { "type": "gap", "id": "q24", "number": 24, "answer": ["trade"] },
+            { "type": "gap", "id": "q25", "number": 25, "answer": ["global", "worldwide"] }
+          ]
+        },
+        {
+          "id": "g13",
+          "questionType": "flowchart_completion",
+          "primitive": "gap",
+          "wordLimit": 2,
+          "instructions": "Complete the flow-chart below. Choose NO MORE THAN TWO WORDS for each answer.",
+          "template": "Pick the leaves\n{{26}} the leaves to remove moisture\nPackage and {{27}} to market",
+          "questions": [
+            { "type": "gap", "id": "q26", "number": 26, "answer": ["wither"] },
+            { "type": "gap", "id": "q27", "number": 27, "answer": ["ship", "export"] }
+          ]
+        },
+        {
+          "id": "g14",
+          "questionType": "form_completion",
+          "primitive": "gap",
+          "wordLimit": 2,
+          "allowNumber": true,
+          "instructions": "Complete the form below. Write NO MORE THAN TWO WORDS AND/OR A NUMBER for each answer.",
+          "template": "Name of estate: {{28}}\nYear founded: {{29}}",
+          "questions": [
+            { "type": "gap", "id": "q28", "number": 28, "answer": ["Highland", "Highland Estate"] },
+            { "type": "gap", "id": "q29", "number": 29, "answer": ["1850"] }
+          ]
+        },
+        {
+          "id": "g15",
+          "questionType": "short_answer",
+          "primitive": "gap",
+          "wordLimit": 3,
+          "instructions": "Answer the question below. Choose NO MORE THAN THREE WORDS from the passage.",
+          "template": "Where on an estate are the leaves dried? In a {{30}}.",
+          "questions": [
+            { "type": "gap", "id": "q30", "number": 30, "answer": ["drying shed", "shed"] }
+          ]
+        },
+        {
+          "id": "g16",
+          "questionType": "map_labelling",
+          "primitive": "select",
+          "allowReuse": false,
+          "instructions": "Label the map of the tea estate below. Choose the correct letter, A–E, for each location.",
+          "options": [
+            { "value": "A", "label": "A" },
+            { "value": "B", "label": "B" },
+            { "value": "C", "label": "C" },
+            { "value": "D", "label": "D" },
+            { "value": "E", "label": "E" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q31", "number": 31, "prompt": "The storage warehouse", "answer": "B" },
+            { "type": "select", "id": "q32", "number": 32, "prompt": "The drying shed", "answer": "D" }
+          ]
+        },
+        {
+          "id": "g17",
+          "questionType": "diagram_labelling",
+          "primitive": "gap",
+          "wordLimit": 2,
+          "instructions": "Label the diagram below. Choose NO MORE THAN TWO WORDS for each answer.",
+          "template": "1. the {{33}} where leaves are stored\n2. the {{34}} where leaves are dried",
+          "questions": [
+            { "type": "gap", "id": "q33", "number": 33, "answer": ["warehouse"] },
+            { "type": "gap", "id": "q34", "number": 34, "answer": ["shed", "drying shed"] }
+          ]
+        }
+      ]
+    }
+  ]
+}
