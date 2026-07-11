@@ -32,7 +32,9 @@ The app **degrades gracefully** when optional pieces are missing:
 
 ## Environment variables
 
-Set these in your host's secret manager (never commit real values). Full template: [`.env.example`](./.env.example).
+Set these in your host's secret manager (never commit real values). Fill-in template:
+[`apps/web/.env.production.example`](./apps/web/.env.production.example) — copy it to
+`apps/web/.env.production` (gitignored). Base template: [`.env.example`](./.env.example).
 
 ### Required (all deployments)
 

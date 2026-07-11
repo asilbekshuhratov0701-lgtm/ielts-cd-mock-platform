@@ -10,11 +10,11 @@ dist/
 build/
 .turbo/
 
-# Env & secrets
+# Env & secrets — ignore every env file except the tracked *.example templates
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
+!.env.production.example
 
 # Prisma
 packages/db/prisma/migrations/dev.db*
