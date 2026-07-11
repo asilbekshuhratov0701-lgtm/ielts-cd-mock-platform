@@ -36,7 +36,7 @@ export default async function PlayListPage() {
     },
     include: {
       parts: {
-        include: { blueprint: { select: { module: true, totalQuestions: true } } },
+        include: { blueprint: { select: { module: true } } },
         orderBy: { order: "asc" }
       }
     },
@@ -69,10 +69,7 @@ export default async function PlayListPage() {
         ) : (
           mocks.map((mock) => {
             const resume = inProgress.get(mock.id);
-            const totalQuestions = mock.parts.reduce(
-              (s, p) => s + (p.blueprint.totalQuestions ?? 0),
-              0
-            );
+            const mockDate = mock.publishedAt ?? mock.createdAt;
             return (
               <Card
                 key={mock.id}
@@ -80,18 +77,31 @@ export default async function PlayListPage() {
               >
                 <div className="flex flex-col sm:flex-row">
                   <div
-                    className="flex shrink-0 flex-col items-center justify-center gap-0.5 px-6 py-6 text-white sm:w-32"
+                    className="flex shrink-0 flex-col items-center justify-center px-6 py-6 text-white sm:w-32"
                     style={{ background: "linear-gradient(135deg,#2563EB,#7C5CFC)" }}
                   >
-                    <span className="text-4xl font-extrabold leading-none">{totalQuestions}</span>
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-white/80">
-                      questions
+                      {mockDate.toLocaleString("en-GB", { month: "short" })}
+                    </span>
+                    <span className="text-4xl font-extrabold leading-none">
+                      {String(mockDate.getDate()).padStart(2, "0")}
+                    </span>
+                    <span className="my-1 h-px w-6 bg-white/40" />
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-white/80">
+                      {mockDate.toLocaleString("en-GB", { weekday: "short" })}
                     </span>
                   </div>
 
                   <div className="flex flex-1 flex-col gap-3 p-5">
                     <div>
                       <p className="text-lg font-semibold text-foreground">{mock.title}</p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        {mockDate.toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric"
+                        })}
+                      </p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         {mock.parts.map((p) => (
                           <Badge key={p.id} variant="muted">
