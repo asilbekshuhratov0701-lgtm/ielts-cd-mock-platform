@@ -1,6 +1,6 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
+import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma, Prisma } from "@ielts/db";
@@ -12,25 +12,29 @@ import { EMPTY_IMPORT_RESULT, type ImportResult } from "@/lib/candidate-admin-ty
 
 async function requireAdmin() {
   const session = await auth();
-  const role = session?.user?.role;
-  if (!session?.user?.id || (role !== "ADMIN" && role !== "SUPER_ADMIN")) redirect("/admin");
+  if (!session?.user?.id) redirect("/login");
   const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!dbUser) redirect("/admin");
+  if (
+    !dbUser ||
+    dbUser.status !== "ACTIVE" ||
+    (dbUser.role !== "ADMIN" && dbUser.role !== "SUPER_ADMIN")
+  ) {
+    redirect("/login");
+  }
   return dbUser;
 }
 
 function randomPassword(length = 10): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-  const bytes = randomBytes(length);
   let out = "";
-  for (let i = 0; i < length; i++) out += alphabet[bytes[i]! % alphabet.length];
+  for (let i = 0; i < length; i++) out += alphabet[randomInt(0, alphabet.length)];
   return out;
 }
 
 function shuffle<T>(input: T[]): T[] {
   const array = [...input];
   for (let i = array.length - 1; i > 0; i--) {
-    const j = randomBytes(1)[0]! % (i + 1);
+    const j = randomInt(0, i + 1);
     [array[i], array[j]] = [array[j]!, array[i]!];
   }
   return array;
@@ -56,6 +60,9 @@ async function upsertProfile(userId: string, row: ImportRow) {
   });
 }
 
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+const MAX_IMPORT_ROWS = 2000;
+
 export async function importCandidatesAction(
   _prev: ImportResult,
   formData: FormData
@@ -64,6 +71,13 @@ export async function importCandidatesAction(
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) {
     return { ...EMPTY_IMPORT_RESULT, ok: false, message: "Choose a CSV, JSON, or Excel file." };
+  }
+  if (file.size > MAX_IMPORT_BYTES) {
+    return {
+      ...EMPTY_IMPORT_RESULT,
+      ok: false,
+      message: "File is too large (max 5 MB). Split it into smaller batches."
+    };
   }
 
   let rows: ImportRow[];
@@ -74,6 +88,13 @@ export async function importCandidatesAction(
       ...EMPTY_IMPORT_RESULT,
       ok: false,
       message: "Could not read the file. Check the format and column headers."
+    };
+  }
+  if (rows.length > MAX_IMPORT_ROWS) {
+    return {
+      ...EMPTY_IMPORT_RESULT,
+      ok: false,
+      message: `Too many rows (${rows.length}). Import at most ${MAX_IMPORT_ROWS} candidates per file.`
     };
   }
   if (rows.length === 0) {

@@ -79,7 +79,6 @@ async function collectBackup(orgId: string) {
       role: u.role,
       status: u.status,
       locale: u.locale,
-      passwordHash: u.passwordHash,
       createdAt: iso(u.createdAt),
       groupIds: u.groupMemberships.map((g) => g.groupId),
       candidateProfile: u.candidateProfile

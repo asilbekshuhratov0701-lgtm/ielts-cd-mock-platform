@@ -49,7 +49,11 @@ function filenameFor(base: string, format: ExportFormat): string {
 }
 
 function csvCell(value: string | number | null): string {
-  const s = value === null || value === undefined ? "" : String(value);
+  let s = value === null || value === undefined ? "" : String(value);
+  // Neutralize spreadsheet formula injection: a cell beginning with = + - @ (or
+  // a leading tab/CR) is treated as a formula by Excel/LibreOffice. Prefix a
+  // single quote so candidate-authored text (essays, names) can't execute.
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
