@@ -28,19 +28,19 @@ function normalize(value: string): string {
 }
 
 export function expandOptionalAnswers(accepted: string): string[] {
-  const parts: { text: string; optional: boolean }[] = [];
+  const segments: { text: string; optional: boolean }[] = [];
   const re = /\(([^)]*)\)|([^()]+)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(accepted)) !== null) {
-    if (m[1] !== undefined) parts.push({ text: m[1], optional: true });
-    else if (m[2] !== undefined) parts.push({ text: m[2], optional: false });
+    if (m[1] !== undefined) segments.push({ text: m[1], optional: true });
+    else if (m[2] !== undefined) segments.push({ text: m[2], optional: false });
   }
   let variants = [""];
-  for (const part of parts) {
-    if (part.optional) {
-      variants = variants.flatMap((v) => [v, `${v} ${part.text}`]);
+  for (const seg of segments) {
+    if (seg.optional) {
+      variants = variants.flatMap((v) => [v, v + seg.text]);
     } else {
-      variants = variants.map((v) => `${v} ${part.text}`);
+      variants = variants.map((v) => v + seg.text);
     }
   }
   const out = new Set<string>();
@@ -77,13 +77,27 @@ export function matchSet(input: string[], accepted: string[]): boolean {
   return true;
 }
 
+export function scoreCheckboxMarks(input: string[], accepted: string[]): number {
+  const chosen = new Set(input.map(normalize));
+  const want = new Set(accepted.map(normalize));
+  if (chosen.size > want.size) return 0;
+  let hit = 0;
+  for (const w of want) if (chosen.has(w)) hit++;
+  return hit;
+}
+
 function scoreOne(questionId: string, key: ImportAnswerKey, answer: CandidateAnswer): QuestionScore {
   const maxMarks = key.kind === "checkbox" ? (key.numbers?.length ?? key.accepted.length) : 1;
-  let correct = false;
 
   if (key.kind === "checkbox") {
-    correct = Array.isArray(answer) ? matchSet(answer, key.accepted) : false;
-  } else if (typeof answer === "string") {
+    const marks = Array.isArray(answer)
+      ? Math.min(maxMarks, scoreCheckboxMarks(answer, key.accepted))
+      : 0;
+    return { questionId, kind: key.kind, correct: maxMarks > 0 && marks === maxMarks, marks, maxMarks };
+  }
+
+  let correct = false;
+  if (typeof answer === "string") {
     correct = key.kind === "gap" ? matchGap(answer, key.accepted) : matchChoice(answer, key.accepted);
   }
 
