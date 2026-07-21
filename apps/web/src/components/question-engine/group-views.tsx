@@ -222,6 +222,63 @@ function OptionsPanel({ options }: { options: { id: string; text: string }[] }) 
   );
 }
 
+function SelectTableRow({ promptId, letters }: { promptId: string; letters: string[] }) {
+  const [value, set] = useAnswer(promptId);
+  return (
+    <>
+      {letters.map((letter) => (
+        <td key={letter} className="border border-border px-2 py-2 text-center">
+          <input
+            type="radio"
+            name={promptId}
+            checked={value === letter}
+            onChange={() => set(letter)}
+            aria-label={letter}
+            className="h-4 w-4 text-brand-600"
+          />
+        </td>
+      ))}
+    </>
+  );
+}
+
+function TableSelectView({ group }: { group: SelectGroup }) {
+  const letters = group.optionBank.map((o) => o.id);
+  return (
+    <div className="space-y-4">
+      {!isBareLetterBank(group.optionBank) ? <OptionsPanel options={group.optionBank} /> : null}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-base">
+          <thead>
+            <tr>
+              <th className="border border-border bg-brand-50 px-3 py-2 text-left" />
+              {letters.map((l) => (
+                <th
+                  key={l}
+                  className="border border-border bg-brand-50 px-3 py-2 text-center font-semibold text-brand-700"
+                >
+                  {l}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {group.prompts.map((p) => (
+              <tr key={p.id}>
+                <td className="border border-border px-3 py-2 text-foreground">
+                  <NumberBadge n={p.number} />
+                  {p.text}
+                </td>
+                <SelectTableRow promptId={p.id} letters={letters} />
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function DragSelectView({ group }: { group: SelectGroup }) {
   const hostedInPassage = useHostedInPassage(group.id);
 
@@ -276,6 +333,10 @@ function DragSelectView({ group }: { group: SelectGroup }) {
 }
 
 export function SelectGroupView({ group }: { group: SelectGroup }) {
+  if (group.renderAs === "table" && group.optionBank.length > 0) {
+    return <TableSelectView group={group} />;
+  }
+
   if (group.renderAs === "drag" && group.optionBank.length > 0) {
     return <DragSelectView group={group} />;
   }

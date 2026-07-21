@@ -273,5 +273,44 @@ export const READING_GROUPS: QuestionGroup[] = [
       { id: "D", text: "no further work was needed." },
       { id: "E", text: "cost remained the main barrier." }
     ]
+  },
+  {
+    id: "g-features",
+    questionType: "matching_features",
+    inputKind: "select",
+    renderAs: "table",
+    allowReuse: true,
+    instructions: "Look at the following statements and the list of researchers below.",
+    numberRange: [23, 25],
+    prompts: [
+      { id: "r-23", number: 23, text: "argued that the original dating was wrong." },
+      { id: "r-24", number: 24, text: "developed a new measurement technique." },
+      { id: "r-25", number: 25, text: "questioned the value of further fieldwork." }
+    ],
+    optionBank: [
+      { id: "A", text: "Halvorsen" },
+      { id: "B", text: "Ibarra" },
+      { id: "C", text: "Nakamura" }
+    ]
+  },
+  {
+    id: "g-info",
+    questionType: "matching_information",
+    inputKind: "select",
+    renderAs: "table",
+    allowReuse: true,
+    instructions: "Which paragraph contains the following information?",
+    numberRange: [26, 28],
+    prompts: [
+      { id: "r-26", number: 26, text: "a description of the excavation site" },
+      { id: "r-27", number: 27, text: "a comparison with earlier findings" },
+      { id: "r-28", number: 28, text: "an explanation of the funding process" }
+    ],
+    optionBank: [
+      { id: "A", text: "A" },
+      { id: "B", text: "B" },
+      { id: "C", text: "C" },
+      { id: "D", text: "D" }
+    ]
   }
 ];

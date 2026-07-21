@@ -31,6 +31,9 @@ export type GapLayout =
 export const HELP_TEXT =
   "Use TAB to navigate between the options. Press enter or space to see options. Your answer is saved continuously.";
 
+export const TABLE_HELP_TEXT =
+  "Use TAB to move between rows and the arrow keys to choose a letter, or click a circle in the row. Your answer is saved continuously.";
+
 export const DRAG_HELP_TEXT =
   "Drag an option into a blank, or use TAB to reach an option and press enter to pick it up, then TAB to a blank and press enter to place it. Press escape to cancel, or use the × to clear a blank. Your answer is saved continuously.";
 
@@ -112,7 +115,7 @@ export interface GapGroup extends BaseGroup {
 
 export interface SelectGroup extends BaseGroup {
   inputKind: "select";
-  renderAs: "dropdown" | "drag";
+  renderAs: "dropdown" | "drag" | "table";
   prompts: { id: string; number: number; text: string }[];
   optionBank: { id: string; text: string }[];
   allowReuse: boolean;

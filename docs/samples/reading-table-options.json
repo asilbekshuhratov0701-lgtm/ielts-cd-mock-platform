@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "examId": "table-demo-reading",
+  "module": "reading",
+  "title": "Table Options Demo — Reading",
+  "totalQuestions": 6,
+  "timerSource": "fixed",
+  "timeLimitMinutes": 20,
+  "sections": [
+    {
+      "id": "s1",
+      "order": 0,
+      "title": "Reading Passage 1",
+      "instructions": "You should spend about 20 minutes on Questions 1-6.",
+      "passage": {
+        "subtitle": "DATING THE KALAMBO SITE",
+        "blocks": [
+          {
+            "label": "A",
+            "text": "The excavation at Kalambo Falls sits on a terrace above the river, where waterlogged deposits have preserved worked timber that would normally have rotted away within a few seasons."
+          },
+          {
+            "label": "B",
+            "text": "Halvorsen argued that the original dating was wrong, pointing out that the samples had been taken from a layer disturbed by later flooding."
+          },
+          {
+            "label": "C",
+            "text": "Ibarra developed a new measurement technique based on luminescence, which allowed the surrounding sand to be dated directly rather than relying on organic material."
+          },
+          {
+            "label": "D",
+            "text": "Nakamura questioned the value of further fieldwork at the site, noting that the cost of each season had risen sharply while the return in new material had fallen."
+          }
+        ]
+      },
+      "groups": [
+        {
+          "id": "g1",
+          "questionType": "matching_features",
+          "primitive": "select",
+          "instructions": "Look at the following statements and the list of researchers below. Match each statement with the correct researcher, A-C.",
+          "allowReuse": true,
+          "options": [
+            { "value": "A", "label": "Halvorsen" },
+            { "value": "B", "label": "Ibarra" },
+            { "value": "C", "label": "Nakamura" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q1", "number": 1, "prompt": "argued that the original dating was wrong.", "answer": "A" },
+            { "type": "select", "id": "q2", "number": 2, "prompt": "developed a new measurement technique.", "answer": "B" },
+            { "type": "select", "id": "q3", "number": 3, "prompt": "questioned the value of further fieldwork.", "answer": "C" }
+          ]
+        },
+        {
+          "id": "g2",
+          "questionType": "matching_information",
+          "primitive": "select",
+          "instructions": "Which paragraph contains the following information? Write the correct letter, A-D.",
+          "allowReuse": true,
+          "options": [
+            { "value": "A", "label": "A" },
+            { "value": "B", "label": "B" },
+            { "value": "C", "label": "C" },
+            { "value": "D", "label": "D" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q4", "number": 4, "prompt": "a description of the excavation site", "answer": "A" },
+            { "type": "select", "id": "q5", "number": 5, "prompt": "a reference to rising costs", "answer": "D" },
+            { "type": "select", "id": "q6", "number": 6, "prompt": "an alternative dating method", "answer": "C" }
+          ]
+        }
+      ]
+    }
+  ]
+}

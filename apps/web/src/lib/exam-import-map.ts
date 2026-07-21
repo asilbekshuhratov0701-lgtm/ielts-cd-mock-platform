@@ -15,7 +15,8 @@ import type {
   SummaryContent,
   TableContent
 } from "@/components/question-engine/types";
-import { DRAG_HELP_TEXT } from "@/components/question-engine/types";
+import { DRAG_HELP_TEXT, TABLE_HELP_TEXT } from "@/components/question-engine/types";
+import { selectRenderAs } from "@/components/question-engine/select-render";
 
 export interface PreviewSection {
   id: string;
@@ -62,17 +63,6 @@ function toQuestionType(value: string): QuestionType {
   return QUESTION_TYPES.has(value as QuestionType) ? (value as QuestionType) : "short_answer";
 }
 
-const DRAG_QUESTION_TYPES = new Set<QuestionType>([
-  "matching_headings",
-  "matching_sentence_endings",
-  "matching_features",
-  "summary_completion"
-]);
-
-function selectRenderAs(group: ExamGroup, questionType: QuestionType): "dropdown" | "drag" {
-  if (group.renderAs === "dropdown" || group.renderAs === "drag") return group.renderAs;
-  return DRAG_QUESTION_TYPES.has(questionType) ? "drag" : "dropdown";
-}
 
 function optionValue(o: ExamOption): string {
   return o.value ?? o.id ?? o.key ?? "";
@@ -225,7 +215,7 @@ function summaryParagraphs(group: ExamGroup): string[] | undefined {
   return undefined;
 }
 
-function mapGroup(group: ExamGroup): QuestionGroup[] {
+function mapGroup(group: ExamGroup, module: ExamFile["module"]): QuestionGroup[] {
   const questionType = toQuestionType(group.questionType);
   const allNumbers = group.questions.flatMap(numbersOf);
 
@@ -280,7 +270,11 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
     const prompts = group.questions.flatMap((q) =>
       q.type === "select" ? [{ id: q.id, number: q.number, text: q.prompt ?? "" }] : []
     );
-    const renderAs = selectRenderAs(group, questionType);
+    const renderAs = selectRenderAs(
+      typeof group.renderAs === "string" ? group.renderAs : undefined,
+      questionType,
+      module
+    );
     return [
       {
         id: group.id,
@@ -288,7 +282,12 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
         inputKind: "select",
         instructions: group.instructions ?? "",
         numberRange: range(allNumbers),
-        helpText: renderAs === "drag" ? DRAG_HELP_TEXT : undefined,
+        helpText:
+          renderAs === "drag"
+            ? DRAG_HELP_TEXT
+            : renderAs === "table"
+              ? TABLE_HELP_TEXT
+              : undefined,
         renderAs,
         prompts,
         optionBank: (group.options ?? []).map((o) => ({ id: optionValue(o), text: optionLabel(o) })),
@@ -354,7 +353,7 @@ export function mapExamFile(exam: ExamFile): PreviewExam {
     subtitle: section.passage?.subtitle,
     scenario: section.scenario,
     passageBlocks: (section.passage?.blocks ?? []).map((b) => ({ text: b.text, label: b.label })),
-    groups: section.groups.flatMap(mapGroup)
+    groups: section.groups.flatMap((g) => mapGroup(g, exam.module))
   }));
 
   return {
