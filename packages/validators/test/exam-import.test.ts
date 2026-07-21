@@ -3,12 +3,44 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { validateExamFile, formatReport } from "../src/exam-import.ts";
+import { validateExamFile, formatReport, suggestQuestionType } from "../src/exam-import.ts";
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 
 function load(name: string): unknown {
   return JSON.parse(readFileSync(path.join(dir, "fixtures", name), "utf8"));
+}
+
+function examWithQuestionType(questionType: string): unknown {
+  return {
+    schemaVersion: 1,
+    examId: "qtype-check",
+    module: "reading",
+    title: "Question type check",
+    totalQuestions: 1,
+    timerSource: "fixed",
+    timeLimitMinutes: 60,
+    sections: [
+      {
+        id: "s1",
+        order: 0,
+        groups: [
+          {
+            id: "g1",
+            questionType,
+            primitive: "select",
+            instructions: "Match.",
+            allowReuse: true,
+            options: [
+              { value: "A", label: "Alpha" },
+              { value: "B", label: "Beta" }
+            ],
+            questions: [{ type: "select", id: "q1", number: 1, prompt: "first", answer: "A" }]
+          }
+        ]
+      }
+    ]
+  };
 }
 
 test("valid reading fixture passes with no errors", () => {
@@ -94,4 +126,59 @@ test("non-object input fails schema validation cleanly", () => {
   assert.equal(report.ok, false);
   assert.equal(report.parsed, null);
   assert.ok(report.errors.length > 0);
+});
+
+test("every known question type is accepted", () => {
+  for (const t of [
+    "mc_single",
+    "matching_information",
+    "matching_headings",
+    "matching_features",
+    "matching_sentence_endings",
+    "summary_completion",
+    "map_labelling"
+  ]) {
+    const report = validateExamFile(examWithQuestionType(t));
+    assert.ok(
+      !report.errors.some((e) => e.code === "unknown_question_type"),
+      `'${t}' should be a known type`
+    );
+  }
+});
+
+test("a misspelled questionType is rejected with a suggestion", () => {
+  const report = validateExamFile(examWithQuestionType("matching_feature"));
+  assert.equal(report.ok, false);
+  const err = report.errors.find((e) => e.code === "unknown_question_type");
+  assert.ok(err, "expected unknown_question_type error");
+  assert.ok(err.where.includes("g1"));
+  assert.ok(
+    err.message.includes("matching_features"),
+    `expected a suggestion of matching_features, got: ${err.message}`
+  );
+});
+
+test("a garbage questionType is rejected even without a close suggestion", () => {
+  const report = validateExamFile(examWithQuestionType("totally_made_up_xyz"));
+  assert.equal(report.ok, false);
+  assert.ok(report.errors.some((e) => e.code === "unknown_question_type"));
+});
+
+test("legacy questionType spellings are accepted with a non-blocking warning", () => {
+  const report = validateExamFile(examWithQuestionType("multiple_choice_single"));
+  assert.ok(
+    !report.errors.some((e) => e.code === "unknown_question_type"),
+    "legacy spelling must not error"
+  );
+  const warn = report.warnings.find((w) => w.code === "noncanonical_question_type");
+  assert.ok(warn, "expected a noncanonical_question_type warning");
+  assert.ok(warn.message.includes("mc_single"), `expected canonical hint, got: ${warn.message}`);
+});
+
+test("IELTS aliases resolve to the canonical engine type", () => {
+  assert.equal(suggestQuestionType("classification"), "matching_features");
+  assert.equal(suggestQuestionType("Matching Names"), "matching_features");
+  assert.equal(suggestQuestionType("plan_labelling"), "map_labelling");
+  assert.equal(suggestQuestionType("mc_single"), "mc_single");
+  assert.equal(suggestQuestionType("qwerty"), null);
 });

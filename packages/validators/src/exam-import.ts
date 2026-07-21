@@ -3,6 +3,89 @@ import { z } from "zod";
 export const examPrimitive = z.enum(["radio", "checkbox", "gap", "select", "essay"]);
 export const examModule = z.enum(["reading", "listening", "writing"]);
 
+export const QUESTION_TYPES = [
+  "mc_single",
+  "mc_multiple",
+  "true_false_not_given",
+  "yes_no_not_given",
+  "matching_information",
+  "matching_headings",
+  "matching_features",
+  "matching_sentence_endings",
+  "note_completion",
+  "summary_completion",
+  "table_completion",
+  "form_completion",
+  "flowchart_completion",
+  "sentence_completion",
+  "short_answer",
+  "map_labelling",
+  "diagram_labelling",
+  "essay",
+  "writing_task_1",
+  "writing_task_2"
+] as const;
+
+export type ExamQuestionType = (typeof QUESTION_TYPES)[number];
+
+const QUESTION_TYPE_SET: ReadonlySet<string> = new Set(QUESTION_TYPES);
+
+const QUESTION_TYPE_ALIASES: Readonly<Record<string, string>> = {
+  classification: "matching_features",
+  matching_classification: "matching_features",
+  matching_names: "matching_features",
+  matching: "matching_information",
+  plan_labelling: "map_labelling",
+  plan_labeling: "map_labelling",
+  map_labeling: "map_labelling",
+  diagram_labeling: "diagram_labelling",
+  multiple_choice: "mc_single",
+  multiple_choice_single: "mc_single",
+  multiple_answer: "mc_multiple",
+  multiple_choice_multi: "mc_multiple",
+  multiple_choice_multiple: "mc_multiple",
+  true_false: "true_false_not_given",
+  true_false_notgiven: "true_false_not_given",
+  yes_no: "yes_no_not_given",
+  yes_no_notgiven: "yes_no_not_given",
+  summary_completion_wordbank: "summary_completion"
+};
+
+function normalizeType(value: string): string {
+  return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+}
+
+function editDistance(a: string, b: string): number {
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  const curr = new Array<number>(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min((curr[j - 1] ?? 0) + 1, (prev[j] ?? 0) + 1, (prev[j - 1] ?? 0) + cost);
+    }
+    for (let j = 0; j <= b.length; j++) prev[j] = curr[j] ?? 0;
+  }
+  return prev[b.length] ?? 0;
+}
+
+export function suggestQuestionType(value: string): string | null {
+  const key = normalizeType(value);
+  if (QUESTION_TYPE_SET.has(key)) return key;
+  const alias = QUESTION_TYPE_ALIASES[key];
+  if (alias) return alias;
+  let best: string | null = null;
+  let bestDistance = Infinity;
+  for (const t of QUESTION_TYPES) {
+    const d = editDistance(key, t);
+    if (d < bestDistance) {
+      bestDistance = d;
+      best = t;
+    }
+  }
+  return bestDistance <= 4 ? best : null;
+}
+
 const optionSchema = z
   .object({
     value: z.string().optional(),
@@ -225,6 +308,29 @@ export function validateExamFile(input: unknown): ValidationReport {
 
   for (const section of exam.sections) {
     for (const group of section.groups) {
+      const normalizedType = normalizeType(group.questionType);
+      if (!QUESTION_TYPE_SET.has(group.questionType)) {
+        const canonical = QUESTION_TYPE_ALIASES[normalizedType];
+        if (canonical) {
+          warnings.push({
+            level: "warning",
+            code: "noncanonical_question_type",
+            where: `group ${group.id}`,
+            message: `questionType '${group.questionType}' is non-canonical; use '${canonical}'`
+          });
+        } else {
+          const suggestion = suggestQuestionType(group.questionType);
+          errors.push({
+            level: "error",
+            code: "unknown_question_type",
+            where: `group ${group.id}`,
+            message: `unknown questionType '${group.questionType}'${
+              suggestion ? ` — did you mean '${suggestion}'?` : ""
+            }`
+          });
+        }
+      }
+
       const groupValues = (group.options ?? [])
         .map(optionValue)
         .filter((v): v is string => v !== null);

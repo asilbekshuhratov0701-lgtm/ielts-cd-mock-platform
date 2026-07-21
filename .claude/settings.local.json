@@ -95,7 +95,8 @@
       "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code}\\\\n\" http://localhost:3000/login --max-time 90)",
       "Bash(curl -s http://localhost:3000/login --max-time 60)",
       "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code}\\\\n\" http://localhost:3000/login --max-time 120)",
-      "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code}\\\\n\" http://localhost:3000/login --max-time 150)"
+      "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code}\\\\n\" http://localhost:3000/login --max-time 150)",
+      "Bash(pnpm test *)"
     ]
   }
 }
