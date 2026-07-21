@@ -82,11 +82,12 @@ export async function createMockAction(formData: FormData): Promise<void> {
 }
 
 export async function publishMockAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const mock = await prisma.mockExam.findUnique({
-    where: { id },
+  const mock = await prisma.mockExam.findFirst({
+    where: { id, orgId },
     include: { parts: { include: { blueprint: true } } }
   });
   if (!mock || mock.parts.length === 0) {
@@ -94,7 +95,7 @@ export async function publishMockAction(formData: FormData): Promise<void> {
     return;
   }
   const audioReady = mock.parts.every((p) => {
-    const needsAudio = p.blueprint.module === "listening" && Boolean(p.blueprint.audioRef);
+    const needsAudio = p.blueprint.module === "listening";
     return !needsAudio || Boolean(p.blueprint.audioMediaId);
   });
   if (!audioReady) {
@@ -111,28 +112,40 @@ export async function publishMockAction(formData: FormData): Promise<void> {
 }
 
 export async function unpublishMockAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
   if (!id) return;
+  const mock = await prisma.mockExam.findFirst({ where: { id, orgId } });
+  if (!mock) return;
   await prisma.mockExam.update({ where: { id }, data: { state: "draft", publishedAt: null } });
   refreshAdmin(id);
 }
 
 export async function deleteMockAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
   if (!id) return;
+  const mock = await prisma.mockExam.findFirst({ where: { id, orgId } });
+  if (!mock) return;
+  const attempts = await prisma.mockAttempt.count({ where: { mockExamId: id } });
+  if (attempts > 0) {
+    refreshAdmin(id);
+    redirect(`/admin/exam-import/mock/${id}?error=has_attempts`);
+  }
   await prisma.mockExam.delete({ where: { id } });
   revalidatePath("/admin/exam-import");
   redirect("/admin/exam-import");
 }
 
 export async function saveMockWritingMarkAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const attemptId = String(formData.get("attemptId") ?? "");
   if (!attemptId) return;
-  const part = await prisma.blueprintAttempt.findUnique({
-    where: { id: attemptId },
+  const part = await prisma.blueprintAttempt.findFirst({
+    where: { id: attemptId, blueprint: { orgId } },
     include: { blueprint: true }
   });
   if (!part || part.blueprint.module !== "writing") return;
@@ -193,9 +206,25 @@ export async function saveMockWritingMarkAction(formData: FormData): Promise<voi
 }
 
 export async function releaseMockResultAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
   if (!id) return;
+  const attempt = await prisma.mockAttempt.findFirst({ where: { id, mockExam: { orgId } } });
+  if (!attempt) return;
+  const parts = await prisma.blueprintAttempt.findMany({
+    where: { mockAttemptId: id },
+    include: { blueprint: true }
+  });
+  const writingUnmarked = parts.some(
+    (p) =>
+      p.blueprint.module === "writing" &&
+      (p.resultJson as { kind?: string } | null)?.kind !== "writing"
+  );
+  if (writingUnmarked) {
+    revalidatePath("/admin/results");
+    redirect("/admin/results?error=writing_unmarked");
+  }
   await prisma.mockAttempt.update({
     where: { id },
     data: { resultsReleased: true, releasedAt: new Date() }
@@ -204,9 +233,12 @@ export async function releaseMockResultAction(formData: FormData): Promise<void>
 }
 
 export async function holdMockResultAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
   if (!id) return;
+  const attempt = await prisma.mockAttempt.findFirst({ where: { id, mockExam: { orgId } } });
+  if (!attempt) return;
   await prisma.mockAttempt.update({
     where: { id },
     data: { resultsReleased: false, releasedAt: null }
@@ -224,14 +256,32 @@ export async function setMockAssignmentsAction(formData: FormData): Promise<void
 
   const candidateIds = formData.getAll("candidateId").map(String).filter(Boolean);
   const groupIds = formData.getAll("groupId").map(String).filter(Boolean);
-  const rows = [
-    ...candidateIds.map((candidateId) => ({ mockExamId, candidateId })),
-    ...groupIds.map((groupId) => ({ mockExamId, groupId }))
+
+  const existing = await prisma.mockAssignment.findMany({ where: { mockExamId } });
+  const desiredCandidates = new Set(candidateIds);
+  const desiredGroups = new Set(groupIds);
+  const existingCandidates = new Set(
+    existing.filter((a) => a.candidateId).map((a) => a.candidateId as string)
+  );
+  const existingGroups = new Set(existing.filter((a) => a.groupId).map((a) => a.groupId as string));
+
+  const toDelete = existing.filter(
+    (a) =>
+      (a.candidateId && !desiredCandidates.has(a.candidateId)) ||
+      (a.groupId && !desiredGroups.has(a.groupId))
+  );
+  const toCreate = [
+    ...candidateIds
+      .filter((c) => !existingCandidates.has(c))
+      .map((candidateId) => ({ mockExamId, candidateId })),
+    ...groupIds.filter((g) => !existingGroups.has(g)).map((groupId) => ({ mockExamId, groupId }))
   ];
 
   await prisma.$transaction([
-    prisma.mockAssignment.deleteMany({ where: { mockExamId } }),
-    ...(rows.length > 0 ? [prisma.mockAssignment.createMany({ data: rows })] : [])
+    ...(toDelete.length > 0
+      ? [prisma.mockAssignment.deleteMany({ where: { id: { in: toDelete.map((a) => a.id) } } })]
+      : []),
+    ...(toCreate.length > 0 ? [prisma.mockAssignment.createMany({ data: toCreate })] : [])
   ]);
   refreshAdmin(mockExamId);
 }
@@ -340,16 +390,17 @@ export async function submitMockPartAction(formData: FormData): Promise<void> {
   if (!mockAttempt || mockAttempt.candidateId !== userId) redirect("/play");
   if (mockAttempt.status === "submitted") redirect(`/play/mock/${mockAttemptId}/result`);
 
+  const parts = mockAttempt.mockExam.parts;
   const part = await prisma.blueprintAttempt.findUnique({
     where: { id: attemptId },
     include: { blueprint: true }
   });
-  if (part && part.mockAttemptId === mockAttemptId && part.status !== "submitted") {
+  if (part && part.mockAttemptId === mockAttemptId && part.status === "in_progress") {
     const answerKey = part.blueprint.answerKeyJson as unknown as Record<string, ImportAnswerKey>;
     const answers = part.answersJson as unknown as Record<string, CandidateAnswer>;
     const score = scoreImportedExam(answerKey, answers);
-    await prisma.blueprintAttempt.update({
-      where: { id: attemptId },
+    await prisma.blueprintAttempt.updateMany({
+      where: { id: attemptId, status: "in_progress" },
       data: {
         status: "submitted",
         submittedAt: new Date(),
@@ -360,15 +411,29 @@ export async function submitMockPartAction(formData: FormData): Promise<void> {
     });
   }
 
-  const parts = mockAttempt.mockExam.parts;
-  const nextIndex = mockAttempt.currentIndex + 1;
+  const submittedOrders = await prisma.blueprintAttempt.findMany({
+    where: { mockAttemptId, status: "submitted" },
+    select: { partOrder: true }
+  });
+  const highestSubmitted = submittedOrders.reduce(
+    (max, p) => Math.max(max, p.partOrder ?? -1),
+    -1
+  );
+  const nextIndex = highestSubmitted + 1;
   if (nextIndex < parts.length) {
     const next = parts[nextIndex]!;
-    await createPartAttempt(mockAttemptId, userId, next, next.blueprint.timeLimitMin);
-    await prisma.mockAttempt.update({
-      where: { id: mockAttemptId },
-      data: { currentIndex: nextIndex }
+    const existingNext = await prisma.blueprintAttempt.findFirst({
+      where: { mockAttemptId, partOrder: nextIndex }
     });
+    if (!existingNext) {
+      await createPartAttempt(mockAttemptId, userId, next, next.blueprint.timeLimitMin);
+    }
+    if (nextIndex > mockAttempt.currentIndex) {
+      await prisma.mockAttempt.updateMany({
+        where: { id: mockAttemptId, status: "in_progress" },
+        data: { currentIndex: nextIndex }
+      });
+    }
     redirect(`/play/mock/${mockAttemptId}`);
   }
 
@@ -387,8 +452,8 @@ export async function submitMockPartAction(formData: FormData): Promise<void> {
     rawScore: partAttempts.reduce((s, p) => s + (p.rawScore ?? 0), 0),
     totalScore: partAttempts.reduce((s, p) => s + (p.totalScore ?? 0), 0)
   };
-  await prisma.mockAttempt.update({
-    where: { id: mockAttemptId },
+  await prisma.mockAttempt.updateMany({
+    where: { id: mockAttemptId, status: "in_progress" },
     data: {
       status: "submitted",
       submittedAt: new Date(),

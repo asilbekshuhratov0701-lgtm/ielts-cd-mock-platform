@@ -19,6 +19,11 @@ async function orgIdFor(userId: string): Promise<string> {
   return dbUser.orgId;
 }
 
+async function loadOwnedBlueprint(id: string, orgId: string) {
+  if (!id) return null;
+  return prisma.examBlueprint.findFirst({ where: { id, orgId } });
+}
+
 function refresh(id?: string) {
   revalidatePath("/admin/exam-import");
   if (id) revalidatePath(`/admin/exam-import/${id}`);
@@ -110,11 +115,15 @@ export async function createWritingExamAction(formData: FormData): Promise<void>
 }
 
 export async function publishBlueprintAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
-  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  const bp = await loadOwnedBlueprint(id, orgId);
   if (!bp || bp.state === "audio_pending") {
+    refresh(id);
+    return;
+  }
+  if (bp.module === "listening" && !bp.audioMediaId) {
     refresh(id);
     return;
   }
@@ -126,10 +135,10 @@ export async function publishBlueprintAction(formData: FormData): Promise<void> 
 }
 
 export async function unpublishBlueprintAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
-  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  const bp = await loadOwnedBlueprint(id, orgId);
   if (!bp) return;
   const next =
     bp.module === "listening" && bp.audioRef && !bp.audioMediaId ? "audio_pending" : "draft";
@@ -151,7 +160,7 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
     refresh(id);
     return;
   }
-  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  const bp = await loadOwnedBlueprint(id, orgId);
   if (!bp) return;
 
   const ext = (file.name.split(".").pop() ?? "mp3").toLowerCase();
@@ -213,7 +222,7 @@ export async function attachGroupImageAction(formData: FormData): Promise<void> 
     refresh(id);
     return;
   }
-  const bp = await prisma.examBlueprint.findUnique({ where: { id } });
+  const bp = await loadOwnedBlueprint(id, orgId);
   if (!bp) return;
 
   const ext = (file.name.split(".").pop() ?? "png").toLowerCase();
@@ -249,9 +258,16 @@ export async function attachGroupImageAction(formData: FormData): Promise<void> 
 }
 
 export async function deleteBlueprintAction(formData: FormData): Promise<void> {
-  await requireStaff();
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
   const id = String(formData.get("id") ?? "");
-  if (!id) return;
+  const bp = await loadOwnedBlueprint(id, orgId);
+  if (!bp) return;
+  const attempts = await prisma.blueprintAttempt.count({ where: { blueprintId: id } });
+  const usedInMock = await prisma.mockExamPart.count({ where: { blueprintId: id } });
+  if (attempts > 0 || usedInMock > 0) {
+    redirect(`/admin/exam-import/${id}?error=in_use`);
+  }
   await prisma.examBlueprint.delete({ where: { id } });
   revalidatePath("/admin/exam-import");
   redirect("/admin/exam-import");
