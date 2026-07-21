@@ -1,5 +1,6 @@
 "use client";
 
+import { DragBoundary } from "./dnd";
 import { GapGroupView } from "./GapGroupView";
 import { CheckboxGroupView, EssayGroupView, RadioGroupView, SelectGroupView } from "./group-views";
 import { QuestionGroupFrame } from "./QuestionGroupFrame";
@@ -22,8 +23,10 @@ function GroupBody({ group }: { group: QuestionGroup }) {
 
 export function QuestionGroupRenderer({ group }: { group: QuestionGroup }) {
   return (
-    <QuestionGroupFrame group={group}>
-      <GroupBody group={group} />
-    </QuestionGroupFrame>
+    <DragBoundary>
+      <QuestionGroupFrame group={group}>
+        <GroupBody group={group} />
+      </QuestionGroupFrame>
+    </DragBoundary>
   );
 }

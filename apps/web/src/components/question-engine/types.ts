@@ -31,6 +31,9 @@ export type GapLayout =
 export const HELP_TEXT =
   "Use TAB to navigate between the options. Press enter or space to see options. Your answer is saved continuously.";
 
+export const DRAG_HELP_TEXT =
+  "Drag an option into a blank, or use TAB to reach an option and press enter to pick it up, then TAB to a blank and press enter to place it. Press escape to cancel, or use the × to clear a blank. Your answer is saved continuously.";
+
 export interface BaseGroup {
   id: string;
   questionType: QuestionType;

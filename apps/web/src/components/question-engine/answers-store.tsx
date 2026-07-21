@@ -42,6 +42,10 @@ export function useAnswers(): AnswersMap {
   return useStore().answers;
 }
 
+export function useSetAnswer(): (key: string, value: AnswerValue) => void {
+  return useStore().setAnswer;
+}
+
 export function useAnswer(key: string): readonly [AnswerValue, (value: AnswerValue) => void] {
   const { answers, setAnswer } = useStore();
   const set = useCallback((value: AnswerValue) => setAnswer(key, value), [key, setAnswer]);

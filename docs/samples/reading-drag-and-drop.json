@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "examId": "drag-demo-reading",
+  "module": "reading",
+  "title": "Drag and Drop Demo — Reading",
+  "totalQuestions": 12,
+  "timerSource": "fixed",
+  "timeLimitMinutes": 20,
+  "sections": [
+    {
+      "id": "s1",
+      "order": 0,
+      "title": "Reading Passage 1",
+      "instructions": "You should spend about 20 minutes on Questions 1-12.",
+      "passage": {
+        "subtitle": "LAND OF THE RISING SUM",
+        "blocks": [
+          {
+            "label": "A",
+            "text": "Japan has a significantly better record in terms of average mathematical attainment than England and Wales. Large sample international comparisons of pupils' attainments since the 1960s have established that not only did Japanese pupils at age 13 have better scores of average attainment, but there was also a larger proportion of 'low' attainers in England, where, incidentally, the variation in attainment scores was much greater."
+          },
+          {
+            "label": "B",
+            "text": "Lower secondary schools in Japan cover three school years, from the seventh grade (age 13) to the ninth grade (age 15). Virtually all pupils at this stage attend state schools: only 3 per cent are in the private sector. Schools are usually modern in design, set well back from the road and spacious inside."
+          },
+          {
+            "label": "C",
+            "text": "Classrooms are large and pupils sit at single desks in rows. Lessons last for a standardised 50 minutes and are always followed by a 10-minute break, which gives the pupils a chance to let off steam. Teachers begin with a formal address and mutual bowing, and then concentrate on whole-class teaching."
+          },
+          {
+            "label": "D",
+            "text": "A standard mathematics text is followed nationwide, and the pace of lessons is brisk. Pupils are expected to keep up, and homework is set and corrected regularly. The emphasis throughout is on effort rather than innate ability."
+          },
+          {
+            "label": "E",
+            "text": "The Japanese Ministry of Education, Monbusho, prescribes the curriculum in considerable detail. This central direction ensures a common standard across the country, and textbook publishers must gain official approval before their materials reach the classroom."
+          }
+        ]
+      },
+      "groups": [
+        {
+          "id": "g1",
+          "questionType": "matching_headings",
+          "primitive": "select",
+          "instructions": "Reading Passage 1 has five sections, A-E. Choose the correct heading for sections B-E from the list of headings below.",
+          "allowReuse": false,
+          "options": [
+            { "value": "i", "label": "The influence of Monbusho" },
+            { "value": "ii", "label": "Helping less successful students" },
+            { "value": "iii", "label": "The success of compulsory education" },
+            { "value": "iv", "label": "Research findings concerning achievements in maths" },
+            { "value": "v", "label": "The typical format of a maths lesson" },
+            { "value": "vi", "label": "Comparative expenditure on maths education" },
+            { "value": "vii", "label": "Background to middle-years education in Japan" },
+            { "value": "viii", "label": "The key to Japanese successes in maths education" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q1", "number": 1, "prompt": "Section B", "answer": "vii" },
+            { "type": "select", "id": "q2", "number": 2, "prompt": "Section C", "answer": "v" },
+            { "type": "select", "id": "q3", "number": 3, "prompt": "Section D", "answer": "viii" },
+            { "type": "select", "id": "q4", "number": 4, "prompt": "Section E", "answer": "i" }
+          ]
+        },
+        {
+          "id": "g2",
+          "questionType": "matching_sentence_endings",
+          "primitive": "select",
+          "instructions": "Complete each sentence with the correct ending, A-F, below.",
+          "allowReuse": false,
+          "options": [
+            { "value": "A", "label": "Homo sapiens emerged at an earlier point in time than experts previously believed." },
+            { "value": "B", "label": "previous assumptions about who had power in the prehistoric world were inaccurate." },
+            { "value": "C", "label": "gender roles in extinct hominin species were different from those in Homo sapiens societies." },
+            { "value": "D", "label": "experts may have been mistaken about who looked for food in early human communities." },
+            { "value": "E", "label": "the tools used by early humans were more sophisticated than expected." },
+            { "value": "F", "label": "climate had little effect on the movement of early human populations." }
+          ],
+          "questions": [
+            { "type": "select", "id": "q5", "number": 5, "prompt": "The findings at Kalambo Falls revealed that", "answer": "A" },
+            { "type": "select", "id": "q6", "number": 6, "prompt": "Evidence from high-altitude regions suggests that", "answer": "D" },
+            { "type": "select", "id": "q7", "number": 7, "prompt": "An academic publication from June 2023 shows that", "answer": "B" },
+            { "type": "select", "id": "q8", "number": 8, "prompt": "Analysis of a 4000-year-old Iberian leader indicates that", "answer": "C" }
+          ]
+        },
+        {
+          "id": "g3",
+          "questionType": "summary_completion",
+          "primitive": "select",
+          "instructions": "Complete the summary below. Choose the correct answer from the list of words.",
+          "allowReuse": false,
+          "template": {
+            "format": "summary",
+            "paragraphs": [
+              "Japanese lower secondary schools follow a {{9}} curriculum that is prescribed centrally. Lessons run for a fixed {{10}} and are followed by a short break. Teachers favour {{11}} instruction rather than small-group work, and the emphasis falls on {{12}} rather than natural talent."
+            ]
+          },
+          "options": [
+            { "value": "A", "label": "national" },
+            { "value": "B", "label": "duration" },
+            { "value": "C", "label": "whole-class" },
+            { "value": "D", "label": "effort" },
+            { "value": "E", "label": "optional" },
+            { "value": "F", "label": "ability" }
+          ],
+          "questions": [
+            { "type": "select", "id": "q9", "number": 9, "prompt": "", "answer": "A" },
+            { "type": "select", "id": "q10", "number": 10, "prompt": "", "answer": "B" },
+            { "type": "select", "id": "q11", "number": 11, "prompt": "", "answer": "C" },
+            { "type": "select", "id": "q12", "number": 12, "prompt": "", "answer": "D" }
+          ]
+        }
+      ]
+    }
+  ]
+}

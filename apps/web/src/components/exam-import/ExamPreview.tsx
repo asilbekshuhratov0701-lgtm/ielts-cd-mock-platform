@@ -11,8 +11,10 @@ import {
   Volume2
 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
-import type { AnswersMap, EssayGroup } from "@/components/question-engine/types";
+import type { AnswersMap, EssayGroup, SelectGroup } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswer, useAnswers } from "@/components/question-engine/answers-store";
+import { AnswerSlot, DragProvider, PassageHostProvider } from "@/components/question-engine/dnd";
+import { headingSlotsByBlock } from "@/components/question-engine/heading-slots";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
 import {
   saveBlueprintAnswers,
@@ -211,7 +213,33 @@ function PartBanner({ index, from, to }: { index: number; from: number; to: numb
   );
 }
 
-function PassagePane({ section, index }: { section: PreviewSection; index: number }) {
+type HeadingHost = { group: SelectGroup; slot: { id: string; number: number } };
+
+function passageHeadingHosts(section: PreviewSection): {
+  hosts: Map<number, HeadingHost>;
+  hosted: Set<string>;
+} {
+  const hosts = new Map<number, HeadingHost>();
+  const hosted = new Set<string>();
+  for (const g of section.groups) {
+    if (g.inputKind !== "select") continue;
+    const slots = headingSlotsByBlock(g, section.passageBlocks);
+    if (!slots) continue;
+    hosted.add(g.id);
+    slots.forEach((slot, blockIndex) => hosts.set(blockIndex, { group: g, slot }));
+  }
+  return { hosts, hosted };
+}
+
+function PassagePane({
+  section,
+  index,
+  hosts
+}: {
+  section: PreviewSection;
+  index: number;
+  hosts: Map<number, HeadingHost>;
+}) {
   return (
     <div className="h-full overflow-auto px-8 py-6">
       <h2 className="text-xl font-bold uppercase text-foreground">
@@ -225,12 +253,28 @@ function PassagePane({ section, index }: { section: PreviewSection; index: numbe
         data-hl-id={`p:${section.id}`}
         className="mt-3 space-y-3 text-[15px] leading-relaxed text-foreground/85"
       >
-        {section.passageBlocks.map((b, i) => (
-          <p key={i}>
-            {b.label ? <span className="mr-2 font-semibold text-foreground">{b.label}</span> : null}
-            {b.text}
-          </p>
-        ))}
+        {section.passageBlocks.map((b, i) => {
+          const host = hosts.get(i);
+          return (
+            <div key={i} className="space-y-2">
+              {host ? (
+                <AnswerSlot
+                  group={host.group}
+                  promptId={host.slot.id}
+                  number={host.slot.number}
+                  variant="block"
+                  placeholder="Drop heading here"
+                />
+              ) : null}
+              <p>
+                {b.label ? (
+                  <span className="mr-2 font-semibold text-foreground">{b.label}</span>
+                ) : null}
+                {b.text}
+              </p>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -258,11 +302,13 @@ function ReadingBody({
   const [leftPct, setLeftPct] = useState(50);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  const { hosts, hosted } = useMemo(() => passageHeadingHosts(section), [section]);
 
   return (
+    <PassageHostProvider hosted={hosted}>
     <div ref={containerRef} className={cn("flex", fill ? "h-full" : "h-[70vh]")}>
       <div style={{ width: `${leftPct}%` }} className="h-full border-r border-border">
-        <PassagePane section={section} index={index} />
+        <PassagePane section={section} index={index} hosts={hosts} />
       </div>
       <div
         role="separator"
@@ -286,6 +332,7 @@ function ReadingBody({
         <GroupsPane section={section} />
       </div>
     </div>
+    </PassageHostProvider>
   );
 }
 
@@ -786,7 +833,9 @@ export function ExamPreview({
 }) {
   return (
     <AnswersProvider initial={live?.initialAnswers}>
-      <Shell exam={exam} audioUrl={audioUrl} live={live} />
+      <DragProvider>
+        <Shell exam={exam} audioUrl={audioUrl} live={live} />
+      </DragProvider>
     </AnswersProvider>
   );
 }

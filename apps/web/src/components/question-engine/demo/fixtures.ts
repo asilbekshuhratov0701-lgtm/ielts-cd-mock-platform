@@ -124,7 +124,7 @@ export const READING_GROUPS: QuestionGroup[] = [
     id: "g-headings",
     questionType: "matching_headings",
     inputKind: "select",
-    renderAs: "dropdown",
+    renderAs: "drag",
     allowReuse: false,
     instructions: "Choose the correct heading for each paragraph from the list of headings.",
     numberRange: [4, 6],
@@ -149,8 +149,9 @@ export const READING_GROUPS: QuestionGroup[] = [
     numberRange: [7, 9],
     content: {
       title: "Summary",
-      paragraph:
+      paragraphs: [
         "The material was originally valued for its {{7}}, but later became important in {{8}}. By the end of the century it was being exported to {{9}} markets around the world."
+      ]
     },
     gaps: [
       { id: "r-7", number: 7, wordLimit: 1, allowNumber: false },
@@ -257,7 +258,7 @@ export const READING_GROUPS: QuestionGroup[] = [
     id: "g-endings",
     questionType: "matching_sentence_endings",
     inputKind: "select",
-    renderAs: "dropdown",
+    renderAs: "drag",
     allowReuse: false,
     instructions: "Complete each sentence with the correct ending, A–E.",
     numberRange: [21, 22],

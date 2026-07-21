@@ -83,6 +83,7 @@ const groupSchema = z
     template: z.union([z.string(), z.object({}).passthrough()]).optional(),
     options: z.array(optionSchema).optional(),
     allowReuse: z.boolean().optional(),
+    renderAs: z.enum(["dropdown", "drag"]).optional(),
     wordLimit: z.number().int().positive().optional(),
     allowNumber: z.boolean().optional(),
     presentation: z.enum(["inline", "list"]).optional(),

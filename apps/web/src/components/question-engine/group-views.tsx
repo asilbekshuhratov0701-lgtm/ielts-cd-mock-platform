@@ -1,6 +1,7 @@
 "use client";
 
 import { useAnswer } from "./answers-store";
+import { AnswerSlot, OptionBank, useHostedInPassage } from "./dnd";
 import { CheckboxInput, RadioInput, SelectMatch } from "./primitives";
 import { NumberBadge } from "./QuestionGroupFrame";
 import type {
@@ -221,7 +222,64 @@ function OptionsPanel({ options }: { options: { id: string; text: string }[] }) 
   );
 }
 
+function DragSelectView({ group }: { group: SelectGroup }) {
+  const hostedInPassage = useHostedInPassage(group.id);
+
+  if (hostedInPassage) {
+    return <OptionBank group={group} hint="Drag and drop the headings to the correct paragraphs in the passage." />;
+  }
+
+  if (group.paragraphs && group.paragraphs.length > 0) {
+    const byNumber = new Map(group.prompts.map((p) => [p.number, p] as const));
+    return (
+      <div className="space-y-4">
+        <div className="space-y-3 text-base leading-loose text-foreground">
+          {group.paragraphs.map((para, i) => (
+            <p key={i}>
+              {para.split(/(\{\{\d+\}\})/g).map((part, j) => {
+                const m = part.match(/^\{\{(\d+)\}\}$/);
+                if (!m) return <span key={j}>{part}</span>;
+                const prompt = byNumber.get(Number(m[1]));
+                if (!prompt) {
+                  return (
+                    <span key={j} className="text-muted">
+                      {part}
+                    </span>
+                  );
+                }
+                return (
+                  <AnswerSlot key={j} group={group} promptId={prompt.id} number={prompt.number} />
+                );
+              })}
+            </p>
+          ))}
+        </div>
+        <OptionBank group={group} hint="Drag and drop an option to fill in each blank." />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <ul className="flex flex-col gap-[var(--space-question)]">
+        {group.prompts.map((p) => (
+          <li key={p.id} className="flex flex-wrap items-center gap-2 text-base text-foreground">
+            <span className="mr-1 text-foreground">•</span>
+            <span>{p.text}</span>
+            <AnswerSlot group={group} promptId={p.id} number={p.number} />
+          </li>
+        ))}
+      </ul>
+      <OptionBank group={group} hint="Drag and drop an option to fill in each blank." />
+    </div>
+  );
+}
+
 export function SelectGroupView({ group }: { group: SelectGroup }) {
+  if (group.renderAs === "drag" && group.optionBank.length > 0) {
+    return <DragSelectView group={group} />;
+  }
+
   if (group.paragraphs && group.paragraphs.length > 0) {
     const byNumber = new Map(group.prompts.map((p) => [p.number, p] as const));
     return (

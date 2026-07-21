@@ -15,6 +15,7 @@ import type {
   SummaryContent,
   TableContent
 } from "@/components/question-engine/types";
+import { DRAG_HELP_TEXT } from "@/components/question-engine/types";
 
 export interface PreviewSection {
   id: string;
@@ -59,6 +60,18 @@ const QUESTION_TYPES = new Set<QuestionType>([
 
 function toQuestionType(value: string): QuestionType {
   return QUESTION_TYPES.has(value as QuestionType) ? (value as QuestionType) : "short_answer";
+}
+
+const DRAG_QUESTION_TYPES = new Set<QuestionType>([
+  "matching_headings",
+  "matching_sentence_endings",
+  "matching_features",
+  "summary_completion"
+]);
+
+function selectRenderAs(group: ExamGroup, questionType: QuestionType): "dropdown" | "drag" {
+  if (group.renderAs === "dropdown" || group.renderAs === "drag") return group.renderAs;
+  return DRAG_QUESTION_TYPES.has(questionType) ? "drag" : "dropdown";
 }
 
 function optionValue(o: ExamOption): string {
@@ -267,6 +280,7 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
     const prompts = group.questions.flatMap((q) =>
       q.type === "select" ? [{ id: q.id, number: q.number, text: q.prompt ?? "" }] : []
     );
+    const renderAs = selectRenderAs(group, questionType);
     return [
       {
         id: group.id,
@@ -274,7 +288,8 @@ function mapGroup(group: ExamGroup): QuestionGroup[] {
         inputKind: "select",
         instructions: group.instructions ?? "",
         numberRange: range(allNumbers),
-        renderAs: "dropdown",
+        helpText: renderAs === "drag" ? DRAG_HELP_TEXT : undefined,
+        renderAs,
         prompts,
         optionBank: (group.options ?? []).map((o) => ({ id: optionValue(o), text: optionLabel(o) })),
         allowReuse: group.allowReuse ?? false,

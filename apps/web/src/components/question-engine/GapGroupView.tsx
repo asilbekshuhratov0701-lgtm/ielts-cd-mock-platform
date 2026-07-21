@@ -97,7 +97,7 @@ function SummaryLayout({
         <p className="mb-3 text-center text-base font-semibold text-foreground">{content.title}</p>
       ) : null}
       <div className="space-y-3">
-        {content.paragraphs.map((p, i) => (
+        {(Array.isArray(content.paragraphs) ? content.paragraphs : []).map((p, i) => (
           <p key={i} className="text-base leading-loose text-foreground">
             {renderText(p, byNumber)}
           </p>
