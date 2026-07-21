@@ -42,6 +42,27 @@ export const heartbeatSchema = z.object({
   audioPositionSec: z.number().nonnegative().optional()
 });
 
+// Live blueprint autosave — bounded so a candidate can't persist an arbitrarily
+// large blob into the JSON column (the server-action body limit is 200MB).
+export const MAX_ANSWER_KEYS = 500;
+export const MAX_ANSWER_VALUE_LEN = 20000;
+export const MAX_ANSWER_ARRAY_ITEMS = 40;
+
+export const blueprintAnswerValueSchema = z.union([
+  z.string().max(MAX_ANSWER_VALUE_LEN),
+  z.array(z.string().max(500)).max(MAX_ANSWER_ARRAY_ITEMS),
+  z.null()
+]);
+
+export const blueprintAnswersSchema = z
+  .record(z.string().min(1).max(200), blueprintAnswerValueSchema)
+  .refine((m) => Object.keys(m).length <= MAX_ANSWER_KEYS, {
+    message: `too many answers (max ${MAX_ANSWER_KEYS})`
+  });
+export type BlueprintAnswers = z.infer<typeof blueprintAnswersSchema>;
+
+export const MAX_ANNOTATIONS_BYTES = 1_000_000;
+
 export const writingSubmissionSchema = z.object({
   taskNo: z.union([z.literal(1), z.literal(2)]),
   content: z.string().max(20000)

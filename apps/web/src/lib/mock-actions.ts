@@ -369,12 +369,24 @@ export async function startMockAttemptAction(formData: FormData): Promise<void> 
     redirect("/play");
   }
 
-  const attempt = await prisma.mockAttempt.create({
-    data: { mockExamId, candidateId: userId, status: "in_progress", currentIndex: 0 }
-  });
+  let attemptId: string | null = null;
+  try {
+    const attempt = await prisma.mockAttempt.create({
+      data: { mockExamId, candidateId: userId, status: "in_progress", currentIndex: 0 }
+    });
+    attemptId = attempt.id;
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      const again = await prisma.mockAttempt.findFirst({
+        where: { mockExamId, candidateId: userId, status: "in_progress" }
+      });
+      if (again) redirect(`/play/mock/${again.id}`);
+    }
+    throw e;
+  }
   const first = mock.parts[0]!;
-  await createPartAttempt(attempt.id, userId, first, first.blueprint.timeLimitMin);
-  redirect(`/play/mock/${attempt.id}`);
+  await createPartAttempt(attemptId, userId, first, first.blueprint.timeLimitMin);
+  redirect(`/play/mock/${attemptId}`);
 }
 
 export async function submitMockPartAction(formData: FormData): Promise<void> {

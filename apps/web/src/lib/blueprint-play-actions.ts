@@ -10,6 +10,7 @@ import {
   type CandidateAnswer,
   type ImportAnswerKey
 } from "@ielts/core";
+import { blueprintAnswersSchema, MAX_ANNOTATIONS_BYTES } from "@ielts/validators";
 import { auth } from "@/auth";
 
 type AnswersMap = Record<string, string | string[] | null>;
@@ -41,17 +42,29 @@ export async function startBlueprintAttemptAction(formData: FormData): Promise<v
 
   const startedAt = new Date();
   const deadlineAt = computeDeadline(startedAt, durationSecFor(bp.module, bp.timeLimitMin));
-  const attempt = await prisma.blueprintAttempt.create({
-    data: {
-      blueprintId,
-      candidateId: userId,
-      startedAt,
-      deadlineAt,
-      status: "in_progress",
-      answersJson: {} as Prisma.InputJsonValue
+  let attemptId: string | null = null;
+  try {
+    const attempt = await prisma.blueprintAttempt.create({
+      data: {
+        blueprintId,
+        candidateId: userId,
+        startedAt,
+        deadlineAt,
+        status: "in_progress",
+        answersJson: {} as Prisma.InputJsonValue
+      }
+    });
+    attemptId = attempt.id;
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+      const again = await prisma.blueprintAttempt.findFirst({
+        where: { blueprintId, candidateId: userId, status: "in_progress" }
+      });
+      attemptId = again?.id ?? null;
     }
-  });
-  redirect(`/play/${attempt.id}`);
+    if (!attemptId) throw e;
+  }
+  redirect(`/play/${attemptId}`);
 }
 
 export async function saveBlueprintAnswers(
@@ -63,13 +76,23 @@ export async function saveBlueprintAnswers(
   if (!attempt || attempt.candidateId !== userId) {
     return { ok: false, remainingSec: 0, expired: true };
   }
-  const expired = isExpired(attempt.deadlineAt) || attempt.status !== "in_progress";
-  if (!expired) {
-    await prisma.blueprintAttempt.update({
-      where: { id: attemptId },
-      data: { answersJson: answers as Prisma.InputJsonValue }
-    });
+  const parsed = blueprintAnswersSchema.safeParse(answers);
+  if (!parsed.success) {
+    return { ok: false, remainingSec: remainingSeconds(attempt.deadlineAt), expired: false };
   }
+  if (isExpired(attempt.deadlineAt) || attempt.status !== "in_progress") {
+    return { ok: false, remainingSec: remainingSeconds(attempt.deadlineAt), expired: true };
+  }
+  const res = await prisma.blueprintAttempt.updateMany({
+    where: {
+      id: attemptId,
+      candidateId: userId,
+      status: "in_progress",
+      deadlineAt: { gt: new Date() }
+    },
+    data: { answersJson: parsed.data as Prisma.InputJsonValue }
+  });
+  const expired = res.count === 0;
   return { ok: !expired, remainingSec: remainingSeconds(attempt.deadlineAt), expired };
 }
 
@@ -78,15 +101,18 @@ export async function saveBlueprintAnnotations(
   annotations: unknown
 ): Promise<{ ok: boolean }> {
   const userId = await requireUserId();
-  const attempt = await prisma.blueprintAttempt.findUnique({ where: { id: attemptId } });
-  if (!attempt || attempt.candidateId !== userId || attempt.status !== "in_progress") {
+  let serialized: string;
+  try {
+    serialized = JSON.stringify(annotations ?? null);
+  } catch {
     return { ok: false };
   }
-  await prisma.blueprintAttempt.update({
-    where: { id: attemptId },
+  if (serialized.length > MAX_ANNOTATIONS_BYTES) return { ok: false };
+  const res = await prisma.blueprintAttempt.updateMany({
+    where: { id: attemptId, candidateId: userId, status: "in_progress" },
     data: { annotationsJson: annotations as Prisma.InputJsonValue }
   });
-  return { ok: true };
+  return { ok: res.count > 0 };
 }
 
 export async function submitBlueprintAttemptAction(formData: FormData): Promise<void> {
