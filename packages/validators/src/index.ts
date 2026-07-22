@@ -6,8 +6,12 @@
 import { z } from "zod";
 
 // --- Auth ---
+// Normalize email to lowercase everywhere so mixed-case can't create duplicate
+// accounts or desync from the (lowercasing) password-reset lookup.
+const emailField = z.string().trim().toLowerCase().pipe(z.string().email());
+
 export const loginSchema = z.object({
-  email: z.string().email(),
+  email: emailField,
   password: z.string().min(8),
   rememberMe: z.boolean().optional().default(false)
 });
@@ -15,12 +19,12 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 export const registerSchema = z.object({
   name: z.string().min(1).max(120),
-  email: z.string().email(),
+  email: emailField,
   password: z.string().min(8).max(200)
 });
 export type RegisterInput = z.infer<typeof registerSchema>;
 
-export const forgotPasswordSchema = z.object({ email: z.string().email() });
+export const forgotPasswordSchema = z.object({ email: emailField });
 export const resetPasswordSchema = z.object({
   token: z.string().min(10),
   password: z.string().min(8).max(200)
