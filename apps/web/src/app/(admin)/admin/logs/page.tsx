@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { auth } from "@/auth";
 import { prisma, Prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/input";
+import { requireAdminUser } from "@/lib/page-guards";
 import { cn } from "@/lib/cn";
 
 export const metadata = { title: "System Logs" };
@@ -54,11 +54,8 @@ export default async function AdminLogsPage({
   const actionFilter = first(sp.action);
   const actorFilter = first(sp.actor).trim();
 
-  const session = await auth();
-  const me = session?.user?.id
-    ? await prisma.user.findUnique({ where: { id: session.user.id } })
-    : null;
-  const orgId = me?.orgId ?? "";
+  const me = await requireAdminUser();
+  const orgId = me.orgId;
 
   const distinctActions = await prisma.auditLog.findMany({
     where: { orgId },

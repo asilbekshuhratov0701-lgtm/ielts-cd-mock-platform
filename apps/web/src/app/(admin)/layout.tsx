@@ -20,7 +20,13 @@ import { Logo } from "@/components/Logo";
 import { NavLink } from "@/components/NavLink";
 import { LogoutButton } from "@/components/LogoutButton";
 
-type NavItem = { href: string; label: string; icon: LucideIcon; exact?: boolean };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+  adminOnly?: boolean;
+};
 
 const NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -32,15 +38,18 @@ const NAV: NavItem[] = [
   { href: "/admin/live", label: "Live Exam Center", icon: Activity },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/exam-import", label: "Exam Builder", icon: FileJson },
-  { href: "/admin/users", label: "Users & Roles", icon: Shield },
+  { href: "/admin/users", label: "Users & Roles", icon: Shield, adminOnly: true },
   { href: "/admin/reports", label: "Reports", icon: FileBarChart },
-  { href: "/admin/logs", label: "System Logs", icon: ScrollText },
-  { href: "/admin/settings", label: "Settings", icon: Settings }
+  { href: "/admin/logs", label: "System Logs", icon: ScrollText, adminOnly: true },
+  { href: "/admin/settings", label: "Settings", icon: Settings, adminOnly: true }
 ];
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await auth();
   const name = session?.user?.name ?? session?.user?.email ?? "Admin";
+  const role = session?.user?.role;
+  const isAdmin = role === "ADMIN" || role === "SUPER_ADMIN";
+  const nav = NAV.filter((item) => !item.adminOnly || isAdmin);
 
   return (
     <div className="flex min-h-screen">
@@ -49,7 +58,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           <Logo href="/admin" />
         </div>
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <NavLink
               key={item.href}
               href={item.href}

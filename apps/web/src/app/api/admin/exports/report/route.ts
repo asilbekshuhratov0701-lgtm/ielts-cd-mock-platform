@@ -23,14 +23,18 @@ export async function GET(request: NextRequest) {
   const type: ReportType =
     typeRaw === "attendance" ? "attendance" : typeRaw === "bands" ? "bands" : "exam";
 
-  const dataset = await gatherReport(me.orgId, type);
-  const file = await buildResultsExport(format, dataset, `report-${type}`);
-  const body = typeof file.body === "string" ? file.body : new Uint8Array(file.body);
-  return new NextResponse(body, {
-    headers: {
-      "Content-Type": file.mime,
-      "Content-Disposition": `attachment; filename="${file.filename}"`,
-      "Cache-Control": "no-store"
-    }
-  });
+  try {
+    const dataset = await gatherReport(me.orgId, type);
+    const file = await buildResultsExport(format, dataset, `report-${type}`);
+    const body = typeof file.body === "string" ? file.body : new Uint8Array(file.body);
+    return new NextResponse(body, {
+      headers: {
+        "Content-Type": file.mime,
+        "Content-Disposition": `attachment; filename="${file.filename}"`,
+        "Cache-Control": "no-store"
+      }
+    });
+  } catch {
+    return new NextResponse("Failed to build report", { status: 500 });
+  }
 }

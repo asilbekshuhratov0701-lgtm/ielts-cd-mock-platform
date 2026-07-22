@@ -1,8 +1,8 @@
 import { Database, FileJson, FileSpreadsheet } from "lucide-react";
-import { auth } from "@/auth";
 import { prisma } from "@ielts/db";
 import { SETTING_KEYS, getNumberSetting, getReleaseMode } from "@/lib/settings";
 import { saveSettingsAction } from "@/lib/settings-actions";
+import { requireAdminUser } from "@/lib/page-guards";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,11 +11,8 @@ import { Input, Label } from "@/components/ui/input";
 export const metadata = { title: "Settings" };
 
 export default async function AdminSettingsPage() {
-  const session = await auth();
-  const me = session?.user?.id
-    ? await prisma.user.findUnique({ where: { id: session.user.id } })
-    : null;
-  const orgId = me?.orgId ?? "";
+  const me = await requireAdminUser();
+  const orgId = me.orgId;
   const [org, task2Weight, passBand, releaseMode] = await Promise.all([
     orgId ? prisma.organization.findUnique({ where: { id: orgId } }) : null,
     getNumberSetting(orgId, SETTING_KEYS.task2Weight, 2),

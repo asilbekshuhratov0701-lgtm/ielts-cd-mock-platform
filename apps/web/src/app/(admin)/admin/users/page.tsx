@@ -1,4 +1,3 @@
-import { auth } from "@/auth";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
@@ -6,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { changeRoleAction, createStaffAction, setStatusAction } from "@/lib/admin-users-actions";
+import { requireAdminUser } from "@/lib/page-guards";
 
 export const metadata = { title: "Users & Roles" };
 
@@ -25,11 +25,8 @@ export default async function AdminUsersPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const session = await auth();
-  const me = session?.user?.id
-    ? await prisma.user.findUnique({ where: { id: session.user.id } })
-    : null;
-  const orgId = me?.orgId ?? "";
+  const me = await requireAdminUser();
+  const orgId = me.orgId;
 
   const users = await prisma.user.findMany({
     where: { orgId },

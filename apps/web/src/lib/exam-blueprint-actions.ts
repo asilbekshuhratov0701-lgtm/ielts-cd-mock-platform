@@ -34,6 +34,7 @@ export async function importBlueprintAction(formData: FormData): Promise<void> {
   const orgId = await orgIdFor(user.id);
   const raw = String(formData.get("json") ?? "");
   if (!raw.trim()) redirect("/admin/exam-import?error=empty");
+  if (raw.length > 5_000_000) redirect("/admin/exam-import?error=too_large");
 
   let json: unknown;
   try {
