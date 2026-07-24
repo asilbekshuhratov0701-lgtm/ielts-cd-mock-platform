@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --background: 210 40% 98%;
+  --font-sans: var(--font-sora), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --background: 228 44% 98%;
   --surface: 0 0% 100%;
-  --foreground: 222 47% 11%;
-  --muted: 215 16% 47%;
-  --border: 214 32% 91%;
+  --foreground: 232 48% 12%;
+  --muted: 226 16% 35%;
+  --border: 229 30% 93%;
 
   --space-option: 0.5rem;
   --space-question: 1.5rem;
@@ -16,11 +16,11 @@
 }
 
 .dark {
-  --background: 222 47% 7%;
-  --surface: 222 47% 11%;
-  --foreground: 210 40% 98%;
-  --muted: 215 20% 65%;
-  --border: 217 33% 20%;
+  --background: 230 47% 8%;
+  --surface: 233 47% 14%;
+  --foreground: 230 48% 96%;
+  --muted: 229 25% 73%;
+  --border: 231 28% 22%;
 }
 
 * {

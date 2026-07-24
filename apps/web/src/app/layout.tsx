@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Inter } from "next/font/google";
+import { Sora } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-sora",
+  display: "swap"
+});
 
 const HIGHLIGHT_CSS = `::highlight(hl-yellow){background-color:#fde68a;color:#111827}
 ::highlight(hl-green){background-color:#bbf7d0;color:#111827}
@@ -20,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang="en" className={sora.variable} suppressHydrationWarning>
       <head>
         <style dangerouslySetInnerHTML={{ __html: HIGHLIGHT_CSS }} />
       </head>
