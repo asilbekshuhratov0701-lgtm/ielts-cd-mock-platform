@@ -28,6 +28,7 @@ interface WritingResult {
   kind: "writing";
   tasks: { taskNumber: number; criteria: WritingCriteria; taskBand: number }[];
   writingBand: number;
+  feedback?: string | null;
 }
 
 type EssayTask = { id: string; number: number; prompt: string };
@@ -162,6 +163,23 @@ export default async function MockAttemptReviewPage({
                     </div>
                   );
                 })}
+                <div>
+                  <label
+                    htmlFor={`feedback-${part.id}`}
+                    className="text-xs font-medium text-muted"
+                  >
+                    Feedback (optional) — shown to the candidate with their result
+                  </label>
+                  <textarea
+                    id={`feedback-${part.id}`}
+                    name="feedback"
+                    rows={4}
+                    maxLength={5000}
+                    defaultValue={mark?.feedback ?? ""}
+                    placeholder="Overall comments on the writing — strengths and concrete steps to the next band…"
+                    className="mt-1 w-full rounded-lg border border-border bg-surface p-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+                  />
+                </div>
                 <Button type="submit" variant="secondary">
                   <Save className="h-4 w-4" /> Save writing marks
                 </Button>

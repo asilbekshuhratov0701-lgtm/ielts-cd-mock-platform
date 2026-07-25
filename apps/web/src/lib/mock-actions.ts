@@ -179,12 +179,21 @@ export async function saveMockWritingMarkAction(formData: FormData): Promise<voi
   else if (tasks.length === 1) writingBand = tasks[0]!.taskBand;
   else writingBand = 0;
 
+  const feedback = String(formData.get("feedback") ?? "")
+    .trim()
+    .slice(0, 5000);
+
   await prisma.blueprintAttempt.update({
     where: { id: attemptId },
     data: {
       rawScore: null,
       totalScore: null,
-      resultJson: { kind: "writing", tasks, writingBand } as unknown as Prisma.InputJsonValue
+      resultJson: {
+        kind: "writing",
+        tasks,
+        writingBand,
+        feedback: feedback || null
+      } as unknown as Prisma.InputJsonValue
     }
   });
 
