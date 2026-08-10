@@ -23,12 +23,28 @@
   --border: 231 28% 22%;
 }
 
-.theme-fixed-light {
+.exam-mode-standard {
   --background: 228 44% 98%;
   --surface: 0 0% 100%;
   --foreground: 232 48% 12%;
   --muted: 226 16% 35%;
   --border: 229 30% 93%;
+}
+
+.exam-mode-sepia {
+  --background: 40 38% 92%;
+  --surface: 42 46% 96%;
+  --foreground: 28 30% 16%;
+  --muted: 30 16% 38%;
+  --border: 38 28% 82%;
+}
+
+.exam-mode-night {
+  --background: 230 47% 8%;
+  --surface: 233 47% 14%;
+  --foreground: 230 48% 96%;
+  --muted: 229 25% 73%;
+  --border: 231 28% 22%;
 }
 
 * {

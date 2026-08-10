@@ -1,15 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Maximize,
-  Minimize,
-  StickyNote,
-  Sun,
-  Volume2
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize, Minimize, StickyNote, Volume2 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
 import type { AnswersMap, EssayGroup, SelectGroup } from "@/components/question-engine/types";
 import { AnswersProvider, useAnswer, useAnswers } from "@/components/question-engine/answers-store";
@@ -28,6 +20,11 @@ import {
   type ExamNote,
   type SerializedHighlight
 } from "@/components/exam-import/SelectionLayer";
+import {
+  ExamDisplayPicker,
+  ExamDisplayProvider,
+  ExamSurface
+} from "@/components/exam-import/ExamDisplay";
 import { cn } from "@/lib/cn";
 
 export interface LiveAttempt {
@@ -180,14 +177,7 @@ function TopBar({
             <StickyNote className="h-4 w-4" /> Written Notes ({noteCount})
           </button>
         ) : null}
-        <button
-          type="button"
-          onClick={() => document.documentElement.classList.toggle("dark")}
-          className="rounded-md p-1.5 text-muted hover:bg-black/[0.05]"
-          aria-label="Toggle theme"
-        >
-          <Sun className="h-4 w-4" />
-        </button>
+        <ExamDisplayPicker />
         {onToggleFullscreen ? (
           <button
             type="button"
@@ -842,9 +832,11 @@ export function ExamPreview({
   return (
     <AnswersProvider initial={live?.initialAnswers}>
       <DragProvider>
-        <div className="theme-fixed-light">
-          <Shell exam={exam} audioUrl={audioUrl} live={live} />
-        </div>
+        <ExamDisplayProvider>
+          <ExamSurface>
+            <Shell exam={exam} audioUrl={audioUrl} live={live} />
+          </ExamSurface>
+        </ExamDisplayProvider>
       </DragProvider>
     </AnswersProvider>
   );
