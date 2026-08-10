@@ -21,9 +21,11 @@ import {
   type SerializedHighlight
 } from "@/components/exam-import/SelectionLayer";
 import {
+  EXAM_TEXT_CLASS,
   ExamDisplayPicker,
   ExamDisplayProvider,
-  ExamSurface
+  ExamSurface,
+  useExamDisplay
 } from "@/components/exam-import/ExamDisplay";
 import { cn } from "@/lib/cn";
 
@@ -238,8 +240,10 @@ function PassagePane({
   index: number;
   hosts: Map<number, HeadingHost>;
 }) {
+  const { textSize } = useExamDisplay();
   return (
     <div className="h-full overflow-auto px-8 py-6">
+      <div className={EXAM_TEXT_CLASS[textSize]}>
       <h2 className="text-xl font-bold uppercase text-foreground">
         {section.title || `Reading Passage ${index + 1}`}
       </h2>
@@ -274,13 +278,20 @@ function PassagePane({
           );
         })}
       </div>
+      </div>
     </div>
   );
 }
 
 function GroupsPane({ section }: { section: PreviewSection }) {
+  const { textSize } = useExamDisplay();
   return (
-    <div className="flex flex-col gap-[var(--space-group)] px-8 py-6 text-[15px] leading-relaxed">
+    <div
+      className={cn(
+        "flex flex-col gap-[var(--space-group)] px-8 py-6 text-[15px] leading-relaxed",
+        EXAM_TEXT_CLASS[textSize]
+      )}
+    >
       {section.groups.map((g) => (
         <QuestionGroupRenderer key={g.id} group={g} />
       ))}
@@ -343,9 +354,15 @@ function ListeningBody({
   index: number;
   fill?: boolean;
 }) {
+  const { textSize } = useExamDisplay();
   return (
     <div className={cn("overflow-auto", fill ? "h-full" : "h-[70vh]")}>
-      <div className="mx-auto max-w-4xl px-8 py-8 text-[15px] leading-relaxed">
+      <div
+        className={cn(
+          "mx-auto max-w-4xl px-8 py-8 text-[15px] leading-relaxed",
+          EXAM_TEXT_CLASS[textSize]
+        )}
+      >
         <p className="mb-3 text-base font-bold uppercase text-foreground">Part {index + 1}</p>
         {section.scenario ? (
           <p className="mb-4 text-base italic text-muted">{section.scenario}</p>
@@ -362,15 +379,20 @@ function ListeningBody({
 
 function EssayEditor({ taskId, index }: { taskId: string; index: number }) {
   const [value, set] = useAnswer(taskId);
+  const { textSize } = useExamDisplay();
   const text = (value as string) ?? "";
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const sizeClass = textSize === "xlarge" ? "text-xl" : textSize === "large" ? "text-lg" : "text-base";
   return (
     <div className="flex h-full flex-col px-6 py-5">
       <textarea
         value={text}
         onChange={(e) => set(e.target.value)}
         placeholder={`Write part ${index + 1} here...`}
-        className="w-full flex-1 resize-none rounded-xl border border-border bg-surface p-4 text-base leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+        className={cn(
+          "w-full flex-1 resize-none rounded-xl border border-border bg-surface p-4 leading-relaxed text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40",
+          sizeClass
+        )}
       />
       <p className="mt-2 shrink-0 text-right text-sm font-medium text-muted">Words: {wordCount}</p>
     </div>
@@ -379,26 +401,29 @@ function EssayEditor({ taskId, index }: { taskId: string; index: number }) {
 
 function WritingTaskPane({ group }: { group: EssayGroup }) {
   const task = group.tasks[0];
+  const { textSize } = useExamDisplay();
   if (!task) return <div className="p-6 text-sm text-muted">No task.</div>;
   return (
     <div className="h-full overflow-auto px-8 py-6">
-      <h2 className="text-base font-bold uppercase text-foreground">Writing Task {task.number}</h2>
-      {group.instructions ? (
-        <p className="mt-1 text-sm italic text-muted">{group.instructions}</p>
-      ) : null}
-      <div className="mt-3 rounded-lg border border-border p-4 text-base font-semibold leading-relaxed text-foreground">
-        <p className="whitespace-pre-wrap">{task.prompt}</p>
-        {typeof task.minWords === "number" ? (
-          <p className="mt-3">Write at least {task.minWords} words.</p>
+      <div className={EXAM_TEXT_CLASS[textSize]}>
+        <h2 className="text-base font-bold uppercase text-foreground">Writing Task {task.number}</h2>
+        {group.instructions ? (
+          <p className="mt-1 text-sm italic text-muted">{group.instructions}</p>
+        ) : null}
+        <div className="mt-3 rounded-lg border border-border p-4 text-base font-semibold leading-relaxed text-foreground">
+          <p className="whitespace-pre-wrap">{task.prompt}</p>
+          {typeof task.minWords === "number" ? (
+            <p className="mt-3">Write at least {task.minWords} words.</p>
+          ) : null}
+        </div>
+        {task.imageUrl ? (
+          <img
+            src={task.imageUrl}
+            alt={`Task ${task.number}`}
+            className="mt-4 max-w-full rounded-lg border border-border"
+          />
         ) : null}
       </div>
-      {task.imageUrl ? (
-        <img
-          src={task.imageUrl}
-          alt={`Task ${task.number}`}
-          className="mt-4 max-w-full rounded-lg border border-border"
-        />
-      ) : null}
     </div>
   );
 }

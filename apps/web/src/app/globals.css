@@ -47,6 +47,18 @@
   --border: 231 28% 22%;
 }
 
+.exam-text-normal {
+  zoom: 1;
+}
+
+.exam-text-large {
+  zoom: 1.12;
+}
+
+.exam-text-xlarge {
+  zoom: 1.28;
+}
+
 * {
   border-color: hsl(var(--border));
 }
