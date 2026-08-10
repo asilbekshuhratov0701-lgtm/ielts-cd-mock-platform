@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Sora } from "next/font/google";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 const sora = Sora({
@@ -15,6 +16,8 @@ const HIGHLIGHT_CSS = `::highlight(hl-yellow){background-color:#fde68a;color:#11
 ::highlight(hl-pink){background-color:#fbcfe8;color:#111827}
 ::highlight(hl-blue){background-color:#bfdbfe;color:#111827}`;
 
+const THEME_INIT = `(function(){try{var t=localStorage.getItem("ziyomock-theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);}catch(e){}})();`;
+
 export const metadata: Metadata = {
   title: {
     default: "IELTS Mock Platform",
@@ -27,9 +30,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={sora.variable} suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT }} />
         <style dangerouslySetInnerHTML={{ __html: HIGHLIGHT_CSS }} />
       </head>
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-screen antialiased">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

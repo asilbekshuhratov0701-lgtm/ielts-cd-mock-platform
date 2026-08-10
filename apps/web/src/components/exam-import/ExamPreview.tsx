@@ -842,7 +842,9 @@ export function ExamPreview({
   return (
     <AnswersProvider initial={live?.initialAnswers}>
       <DragProvider>
-        <Shell exam={exam} audioUrl={audioUrl} live={live} />
+        <div className="theme-fixed-light">
+          <Shell exam={exam} audioUrl={audioUrl} live={live} />
+        </div>
       </DragProvider>
     </AnswersProvider>
   );

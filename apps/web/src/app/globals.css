@@ -23,6 +23,14 @@
   --border: 231 28% 22%;
 }
 
+.theme-fixed-light {
+  --background: 228 44% 98%;
+  --surface: 0 0% 100%;
+  --foreground: 232 48% 12%;
+  --muted: 226 16% 35%;
+  --border: 229 30% 93%;
+}
+
 * {
   border-color: hsl(var(--border));
 }

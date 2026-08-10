@@ -13,6 +13,7 @@ import { countUnread } from "@/lib/notifications";
 import { Logo } from "@/components/Logo";
 import { NavLink } from "@/components/NavLink";
 import { LogoutButton } from "@/components/LogoutButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type NavItem = { href: string; label: string; icon: LucideIcon; exact?: boolean };
 
@@ -48,6 +49,7 @@ export default async function CandidateLayout({ children }: { children: ReactNod
             </nav>
           </div>
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Link
               href="/notifications"
               aria-label="Notifications"

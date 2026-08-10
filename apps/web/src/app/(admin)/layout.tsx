@@ -19,6 +19,7 @@ import { auth } from "@/auth";
 import { Logo } from "@/components/Logo";
 import { NavLink } from "@/components/NavLink";
 import { LogoutButton } from "@/components/LogoutButton";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type NavItem = {
   href: string;
@@ -68,7 +69,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             />
           ))}
         </nav>
-        <div className="border-t border-border p-3">
+        <div className="space-y-3 border-t border-border p-3">
+          <ThemeToggle className="w-full justify-between" />
           <div className="flex items-center justify-between gap-2 px-1">
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{name}</p>
@@ -82,7 +84,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex items-center justify-between border-b border-border bg-surface/80 px-6 py-3 backdrop-blur md:hidden">
           <Logo href="/admin" />
-          <LogoutButton withLabel={false} />
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <LogoutButton withLabel={false} />
+          </div>
         </header>
         <div className="flex-1">{children}</div>
       </div>
