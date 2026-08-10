@@ -96,7 +96,19 @@
       "Bash(curl -s http://localhost:3000/login --max-time 60)",
       "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code}\\\\n\" http://localhost:3000/login --max-time 120)",
       "Bash(curl -s -o /dev/null -w \"GET /login -> HTTP %{http_code}\\\\n\" http://localhost:3000/login --max-time 150)",
-      "Bash(pnpm test *)"
+      "Bash(pnpm test *)",
+      "Bash(pnpm --filter @ielts/core test)",
+      "Bash(pnpm --filter @ielts/core --filter @ielts/validators test)",
+      "Bash(WORKER_DRY_RUN=1 timeout 60 pnpm --filter @ielts/worker start)",
+      "PowerShell(Get-Process *)",
+      "Bash(pnpm --filter @ielts/db exec tsx prisma/set-admin.ts)",
+      "Bash(pnpm --filter @ielts/db exec tsx prisma/set-admin.ts --email \"notanemail\" --password \"Whatever123\")",
+      "Bash(pnpm --filter @ielts/db exec tsx prisma/set-admin.ts --email \"x@y.com\" --password \"short\")",
+      "Bash(pnpm --filter @ielts/db run set-admin)",
+      "Bash(pnpm --filter @ielts/db run set-admin -- --email \"x@y.com\" --password \"short\")",
+      "Bash(pnpm --filter @ielts/db run set-admin --email test@x.com --password short)",
+      "Bash(pnpm --filter @ielts/db run set-admin --email temp@ziyomock.test --password 'TempPass123!')",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }
