@@ -139,7 +139,7 @@ export async function deleteMockAction(formData: FormData): Promise<void> {
   redirect("/admin/exam-import");
 }
 
-export async function saveMockWritingMarkAction(formData: FormData): Promise<void> {
+export async function saveWritingMarkAction(formData: FormData): Promise<void> {
   const user = await requireStaff();
   const orgId = await orgIdFor(user.id);
   const attemptId = String(formData.get("attemptId") ?? "");
@@ -211,7 +211,11 @@ export async function saveMockWritingMarkAction(formData: FormData): Promise<voi
     }
     revalidatePath(`/admin/exam-import/mock/${ma?.mockExamId}/attempt/${part.mockAttemptId}`);
     revalidatePath(`/admin/exam-import/mock/${ma?.mockExamId}`);
+  } else {
+    revalidatePath(`/admin/writing/${attemptId}`);
+    revalidatePath(`/play/${attemptId}/result`);
   }
+  revalidatePath("/admin/writing");
 }
 
 export async function releaseMockResultAction(formData: FormData): Promise<void> {

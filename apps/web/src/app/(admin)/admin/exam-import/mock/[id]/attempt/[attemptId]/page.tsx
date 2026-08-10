@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { buildAnswerRows } from "@/lib/mock-review";
 import { skillBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
-import { saveMockWritingMarkAction } from "@/lib/mock-actions";
+import { saveWritingMarkAction } from "@/lib/mock-actions";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import type { CandidateAnswer, ImportAnswerKey, WritingCriteria } from "@ielts/core";
 import { cn } from "@/lib/cn";
@@ -124,7 +124,7 @@ export default async function MockAttemptReviewPage({
                 </span>
               </div>
 
-              <form action={saveMockWritingMarkAction} className="space-y-5">
+              <form action={saveWritingMarkAction} className="space-y-5">
                 <input type="hidden" name="attemptId" value={part.id} />
                 {tasks.map((t) => {
                   const essay = typeof answers?.[t.id] === "string" ? (answers[t.id] as string) : "";

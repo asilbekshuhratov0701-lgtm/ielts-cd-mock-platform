@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { WritingResultView } from "@/components/exam/WritingResultView";
+import type { WritingTaskDetail } from "@/components/exam/WritingScoreDetail";
 import { cn } from "@/lib/cn";
 
 interface QuestionResult {
@@ -13,6 +15,13 @@ interface QuestionResult {
   correct: boolean;
   marks: number;
   maxMarks: number;
+}
+
+interface WritingResult {
+  kind: "writing";
+  tasks: WritingTaskDetail[];
+  writingBand: number;
+  feedback?: string | null;
 }
 
 export default async function PlayResultPage({
@@ -30,6 +39,42 @@ export default async function PlayResultPage({
   });
   if (!attempt || attempt.candidateId !== session.user.id) notFound();
   if (attempt.status !== "submitted") redirect(`/play/${attemptId}`);
+
+  if (attempt.blueprint.module === "writing") {
+    const rj = attempt.resultJson as unknown as WritingResult | null;
+    if (rj?.kind === "writing" && Array.isArray(rj.tasks)) {
+      return (
+        <WritingResultView
+          examTitle={attempt.blueprint.title}
+          band={rj.writingBand}
+          tasks={rj.tasks}
+          feedback={rj.feedback ?? null}
+        />
+      );
+    }
+    return (
+      <div className="mx-auto max-w-3xl px-6 py-12">
+        <Card className="p-8 text-center shadow-card">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <Clock className="h-7 w-7" />
+          </span>
+          <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+            Writing submitted
+          </h1>
+          <p className="mt-1 text-sm text-muted">{attempt.blueprint.title}</p>
+          <p className="mx-auto mt-6 max-w-md text-sm leading-relaxed text-muted">
+            Your writing is being evaluated by an examiner. Your band and feedback will appear here
+            once marking is complete.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link href="/play">
+              <Button variant="outline">Back to exams</Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   const result = attempt.resultJson as unknown as { perQuestion?: QuestionResult[] } | null;
   const perQuestion = result?.perQuestion ?? [];
