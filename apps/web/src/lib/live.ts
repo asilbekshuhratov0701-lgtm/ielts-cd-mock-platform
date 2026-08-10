@@ -15,32 +15,32 @@ export type LiveSession = {
 };
 
 export async function listLiveSessions(orgId: string): Promise<LiveSession[]> {
-  const rows = await prisma.sectionAttempt.findMany({
+  if (!orgId) return [];
+  const rows = await prisma.blueprintAttempt.findMany({
     where: {
+      status: "in_progress",
       submittedAt: null,
-      deadlineAt: { not: null },
-      attempt: { status: "IN_PROGRESS", exam: { orgId } }
+      blueprint: { orgId }
     },
     include: {
-      section: true,
-      attempt: { include: { candidate: true, exam: true } }
+      candidate: { select: { name: true, email: true } },
+      blueprint: { select: { title: true, module: true } },
+      mockAttempt: { select: { mockExam: { select: { title: true } } } }
     },
     orderBy: { deadlineAt: "asc" }
   });
 
   const now = Date.now();
   return rows.map((row) => {
-    const ageSec = row.lastHeartbeatAt
-      ? Math.round((now - row.lastHeartbeatAt.getTime()) / 1000)
-      : null;
+    const ageSec = Math.max(0, Math.round((now - row.updatedAt.getTime()) / 1000));
     const connection: LiveConnection =
-      ageSec == null ? "unknown" : ageSec < 30 ? "live" : ageSec < 90 ? "idle" : "offline";
-    const remainingSec = row.deadlineAt ? remainingSeconds(row.deadlineAt) : 0;
+      ageSec < 45 ? "live" : ageSec < 150 ? "idle" : "offline";
+    const remainingSec = remainingSeconds(row.deadlineAt);
     return {
       id: row.id,
-      candidate: row.attempt.candidate.name ?? row.attempt.candidate.email,
-      examTitle: row.attempt.exam.title,
-      sectionKind: row.section.kind,
+      candidate: row.candidate.name ?? row.candidate.email,
+      examTitle: row.mockAttempt?.mockExam.title ?? row.blueprint.title,
+      sectionKind: row.blueprint.module,
       remainingSec,
       expired: remainingSec <= 0,
       heartbeatAgeSec: ageSec,

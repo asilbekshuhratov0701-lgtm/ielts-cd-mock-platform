@@ -50,6 +50,8 @@ function Autosaver({ attemptId }: { attemptId: string }) {
   const answers = useAnswers();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const first = useRef(true);
+  const latest = useRef(answers);
+  latest.current = answers;
   useEffect(() => {
     if (first.current) {
       first.current = false;
@@ -61,6 +63,12 @@ function Autosaver({ attemptId }: { attemptId: string }) {
     }, 800);
     return () => clearTimeout(timer.current);
   }, [answers, attemptId]);
+  useEffect(() => {
+    const id = setInterval(() => {
+      void saveBlueprintAnswers(attemptId, latest.current);
+    }, 20000);
+    return () => clearInterval(id);
+  }, [attemptId]);
   return null;
 }
 
