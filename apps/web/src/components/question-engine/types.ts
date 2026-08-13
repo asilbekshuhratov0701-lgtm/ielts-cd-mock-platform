@@ -91,9 +91,19 @@ export interface SummaryContent {
   title?: string;
   paragraphs: string[];
 }
+export type TableCellPart = { text: string } | { gap: number };
+export interface TableCell {
+  parts: TableCellPart[];
+  colspan?: number;
+  rowspan?: number;
+  bold?: boolean;
+  header?: boolean;
+}
 export interface TableContent {
   rows: string[][];
   headerRow?: boolean;
+  title?: string;
+  cells?: TableCell[][];
 }
 export interface FlowchartContent {
   nodes: { id: string; text: string }[];

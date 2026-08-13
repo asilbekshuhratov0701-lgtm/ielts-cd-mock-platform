@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "examId": "oyster-bay-listening",
+  "module": "listening",
+  "title": "Oyster Bay Sailing Club",
+  "totalQuestions": 4,
+  "timerSource": "audio",
+  "timeLimitMinutes": null,
+  "audio": { "ref": "section1.mp3", "required": true },
+  "sections": [
+    {
+      "id": "s1",
+      "order": 0,
+      "title": "Section 1",
+      "instructions": "Listen and answer questions 1-4.",
+      "groups": [
+        {
+          "id": "g1",
+          "questionType": "table_completion",
+          "primitive": "gap",
+          "instructions": "Write ONE WORD AND/OR A NUMBER for each answer.",
+          "wordLimit": 1,
+          "allowNumber": true,
+          "template": {
+            "format": "table",
+            "title": "Oyster Bay Sailing Club Courses",
+            "header": ["Name of course", "What you learn", "Cost", "Other information"],
+            "rows": [
+              {
+                "cells": [
+                  { "parts": [{ "text": "Taster day" }], "bold": true },
+                  { "parts": [{ "text": "introduction to sailing" }] },
+                  { "parts": [{ "text": "£120 if booking one place" }] },
+                  {
+                    "parts": [
+                      { "text": "small groups (max " },
+                      { "gap": 1 },
+                      { "text": " people)" }
+                    ]
+                  }
+                ]
+              },
+              {
+                "cells": [
+                  { "parts": [{ "text": "Weekend course" }], "bold": true, "rowspan": 2 },
+                  { "parts": [{ "text": "how to " }, { "gap": 2 }] },
+                  { "parts": [{ "text": "£250" }] },
+                  { "parts": [{ "text": "ask about the " }, { "gap": 3 }] }
+                ]
+              },
+              {
+                "cells": [
+                  { "parts": [{ "text": "navigation and safety" }] },
+                  { "parts": [{ "text": "£195" }] },
+                  { "parts": [{ "text": "bring your own " }, { "gap": 4 }] }
+                ]
+              }
+            ]
+          },
+          "questions": [
+            { "type": "gap", "id": "q1", "number": 1, "answer": ["eight", "8"] },
+            { "type": "gap", "id": "q2", "number": 2, "answer": ["navigate"] },
+            { "type": "gap", "id": "q3", "number": 3, "answer": ["discount", "discounts"] },
+            { "type": "gap", "id": "q4", "number": 4, "answer": ["lifejacket"] }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -2,8 +2,11 @@ import type {
   ExamFile,
   ExamGroup,
   ExamOption,
-  ExamQuestion
+  ExamQuestion,
+  TableCell as SourceTableCell,
+  TableTemplate
 } from "@ielts/validators";
+import { tableTemplateSchema } from "@ielts/validators";
 import type {
   FlowchartContent,
   FormContent,
@@ -13,6 +16,7 @@ import type {
   QuestionType,
   SentenceContent,
   SummaryContent,
+  TableCell,
   TableContent
 } from "@/components/question-engine/types";
 import { DRAG_HELP_TEXT, TABLE_HELP_TEXT } from "@/components/question-engine/types";
@@ -179,6 +183,37 @@ function noteContentFromLines(
   return { title, sections };
 }
 
+function toEngineCell(cell: SourceTableCell, header: boolean): TableCell {
+  const out: TableCell = {
+    parts: cell.parts.map((p) => ("gap" in p ? { gap: p.gap } : { text: p.text }))
+  };
+  if (cell.colspan !== undefined) out.colspan = cell.colspan;
+  if (cell.rowspan !== undefined) out.rowspan = cell.rowspan;
+  if (cell.bold) out.bold = true;
+  if (header || cell.header) out.header = true;
+  return out;
+}
+
+function engineCellText(cell: TableCell): string {
+  return cell.parts.map((p) => ("gap" in p ? `{{${p.gap}}}` : p.text)).join("");
+}
+
+function tableContentFromTemplate(table: TableTemplate): TableContent {
+  const header = (table.header ?? []).map((cell) =>
+    typeof cell === "string" ? ({ parts: [{ text: cell }], header: true } as TableCell) : toEngineCell(cell, true)
+  );
+  const body = table.rows.map((row) => row.cells.map((cell) => toEngineCell(cell, false)));
+  const cells = header.length > 0 ? [header, ...body] : body;
+
+  const content: TableContent = {
+    rows: cells.map((row) => row.map(engineCellText)),
+    cells
+  };
+  if (header.length > 0) content.headerRow = true;
+  if (table.title !== undefined) content.title = table.title;
+  return content;
+}
+
 function gapLayoutAndContent(group: ExamGroup): { layout: GapLayout; content: unknown } {
   const t = asObject(group.template);
   if (t) {
@@ -190,6 +225,12 @@ function gapLayoutAndContent(group: ExamGroup): { layout: GapLayout; content: un
           t.lines as { style?: string; text?: string }[]
         )
       };
+    }
+    if (t.format === "table") {
+      const parsed = tableTemplateSchema.safeParse(t);
+      if (parsed.success) {
+        return { layout: "table", content: tableContentFromTemplate(parsed.data) };
+      }
     }
     if (t.format === "summary" && Array.isArray(t.paragraphs)) {
       return {
