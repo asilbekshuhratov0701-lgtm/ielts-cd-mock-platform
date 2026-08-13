@@ -12,6 +12,7 @@ import type {
   NoteContent,
   SentenceContent,
   SummaryContent,
+  TableCell,
   TableContent
 } from "./types";
 
@@ -107,34 +108,73 @@ function SummaryLayout({
   );
 }
 
+function TableCellView({ cell, byNumber }: { cell: TableCell; byNumber: Map<number, Gap> }) {
+  const Tag = cell.header ? "th" : "td";
+  return (
+    <Tag
+      colSpan={cell.colspan}
+      rowSpan={cell.rowspan}
+      className={cn(
+        "border border-border px-3 py-2 align-middle leading-relaxed",
+        cell.header ? "bg-brand-50 text-left font-semibold text-brand-700" : "text-foreground",
+        !cell.header && cell.bold ? "font-semibold" : null
+      )}
+    >
+      {cell.parts.map((part, i) => {
+        if (!("gap" in part)) return <span key={i}>{part.text}</span>;
+        const gap = byNumber.get(part.gap);
+        if (!gap) {
+          return (
+            <span key={i} className="text-muted">{`{{${part.gap}}}`}</span>
+          );
+        }
+        return <GapSlot key={i} gap={gap} />;
+      })}
+    </Tag>
+  );
+}
+
 function TableLayout({ content, byNumber }: { content: TableContent; byNumber: Map<number, Gap> }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-base">
-        <tbody>
-          {content.rows.map((row, r) => (
-            <tr key={r}>
-              {row.map((cell, c) => {
-                const header = content.headerRow && r === 0;
-                const Tag = header ? "th" : "td";
-                return (
-                  <Tag
-                    key={c}
-                    className={cn(
-                      "border border-border px-3 py-2 align-middle leading-relaxed",
-                      header
-                        ? "bg-brand-50 text-left font-semibold text-brand-700"
-                        : "text-foreground"
-                    )}
-                  >
-                    {renderText(cell, byNumber)}
-                  </Tag>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      {content.title ? (
+        <p className="mb-3 text-center text-base font-semibold text-foreground">{content.title}</p>
+      ) : null}
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-base">
+          <tbody>
+            {content.cells
+              ? content.cells.map((row, r) => (
+                  <tr key={r}>
+                    {row.map((cell, c) => (
+                      <TableCellView key={c} cell={cell} byNumber={byNumber} />
+                    ))}
+                  </tr>
+                ))
+              : content.rows.map((row, r) => (
+                  <tr key={r}>
+                    {row.map((cell, c) => {
+                      const header = content.headerRow && r === 0;
+                      const Tag = header ? "th" : "td";
+                      return (
+                        <Tag
+                          key={c}
+                          className={cn(
+                            "border border-border px-3 py-2 align-middle leading-relaxed",
+                            header
+                              ? "bg-brand-50 text-left font-semibold text-brand-700"
+                              : "text-foreground"
+                          )}
+                        >
+                          {renderText(cell, byNumber)}
+                        </Tag>
+                      );
+                    })}
+                  </tr>
+                ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

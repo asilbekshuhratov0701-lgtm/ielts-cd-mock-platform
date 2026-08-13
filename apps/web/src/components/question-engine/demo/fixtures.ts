@@ -312,5 +312,54 @@ export const READING_GROUPS: QuestionGroup[] = [
       { id: "C", text: "C" },
       { id: "D", text: "D" }
     ]
+  },
+  {
+    id: "g-table-merged",
+    questionType: "table_completion",
+    inputKind: "gap",
+    layout: "table",
+    instructions: "Complete the table below. Write ONE WORD AND/OR A NUMBER for each answer.",
+    numberRange: [29, 32],
+    content: {
+      title: "Oyster Bay Sailing Club Courses",
+      headerRow: true,
+      rows: [
+        ["Name of course", "What you learn", "Cost", "Other information"],
+        ["Taster day", "introduction to sailing", "£120", "small groups (max {{29}} people)"],
+        ["Weekend course", "how to {{30}}", "£250", "ask about the {{31}}"],
+        ["navigation and safety", "£195", "bring your own {{32}}"]
+      ],
+      cells: [
+        [
+          { parts: [{ text: "Name of course" }], header: true },
+          { parts: [{ text: "What you learn" }], header: true },
+          { parts: [{ text: "Cost" }], header: true },
+          { parts: [{ text: "Other information" }], header: true }
+        ],
+        [
+          { parts: [{ text: "Taster day" }], bold: true },
+          { parts: [{ text: "introduction to sailing" }] },
+          { parts: [{ text: "£120" }] },
+          { parts: [{ text: "small groups (max " }, { gap: 29 }, { text: " people)" }] }
+        ],
+        [
+          { parts: [{ text: "Weekend course" }], bold: true, rowspan: 2 },
+          { parts: [{ text: "how to " }, { gap: 30 }] },
+          { parts: [{ text: "£250" }] },
+          { parts: [{ text: "ask about the " }, { gap: 31 }] }
+        ],
+        [
+          { parts: [{ text: "navigation and safety" }] },
+          { parts: [{ text: "£195" }] },
+          { parts: [{ text: "bring your own " }, { gap: 32 }] }
+        ]
+      ]
+    },
+    gaps: [
+      { id: "r-29", number: 29, wordLimit: 1, allowNumber: true },
+      { id: "r-30", number: 30, wordLimit: 1, allowNumber: true },
+      { id: "r-31", number: 31, wordLimit: 1, allowNumber: true },
+      { id: "r-32", number: 32, wordLimit: 1, allowNumber: true }
+    ]
   }
 ];
