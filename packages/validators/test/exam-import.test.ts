@@ -175,6 +175,272 @@ test("legacy questionType spellings are accepted with a non-blocking warning", (
   assert.ok(warn.message.includes("mc_single"), `expected canonical hint, got: ${warn.message}`);
 });
 
+type Part = { text: string } | { gap: number };
+
+function cell(parts: Part[], extra: Record<string, unknown> = {}): unknown {
+  return { parts, ...extra };
+}
+
+function tableExam(
+  template: unknown,
+  questions: unknown[],
+  totalQuestions = questions.length
+): unknown {
+  return {
+    schemaVersion: 1,
+    examId: "table-check",
+    module: "reading",
+    title: "Table check",
+    totalQuestions,
+    timerSource: "fixed",
+    timeLimitMinutes: 60,
+    sections: [
+      {
+        id: "s1",
+        order: 0,
+        groups: [
+          {
+            id: "g1",
+            questionType: "table_completion",
+            primitive: "gap",
+            instructions: "Complete the table below.",
+            wordLimit: 1,
+            allowNumber: true,
+            template,
+            questions
+          }
+        ]
+      }
+    ]
+  };
+}
+
+function gap(number: number, answer: string[]): unknown {
+  return { type: "gap", id: `q${number}`, number, answer };
+}
+
+test("structured table fixture imports cleanly and round-trips its cells", () => {
+  const raw = load("listening-table-completion.json") as {
+    sections: { groups: { template: unknown }[] }[];
+  };
+  const report = validateExamFile(raw);
+
+  assert.equal(report.ok, true, formatReport(report));
+  assert.equal(report.errors.length, 0);
+  assert.equal(report.questionCount, 4);
+  assert.equal(report.audioRequiredRef, "section1.mp3");
+
+  const source = raw.sections[0].groups[0].template;
+  const parsed = report.parsed!.sections[0].groups[0].template;
+  assert.deepStrictEqual(parsed, source, "structured template must survive validation unchanged");
+});
+
+test("a blank with no matching question is an orphan, located by row and cell", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        header: ["Item", "Detail"],
+        rows: [
+          { cells: [cell([{ text: "First" }]), cell([{ text: "max " }, { gap: 1 }])] },
+          { cells: [cell([{ text: "Second" }]), cell([{ text: "cost " }, { gap: 2 }])] }
+        ]
+      },
+      [gap(1, ["eight"])],
+      1
+    )
+  );
+
+  assert.equal(report.ok, false);
+  const orphan = report.errors.find((e) => e.code === "gap_orphan_placeholder");
+  assert.ok(orphan, `expected gap_orphan_placeholder, got: ${formatReport(report)}`);
+  assert.ok(orphan.message.includes("2"), orphan.message);
+  assert.ok(orphan.where.includes("row 2, cell 2"), orphan.where);
+});
+
+test("an answer with no blank in the table is reported against the question", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        header: ["Item", "Detail"],
+        rows: [{ cells: [cell([{ text: "First" }]), cell([{ text: "max " }, { gap: 1 }])] }]
+      },
+      [gap(1, ["eight"]), gap(2, ["nine"])]
+    )
+  );
+
+  assert.equal(report.ok, false);
+  const missing = report.errors.find((e) => e.code === "gap_no_placeholder");
+  assert.ok(missing, `expected gap_no_placeholder, got: ${formatReport(report)}`);
+  assert.ok(missing.where.includes("Q2"), missing.where);
+});
+
+test("a blank number used twice in one table is rejected with both locations", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        header: ["Item", "Detail"],
+        rows: [
+          { cells: [cell([{ text: "First" }]), cell([{ text: "max " }, { gap: 1 }])] },
+          { cells: [cell([{ text: "Second" }]), cell([{ text: "also " }, { gap: 1 }])] }
+        ]
+      },
+      [gap(1, ["eight"])],
+      1
+    )
+  );
+
+  assert.equal(report.ok, false);
+  const dup = report.errors.find((e) => e.code === "table_blank_duplicate");
+  assert.ok(dup, `expected table_blank_duplicate, got: ${formatReport(report)}`);
+  assert.ok(dup.where.includes("row 2, cell 2"), dup.where);
+  assert.ok(dup.message.includes("row 1, cell 2"), dup.message);
+});
+
+test("a ragged row is rejected against the header width", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        header: ["Course", "Learn", "Cost"],
+        rows: [
+          {
+            cells: [
+              cell([{ text: "Taster" }]),
+              cell([{ text: "sailing" }]),
+              cell([{ text: "max " }, { gap: 1 }])
+            ]
+          },
+          { cells: [cell([{ text: "Weekend" }]), cell([{ text: "navigation" }])] }
+        ]
+      },
+      [gap(1, ["eight"])],
+      1
+    )
+  );
+
+  assert.equal(report.ok, false);
+  const ragged = report.errors.find((e) => e.code === "table_row_width");
+  assert.ok(ragged, `expected table_row_width, got: ${formatReport(report)}`);
+  assert.ok(ragged.where.includes("row 2"), ragged.where);
+  assert.ok(ragged.message.includes("2") && ragged.message.includes("3"), ragged.message);
+});
+
+test("colspan and rowspan count toward row width instead of cell count", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        header: ["Course", "Learn", "Cost", "Notes"],
+        rows: [
+          {
+            cells: [
+              cell([{ text: "Weekend" }], { rowspan: 2 }),
+              cell([{ text: "sailing" }]),
+              cell([{ text: "included in the " }, { gap: 1 }], { colspan: 2 })
+            ]
+          },
+          {
+            cells: [
+              cell([{ text: "navigation" }]),
+              cell([{ text: "£195" }]),
+              cell([{ text: "bring a " }, { gap: 2 }])
+            ]
+          }
+        ]
+      },
+      [gap(1, ["price"]), gap(2, ["lifejacket"])]
+    )
+  );
+
+  assert.equal(report.ok, true, formatReport(report));
+  assert.equal(report.errors.length, 0);
+});
+
+test("a cell holding several blanks registers every one of them", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        header: ["Course", "Detail"],
+        rows: [
+          {
+            cells: [
+              cell([{ text: "Weekend" }]),
+              cell([
+                { text: "£" },
+                { gap: 1 },
+                { text: " per " },
+                { gap: 2 },
+                { text: " including " },
+                { gap: 3 }
+              ])
+            ]
+          }
+        ]
+      },
+      [gap(1, ["250"]), gap(2, ["person"]), gap(3, ["lunch"])]
+    )
+  );
+
+  assert.equal(report.ok, true, formatReport(report));
+  assert.equal(report.questionCount, 3);
+});
+
+test("accepted answers that collapse to the same string warn rather than fail", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        rows: [{ cells: [cell([{ text: "cost " }, { gap: 1 }])] }]
+      },
+      [gap(1, ["(the) canal", "canal"])]
+    )
+  );
+
+  assert.equal(report.ok, true, formatReport(report));
+  const dup = report.warnings.find((w) => w.code === "accept_duplicate");
+  assert.ok(dup, `expected accept_duplicate, got: ${formatReport(report)}`);
+  assert.ok(dup.message.includes("canal"), dup.message);
+});
+
+test("non-contiguous blank numbering warns without failing the import", () => {
+  const report = validateExamFile(
+    tableExam(
+      {
+        format: "table",
+        rows: [
+          { cells: [cell([{ text: "first " }, { gap: 1 }])] },
+          { cells: [cell([{ text: "third " }, { gap: 3 }])] }
+        ]
+      },
+      [gap(1, ["eight"]), gap(3, ["nine"]), gap(2, ["ten"])],
+      3
+    )
+  );
+
+  const discontinuity = report.warnings.find((w) => w.code === "gap_number_discontinuity");
+  assert.ok(discontinuity, `expected gap_number_discontinuity, got: ${formatReport(report)}`);
+  assert.ok(discontinuity.message.includes("1→3"), discontinuity.message);
+});
+
+test("a malformed structured table is rejected on shape, not on placeholders", () => {
+  const report = validateExamFile(
+    tableExam({ format: "table", header: ["Item"], rows: [{ cells: "not an array" }] }, [
+      gap(1, ["eight"])
+    ])
+  );
+
+  assert.equal(report.ok, false);
+  assert.ok(report.errors.some((e) => e.code === "table_schema"));
+  assert.ok(
+    !report.errors.some((e) => e.code === "gap_no_placeholder"),
+    "a broken shape must not also emit misleading placeholder errors"
+  );
+});
+
 test("IELTS aliases resolve to the canonical engine type", () => {
   assert.equal(suggestQuestionType("classification"), "matching_features");
   assert.equal(suggestQuestionType("Matching Names"), "matching_features");

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { expandOptionalAnswers } from "@ielts/core/scoring/import-scoring";
 
 export const examPrimitive = z.enum(["radio", "checkbox", "gap", "select", "essay"]);
 export const examModule = z.enum(["reading", "listening", "writing"]);
@@ -100,6 +101,35 @@ export type ExamOption = z.infer<typeof optionSchema>;
 function optionValue(o: ExamOption): string | null {
   return o.value ?? o.id ?? o.key ?? null;
 }
+
+const tableCellPartSchema = z.union([
+  z.object({ text: z.string() }),
+  z.object({ gap: z.number().int().positive() })
+]);
+export type TableCellPart = z.infer<typeof tableCellPartSchema>;
+
+const tableCellSchema = z
+  .object({
+    parts: z.array(tableCellPartSchema).min(1),
+    colspan: z.number().int().positive().optional(),
+    rowspan: z.number().int().positive().optional(),
+    bold: z.boolean().optional(),
+    header: z.boolean().optional()
+  })
+  .passthrough();
+export type TableCell = z.infer<typeof tableCellSchema>;
+
+const tableRowSchema = z.object({ cells: z.array(tableCellSchema).min(1) }).passthrough();
+
+export const tableTemplateSchema = z
+  .object({
+    format: z.literal("table"),
+    title: z.string().optional(),
+    header: z.array(z.union([z.string(), tableCellSchema])).optional(),
+    rows: z.array(tableRowSchema).min(1)
+  })
+  .passthrough();
+export type TableTemplate = z.infer<typeof tableTemplateSchema>;
 
 const gapQuestion = z.object({
   type: z.literal("gap"),
@@ -279,6 +309,144 @@ function hasAnswer(q: ExamQuestion): boolean {
   return q.answer.trim().length > 0;
 }
 
+function isTableTemplate(template: unknown): boolean {
+  if (!template || typeof template !== "object" || Array.isArray(template)) return false;
+  return (template as Record<string, unknown>).format === "table";
+}
+
+function cellWidth(cell: string | TableCell): number {
+  return typeof cell === "string" ? 1 : (cell.colspan ?? 1);
+}
+
+function headerWidth(table: TableTemplate): number | null {
+  if (!table.header) return null;
+  return table.header.reduce((sum, cell) => sum + cellWidth(cell), 0);
+}
+
+function rowWidths(table: TableTemplate): number[] {
+  const carried: number[] = [];
+  return table.rows.map((row, r) => {
+    let width = carried[r] ?? 0;
+    for (const cell of row.cells) {
+      const colspan = cell.colspan ?? 1;
+      const rowspan = cell.rowspan ?? 1;
+      width += colspan;
+      for (let k = 1; k < rowspan; k += 1) {
+        carried[r + k] = (carried[r + k] ?? 0) + colspan;
+      }
+    }
+    return width;
+  });
+}
+
+function collectTableBlanks(table: TableTemplate): { n: number; where: string }[] {
+  const found: { n: number; where: string }[] = [];
+  const scan = (cell: string | TableCell, where: string) => {
+    if (typeof cell === "string") return;
+    for (const part of cell.parts) {
+      if ("gap" in part) found.push({ n: part.gap, where });
+    }
+  };
+  (table.header ?? []).forEach((cell, c) => scan(cell, `header, cell ${c + 1}`));
+  table.rows.forEach((row, r) => {
+    row.cells.forEach((cell, c) => scan(cell, `row ${r + 1}, cell ${c + 1}`));
+  });
+  return found;
+}
+
+function validateTableTemplate(
+  groupId: string,
+  template: unknown,
+  errors: ValidationIssue[],
+  warnings: ValidationIssue[]
+): Map<number, string> | null {
+  const parsed = tableTemplateSchema.safeParse(template);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      const path = issue.path.length > 0 ? `template.${issue.path.join(".")}` : "template";
+      errors.push({
+        level: "error",
+        code: "table_schema",
+        where: `group ${groupId}, ${path}`,
+        message: issue.message
+      });
+    }
+    return null;
+  }
+
+  const table = parsed.data;
+  const expected = headerWidth(table);
+  if (expected !== null) {
+    rowWidths(table).forEach((width, r) => {
+      if (width !== expected) {
+        errors.push({
+          level: "error",
+          code: "table_row_width",
+          where: `group ${groupId}, row ${r + 1}`,
+          message: `row spans ${width} column(s) but the header defines ${expected} (count colspan/rowspan, not cells)`
+        });
+      }
+    });
+  }
+
+  const seen = new Map<number, string>();
+  for (const blank of collectTableBlanks(table)) {
+    const prior = seen.get(blank.n);
+    if (prior !== undefined) {
+      errors.push({
+        level: "error",
+        code: "table_blank_duplicate",
+        where: `group ${groupId}, ${blank.where}`,
+        message: `blank ${blank.n} already appears at ${prior}`
+      });
+      continue;
+    }
+    seen.set(blank.n, blank.where);
+  }
+
+  const ordered = [...seen.keys()].sort((a, b) => a - b);
+  const breaks: string[] = [];
+  for (let i = 1; i < ordered.length; i += 1) {
+    const prev = ordered[i - 1] ?? 0;
+    const curr = ordered[i] ?? 0;
+    if (curr !== prev + 1) breaks.push(`${prev}→${curr}`);
+  }
+  if (breaks.length > 0) {
+    warnings.push({
+      level: "warning",
+      code: "gap_number_discontinuity",
+      where: `group ${groupId}`,
+      message: `blank numbering is not contiguous (${breaks.join(", ")}); check the table is numbered in reading order`
+    });
+  }
+
+  return seen;
+}
+
+function validateAcceptedAnswers(
+  groupId: string,
+  q: ExamQuestion,
+  warnings: ValidationIssue[]
+): void {
+  if (q.type !== "gap") return;
+  const owner = new Map<string, string>();
+  for (const answer of q.answer) {
+    for (const variant of expandOptionalAnswers(answer)) {
+      const prior = owner.get(variant);
+      if (prior !== undefined) {
+        warnings.push({
+          level: "warning",
+          code: "accept_duplicate",
+          where: questionWhere(groupId, q),
+          message: `accepted answer '${answer}' duplicates '${prior}' after normalisation ('${variant}')`
+        });
+        break;
+      }
+      owner.set(variant, answer);
+    }
+  }
+}
+
 export function validateExamFile(input: unknown): ValidationReport {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
@@ -337,6 +505,11 @@ export function validateExamFile(input: unknown): ValidationReport {
 
       const selectAnswerUsage = new Map<string, number>();
 
+      const isTable = isTableTemplate(group.template);
+      const tableBlanks = isTable
+        ? validateTableTemplate(group.id, group.template, errors, warnings)
+        : null;
+
       for (const q of group.questions) {
         const where = questionWhere(group.id, q);
 
@@ -370,6 +543,16 @@ export function validateExamFile(input: unknown): ValidationReport {
               where,
               message: "gap group has no 'template' to host the {{n}} placeholder"
             });
+          } else if (isTable) {
+            if (tableBlanks && !tableBlanks.has(q.number)) {
+              errors.push({
+                level: "error",
+                code: "gap_no_placeholder",
+                where,
+                message: `no cell in the table carries a blank numbered ${q.number}`
+              });
+            }
+            validateAcceptedAnswers(group.id, q, warnings);
           } else {
             const templateText =
               typeof group.template === "string"
@@ -477,6 +660,22 @@ export function validateExamFile(input: unknown): ValidationReport {
                 message: `answer '${a}' not in options ${formatValues(values)}`
               });
             }
+          }
+        }
+      }
+
+      if (tableBlanks) {
+        const answered = new Set(
+          group.questions.filter((q) => q.type === "gap").flatMap(questionNumbers)
+        );
+        for (const [n, at] of tableBlanks) {
+          if (!answered.has(n)) {
+            errors.push({
+              level: "error",
+              code: "gap_orphan_placeholder",
+              where: `group ${group.id}, ${at}`,
+              message: `blank ${n} has no matching gap question carrying an answer`
+            });
           }
         }
       }
