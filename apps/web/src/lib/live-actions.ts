@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@ielts/db";
 import { remainingSeconds } from "@ielts/core";
 import { auth } from "@/auth";
@@ -43,6 +44,7 @@ export async function pauseAttemptAction(formData: FormData): Promise<void> {
     }
   });
   revalidatePath("/admin/live");
+  redirect("/admin/live?notice=attempt_paused");
 }
 
 export async function resumeAttemptAction(formData: FormData): Promise<void> {
@@ -69,6 +71,7 @@ export async function resumeAttemptAction(formData: FormData): Promise<void> {
     }
   });
   revalidatePath("/admin/live");
+  redirect("/admin/live?notice=attempt_resumed");
 }
 
 export async function grantTimeAction(formData: FormData): Promise<void> {
@@ -101,4 +104,5 @@ export async function grantTimeAction(formData: FormData): Promise<void> {
     });
   }
   revalidatePath("/admin/live");
+  redirect("/admin/live?notice=time_granted");
 }

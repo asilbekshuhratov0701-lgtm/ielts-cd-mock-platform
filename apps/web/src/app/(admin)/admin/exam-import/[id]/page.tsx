@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Image as ImageIcon, Music, Play, Send, Trash2, Undo2, Upload } from "lucide-react";
+import { ArrowLeft, Image as ImageIcon, Music, Play, Send, Trash2, Undo2 } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
+import { MediaUploadField } from "@/components/admin/MediaUploadField";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,6 @@ import { ExamPreview } from "@/components/exam-import/ExamPreview";
 import { mediaPublicUrl } from "@/lib/media-storage";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import {
-  attachAudioAction,
-  attachGroupImageAction,
   deleteBlueprintAction,
   publishBlueprintAction,
   unpublishBlueprintAction
@@ -24,8 +23,6 @@ const stateVariant: Record<string, "default" | "warning" | "success"> = {
   published: "success"
 };
 
-const field =
-  "h-9 w-full rounded-lg border border-border bg-surface px-3 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-brand-700";
 
 export default async function ExamBlueprintPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -117,13 +114,12 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
             One continuous file for the whole module, bound to <code>{bp.audioRef}</code>.
             {bp.audioMedia ? ` Current: ${bp.audioMedia.originalName ?? bp.audioMedia.r2Key}.` : ""}
           </p>
-          <form action={attachAudioAction} className="flex flex-wrap items-center gap-3">
-            <input type="hidden" name="id" value={bp.id} />
-            <input type="file" name="audio" accept="audio/*" className={`${field} max-w-md`} />
-            <Button type="submit" variant="secondary">
-              <Upload className="h-4 w-4" /> {bp.audioMedia ? "Replace audio" : "Attach audio"}
-            </Button>
-          </form>
+          <MediaUploadField
+            kind="audio"
+            blueprintId={bp.id}
+            accept="audio/*"
+            label={bp.audioMedia ? "Replace audio" : "Attach audio"}
+          />
         </Card>
       ) : null}
 
@@ -157,23 +153,15 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
                     className="mt-3 max-h-48 rounded-lg border border-border"
                   />
                 ) : null}
-                <form
-                  action={attachGroupImageAction}
-                  className="mt-3 flex flex-wrap items-center gap-2"
-                >
-                  <input type="hidden" name="id" value={bp.id} />
-                  <input type="hidden" name="groupId" value={g.id} />
-                  <input
-                    type="file"
-                    name="image"
+                <div className="mt-3">
+                  <MediaUploadField
+                    kind="group-image"
+                    blueprintId={bp.id}
+                    groupId={g.id}
                     accept="image/*"
-                    className={`${field} max-w-md`}
-                    required
+                    label={g.imageUrl ? "Replace image" : "Upload image"}
                   />
-                  <Button type="submit" size="sm" variant="secondary">
-                    <Upload className="h-4 w-4" /> {g.imageUrl ? "Replace image" : "Upload image"}
-                  </Button>
-                </form>
+                </div>
               </div>
             ))}
           </div>

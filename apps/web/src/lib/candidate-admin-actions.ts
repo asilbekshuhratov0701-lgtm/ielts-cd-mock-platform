@@ -216,6 +216,7 @@ export async function importCandidatesAction(
   });
   revalidatePath("/admin/candidates");
   revalidatePath("/admin/groups");
+  redirect("/admin/candidates?notice=candidates_imported");
 
   return {
     ok: failed === 0,
@@ -273,6 +274,7 @@ export async function updateCandidateAction(formData: FormData): Promise<void> {
     }
   });
   revalidatePath("/admin/candidates");
+  redirect("/admin/candidates?notice=candidate_updated");
 }
 
 export async function deleteCandidateAction(formData: FormData): Promise<void> {
@@ -293,6 +295,7 @@ export async function deleteCandidateAction(formData: FormData): Promise<void> {
     meta: { email: user.email }
   });
   revalidatePath("/admin/candidates");
+  redirect("/admin/candidates?notice=candidate_deleted");
 }
 
 export async function createGroupAction(formData: FormData): Promise<void> {
@@ -312,6 +315,7 @@ export async function renameGroupAction(formData: FormData): Promise<void> {
   await prisma.candidateGroup.updateMany({ where: { id, orgId: admin.orgId }, data: { name } });
   revalidatePath(`/admin/groups/${id}`);
   revalidatePath("/admin/groups");
+  redirect("/admin/groups?notice=group_updated");
 }
 
 export async function deleteGroupAction(formData: FormData): Promise<void> {
@@ -345,6 +349,7 @@ export async function addGroupMembersAction(formData: FormData): Promise<void> {
   const toCreate = valid.filter((v) => !have.has(v.id)).map((v) => ({ groupId, candidateId: v.id }));
   if (toCreate.length > 0) await prisma.candidateGroupMember.createMany({ data: toCreate });
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}?notice=group_updated`);
 }
 
 export async function removeGroupMemberAction(formData: FormData): Promise<void> {
@@ -360,6 +365,7 @@ export async function removeGroupMemberAction(formData: FormData): Promise<void>
     .delete({ where: { groupId_candidateId: { groupId, candidateId } } })
     .catch(() => undefined);
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}?notice=group_updated`);
 }
 
 export async function assignMockToGroupAction(formData: FormData): Promise<void> {
@@ -375,6 +381,7 @@ export async function assignMockToGroupAction(formData: FormData): Promise<void>
   const existing = await prisma.mockAssignment.findFirst({ where: { groupId, mockExamId } });
   if (!existing) await prisma.mockAssignment.create({ data: { groupId, mockExamId } });
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}?notice=assignments_saved`);
 }
 
 export async function unassignMockFromGroupAction(formData: FormData): Promise<void> {
@@ -388,6 +395,7 @@ export async function unassignMockFromGroupAction(formData: FormData): Promise<v
   if (!group) return;
   await prisma.mockAssignment.deleteMany({ where: { groupId, mockExamId } });
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}?notice=assignments_saved`);
 }
 
 export async function shuffleAssignAction(formData: FormData): Promise<void> {
@@ -433,4 +441,5 @@ export async function shuffleAssignAction(formData: FormData): Promise<void> {
     meta: { mocks: mockIds.length, members: memberIds.length }
   });
   revalidatePath(`/admin/groups/${groupId}`);
+  redirect(`/admin/groups/${groupId}?notice=assignments_saved`);
 }

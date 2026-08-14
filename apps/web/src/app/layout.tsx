@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Sora } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { ToastProvider } from "@/components/ui/toast";
+import { NoticeToaster } from "@/components/NoticeToaster";
 import "./globals.css";
 
 const sora = Sora({
@@ -34,7 +36,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <style dangerouslySetInnerHTML={{ __html: HIGHLIGHT_CSS }} />
       </head>
       <body className="min-h-screen antialiased">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <ToastProvider>
+            <Suspense fallback={null}>
+              <NoticeToaster />
+            </Suspense>
+            {children}
+          </ToastProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

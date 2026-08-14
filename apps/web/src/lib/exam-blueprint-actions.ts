@@ -6,6 +6,7 @@ import { prisma, Prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { createBlueprintFromJson } from "@/lib/exam-blueprint";
 import { saveMediaObject, safeKeySegment, mediaPublicUrl } from "@/lib/media-storage";
+import { setGroupImageOn } from "@/lib/exam-blueprint-media";
 
 async function requireStaff() {
   const session = await auth();
@@ -46,7 +47,7 @@ export async function importBlueprintAction(formData: FormData): Promise<void> {
   const result = await createBlueprintFromJson({ orgId, createdById: user.id, rawJson: json });
   if (!result.ok) redirect("/admin/exam-import?error=invalid");
   refresh(result.blueprintId);
-  redirect(`/admin/exam-import/${result.blueprintId}`);
+  redirect(`/admin/exam-import/${result.blueprintId}?notice=exam_imported`);
 }
 
 export async function createWritingExamAction(formData: FormData): Promise<void> {
@@ -112,7 +113,7 @@ export async function createWritingExamAction(formData: FormData): Promise<void>
   const result = await createBlueprintFromJson({ orgId, createdById: user.id, rawJson: json });
   if (!result.ok) redirect("/admin/exam-import?error=writing_invalid");
   refresh(result.blueprintId);
-  redirect(`/admin/exam-import/${result.blueprintId}`);
+  redirect(`/admin/exam-import/${result.blueprintId}?notice=writing_created`);
 }
 
 export async function publishBlueprintAction(formData: FormData): Promise<void> {
@@ -133,6 +134,7 @@ export async function publishBlueprintAction(formData: FormData): Promise<void> 
     data: { state: "published", publishedAt: new Date() }
   });
   refresh(id);
+  redirect(`/admin/exam-import/${id}?notice=exam_published`);
 }
 
 export async function unpublishBlueprintAction(formData: FormData): Promise<void> {
@@ -148,6 +150,7 @@ export async function unpublishBlueprintAction(formData: FormData): Promise<void
     data: { state: next, publishedAt: null }
   });
   refresh(id);
+  redirect(`/admin/exam-import/${id}?notice=exam_unpublished`);
 }
 
 export async function attachAudioAction(formData: FormData): Promise<void> {
@@ -193,23 +196,6 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
   refresh(id);
 }
 
-function setGroupImage(root: unknown, groupId: string, url: string): boolean {
-  if (!root || typeof root !== "object") return false;
-  const sections = (root as { sections?: unknown }).sections;
-  if (!Array.isArray(sections)) return false;
-  let changed = false;
-  for (const section of sections) {
-    const groups = (section as { groups?: unknown }).groups;
-    if (!Array.isArray(groups)) continue;
-    for (const group of groups) {
-      if (group && typeof group === "object" && (group as { id?: unknown }).id === groupId) {
-        (group as Record<string, unknown>).imageUrl = url;
-        changed = true;
-      }
-    }
-  }
-  return changed;
-}
 
 export async function attachGroupImageAction(formData: FormData): Promise<void> {
   const user = await requireStaff();
@@ -245,8 +231,8 @@ export async function attachGroupImageAction(formData: FormData): Promise<void> 
 
   const engine = structuredClone(bp.engineJson) as unknown;
   const source = structuredClone(bp.sourceJson) as unknown;
-  setGroupImage(engine, groupId, url);
-  setGroupImage(source, groupId, url);
+  setGroupImageOn(engine, groupId, url);
+  setGroupImageOn(source, groupId, url);
 
   await prisma.examBlueprint.update({
     where: { id },
@@ -271,5 +257,5 @@ export async function deleteBlueprintAction(formData: FormData): Promise<void> {
   }
   await prisma.examBlueprint.delete({ where: { id } });
   revalidatePath("/admin/exam-import");
-  redirect("/admin/exam-import");
+  redirect("/admin/exam-import?notice=exam_deleted");
 }

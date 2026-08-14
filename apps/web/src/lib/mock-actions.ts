@@ -244,6 +244,7 @@ export async function releaseMockResultAction(formData: FormData): Promise<void>
     data: { resultsReleased: true, releasedAt: new Date() }
   });
   revalidatePath("/admin/results");
+  redirect("/admin/results?notice=results_released");
 }
 
 export async function holdMockResultAction(formData: FormData): Promise<void> {
@@ -258,6 +259,7 @@ export async function holdMockResultAction(formData: FormData): Promise<void> {
     data: { resultsReleased: false, releasedAt: null }
   });
   revalidatePath("/admin/results");
+  redirect("/admin/results?notice=results_held");
 }
 
 export async function setSpeakingBandAction(formData: FormData): Promise<void> {
@@ -272,7 +274,7 @@ export async function setSpeakingBandAction(formData: FormData): Promise<void> {
   if (raw === "") {
     await prisma.mockAttempt.update({ where: { id }, data: { speakingBand: null } });
     revalidatePath("/admin/results");
-    return;
+    redirect("/admin/results?notice=speaking_cleared");
   }
 
   const band = Number(raw);
@@ -282,6 +284,7 @@ export async function setSpeakingBandAction(formData: FormData): Promise<void> {
   }
   await prisma.mockAttempt.update({ where: { id }, data: { speakingBand: band } });
   revalidatePath("/admin/results");
+  redirect("/admin/results?notice=speaking_saved");
 }
 
 export async function setMockAssignmentsAction(formData: FormData): Promise<void> {

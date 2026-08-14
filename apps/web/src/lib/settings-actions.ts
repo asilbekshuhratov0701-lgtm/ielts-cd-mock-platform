@@ -41,4 +41,5 @@ export async function saveSettingsAction(formData: FormData): Promise<void> {
     meta: { orgName, task2Weight, passBand, releaseMode }
   });
   revalidatePath("/admin/settings");
+  redirect("/admin/settings?notice=settings_saved");
 }

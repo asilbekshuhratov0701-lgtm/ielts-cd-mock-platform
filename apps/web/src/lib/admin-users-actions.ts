@@ -63,6 +63,7 @@ export async function createCandidateAction(formData: FormData): Promise<void> {
     meta: { email: parsed.data.email }
   });
   revalidatePath("/admin/candidates");
+  redirect("/admin/candidates?notice=candidate_created");
 }
 
 export async function createStaffAction(formData: FormData): Promise<void> {
@@ -100,6 +101,7 @@ export async function createStaffAction(formData: FormData): Promise<void> {
     meta: { email: parsed.data.email, role }
   });
   revalidatePath("/admin/users");
+  redirect("/admin/users?notice=candidate_created");
 }
 
 export async function resetPasswordAction(formData: FormData): Promise<void> {
@@ -124,6 +126,7 @@ export async function resetPasswordAction(formData: FormData): Promise<void> {
   });
   revalidatePath("/admin/candidates");
   revalidatePath("/admin/users");
+  redirect("/admin/candidates?notice=password_reset");
 }
 
 export async function changeRoleAction(formData: FormData): Promise<void> {
@@ -150,6 +153,7 @@ export async function changeRoleAction(formData: FormData): Promise<void> {
     meta: { role: roleRaw }
   });
   revalidatePath("/admin/users");
+  redirect("/admin/users?notice=status_changed");
 }
 
 export async function setStatusAction(formData: FormData): Promise<void> {
@@ -172,6 +176,7 @@ export async function setStatusAction(formData: FormData): Promise<void> {
   });
   revalidatePath("/admin/users");
   revalidatePath("/admin/candidates");
+  redirect("/admin/candidates?notice=status_changed");
 }
 
 export async function assignExamAction(formData: FormData): Promise<void> {
@@ -194,4 +199,5 @@ export async function assignExamAction(formData: FormData): Promise<void> {
     });
   }
   revalidatePath("/admin/candidates");
+  redirect("/admin/candidates?notice=assignments_saved");
 }
