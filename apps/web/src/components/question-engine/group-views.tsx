@@ -2,7 +2,7 @@
 
 import { useAnswer } from "./answers-store";
 import { AnswerSlot, OptionBank, useHostedInPassage } from "./dnd";
-import { CheckboxInput, RadioInput, SelectMatch } from "./primitives";
+import { CheckboxInput, LabellingImage, RadioInput, SelectMatch } from "./primitives";
 import { NumberBadge } from "./QuestionGroupFrame";
 import type {
   CheckboxGroup,
@@ -332,7 +332,7 @@ function DragSelectView({ group }: { group: SelectGroup }) {
   );
 }
 
-export function SelectGroupView({ group }: { group: SelectGroup }) {
+function SelectGroupBody({ group }: { group: SelectGroup }) {
   if (group.renderAs === "table" && group.optionBank.length > 0) {
     return <TableSelectView group={group} />;
   }
@@ -395,20 +395,17 @@ export function SelectGroupView({ group }: { group: SelectGroup }) {
       {!group.fixedLabels && group.optionBank.length > 0 && !isBareLetterBank(group.optionBank) ? (
         <OptionsPanel options={group.optionBank} />
       ) : null}
-      {group.imageUrl ? (
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="overflow-hidden rounded-xl border border-border bg-foreground/[0.02]">
-            <img
-              src={group.imageUrl}
-              alt="Map / diagram"
-              className="h-full w-full object-contain"
-            />
-          </div>
-          {prompts}
-        </div>
-      ) : (
-        prompts
-      )}
+      {prompts}
+    </div>
+  );
+}
+
+export function SelectGroupView({ group }: { group: SelectGroup }) {
+  if (!group.imageUrl) return <SelectGroupBody group={group} />;
+  return (
+    <div>
+      <LabellingImage src={group.imageUrl} alt="Map / diagram" />
+      <SelectGroupBody group={group} />
     </div>
   );
 }

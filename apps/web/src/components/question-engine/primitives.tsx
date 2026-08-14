@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 
 export function wordLimitPhrase(wordLimit: number, allowNumber: boolean): string {
@@ -11,6 +13,62 @@ export function wordLimitPhrase(wordLimit: number, allowNumber: boolean): string
 function countWords(value: string): number {
   const trimmed = value.trim();
   return trimmed.length === 0 ? 0 : trimmed.split(/\s+/).length;
+}
+
+export function LabellingImage({ src, alt }: { src: string; alt: string }) {
+  const [zoomed, setZoomed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!zoomed) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setZoomed(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zoomed]);
+
+  return (
+    <>
+      <figure className="mb-4 rounded-xl border border-border bg-foreground/[0.02] p-2">
+        <button
+          type="button"
+          onClick={() => setZoomed(true)}
+          aria-label={`${alt} — enlarge`}
+          className="block w-full cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+        >
+          <img src={src} alt={alt} className="mx-auto max-h-[70vh] w-full object-contain" />
+        </button>
+        <figcaption className="mt-1 text-center text-xs text-muted">
+          Click the image to enlarge
+        </figcaption>
+      </figure>
+      {zoomed && mounted
+        ? createPortal(
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={alt}
+              onClick={() => setZoomed(false)}
+              className="fixed inset-0 z-[120] flex cursor-zoom-out items-center justify-center bg-black/80 p-4"
+            >
+              <img src={src} alt={alt} className="h-full w-full object-contain" />
+            </div>,
+            document.body
+          )
+        : null}
+    </>
+  );
+}
+
+export function LabellingImagePlaceholder({ label }: { label: string }) {
+  return (
+    <div className="mb-4 flex h-40 items-center justify-center rounded-xl border border-dashed border-border bg-foreground/[0.02] px-4 text-center text-xs text-muted">
+      {label}
+    </div>
+  );
 }
 
 export function GapInput({

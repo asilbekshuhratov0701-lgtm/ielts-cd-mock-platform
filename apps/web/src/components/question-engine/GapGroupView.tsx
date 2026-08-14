@@ -3,7 +3,12 @@
 import { ArrowDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { useAnswer } from "./answers-store";
-import { GapInput, wordLimitPhrase } from "./primitives";
+import {
+  GapInput,
+  LabellingImage,
+  LabellingImagePlaceholder,
+  wordLimitPhrase
+} from "./primitives";
 import type {
   FlowchartContent,
   FormContent,
@@ -236,30 +241,19 @@ function SentenceLayout({
 function ImageLayout({ group, byNumber }: { group: GapGroup; byNumber: Map<number, Gap> }) {
   const content = (group.content ?? {}) as { items?: string[] };
   return (
-    <div className="grid gap-5 md:grid-cols-2">
-      <div className="overflow-hidden rounded-xl border border-border bg-foreground/[0.02]">
-        {group.imageUrl ? (
-          <img src={group.imageUrl} alt="Labelling diagram" className="h-full w-full object-contain" />
-        ) : (
-          <div className="flex h-48 items-center justify-center text-xs text-muted">
-            (static image — labels printed on it)
-          </div>
-        )}
-      </div>
-      <div className="flex flex-col gap-[var(--space-question)]">
-        {content.items
-          ? content.items.map((item, i) => (
-              <p key={i} className="text-base leading-relaxed text-foreground">
-                {renderText(item, byNumber)}
-              </p>
-            ))
-          : group.gaps.map((gap) => (
-              <p key={gap.id} className="flex items-center gap-2 text-base text-foreground">
-                <span className="font-bold">{gap.number}.</span>
-                <GapSlot gap={gap} />
-              </p>
-            ))}
-      </div>
+    <div className="flex flex-col gap-[var(--space-question)]">
+      {content.items
+        ? content.items.map((item, i) => (
+            <p key={i} className="text-base leading-relaxed text-foreground">
+              {renderText(item, byNumber)}
+            </p>
+          ))
+        : group.gaps.map((gap) => (
+            <p key={gap.id} className="flex items-center gap-2 text-base text-foreground">
+              <span className="font-bold">{gap.number}.</span>
+              <GapSlot gap={gap} />
+            </p>
+          ))}
     </div>
   );
 }
@@ -293,6 +287,11 @@ export function GapGroupView({ group }: { group: GapGroup }) {
         <p className="mb-2 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand-700">
           Write {wordLimitPhrase(wordLimit, first?.allowNumber ?? true)}
         </p>
+      ) : null}
+      {group.imageUrl ? (
+        <LabellingImage src={group.imageUrl} alt="Labelling diagram" />
+      ) : group.layout === "image" ? (
+        <LabellingImagePlaceholder label="(no image attached — upload one in the exam builder)" />
       ) : null}
       <GapLayoutBody group={group} byNumber={byNumber} />
     </div>
