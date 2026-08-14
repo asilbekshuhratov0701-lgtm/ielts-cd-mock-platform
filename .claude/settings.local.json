@@ -108,7 +108,18 @@
       "Bash(pnpm --filter @ielts/db run set-admin -- --email \"x@y.com\" --password \"short\")",
       "Bash(pnpm --filter @ielts/db run set-admin --email test@x.com --password short)",
       "Bash(pnpm --filter @ielts/db run set-admin --email temp@ziyomock.test --password 'TempPass123!')",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(python -c ' *)",
+      "Bash(pnpm install *)",
+      "Bash(AUTH_SECRET=dummy-secret-for-build-only DATABASE_URL=\"postgresql://u:p@localhost:5432/db\" pnpm --filter @ielts/web build)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(taskkill //PID 98448 //F)",
+      "Bash(curl -s -o /dev/null -w \"login:%{http_code}\\\\n\" --max-time 90 http://localhost:3000/login)",
+      "Bash(curl -s -o /dev/null -w \"login:%{http_code}\\\\n\" --max-time 120 --retry 5 --retry-delay 3 --retry-all-errors http://localhost:3000/login)",
+      "Bash(xargs -I{} cat \"packages/db/prisma/manual-migrations/{}\")",
+      "Bash(grep -vE \"^$|^>\")",
+      "Bash(curl -s -o /dev/null -w \"home:%{http_code}\\\\n\" --max-time 120 --retry 6 --retry-delay 3 --retry-all-errors http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"missing-page:%{http_code}\\\\n\" http://localhost:3000/definitely-not-a-page)"
     ]
   }
 }
