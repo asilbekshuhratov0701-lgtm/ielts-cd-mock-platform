@@ -44,7 +44,7 @@ function makeDataset(
   };
 }
 
-function attemptBands(resultJson: unknown) {
+function attemptBands(resultJson: unknown, speakingBand: number | null) {
   const parts = (resultJson as { parts?: SummaryPart[] } | null)?.parts ?? [];
   const bandFor = (module: string) => {
     const part = parts.find((p) => p.module === module);
@@ -53,7 +53,13 @@ function attemptBands(resultJson: unknown) {
   const listening = bandFor("listening");
   const reading = bandFor("reading");
   const writing = bandFor("writing");
-  return { listening, reading, writing, overall: overallBandFrom([listening, reading, writing]) };
+  return {
+    listening,
+    reading,
+    writing,
+    speaking: speakingBand,
+    overall: overallBandFrom([listening, reading, writing, speakingBand])
+  };
 }
 
 function average(values: (number | null)[]): number | null {
@@ -74,7 +80,9 @@ export async function computeReports(orgId: string): Promise<{
       where: { orgId },
       include: {
         assignments: true,
-        attempts: { select: { candidateId: true, status: true, resultJson: true } }
+        attempts: {
+          select: { candidateId: true, status: true, resultJson: true, speakingBand: true }
+        }
       },
       orderBy: { createdAt: "desc" }
     }),
@@ -109,7 +117,7 @@ export async function computeReports(orgId: string): Promise<{
       mock.attempts.filter((a) => a.status === "submitted").map((a) => a.candidateId)
     );
     const submitted = mock.attempts.filter((a) => a.status === "submitted");
-    const bands = submitted.map((a) => attemptBands(a.resultJson));
+    const bands = submitted.map((a) => attemptBands(a.resultJson, a.speakingBand));
 
     const avgL = average(bands.map((b) => b.listening));
     const avgR = average(bands.map((b) => b.reading));

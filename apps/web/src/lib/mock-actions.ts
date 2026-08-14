@@ -14,6 +14,7 @@ import {
 } from "@ielts/core";
 import { auth } from "@/auth";
 import { MODULE_ORDER, moduleRank, isMockCompleted } from "@/lib/mock";
+import { isValidBand } from "@/lib/mock-band";
 
 function durationSecFor(module: string, timeLimitMin: number | null): number {
   if (timeLimitMin && timeLimitMin > 0) return timeLimitMin * 60;
@@ -256,6 +257,30 @@ export async function holdMockResultAction(formData: FormData): Promise<void> {
     where: { id },
     data: { resultsReleased: false, releasedAt: null }
   });
+  revalidatePath("/admin/results");
+}
+
+export async function setSpeakingBandAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const attempt = await prisma.mockAttempt.findFirst({ where: { id, mockExam: { orgId } } });
+  if (!attempt) return;
+
+  const raw = String(formData.get("speakingBand") ?? "").trim();
+  if (raw === "") {
+    await prisma.mockAttempt.update({ where: { id }, data: { speakingBand: null } });
+    revalidatePath("/admin/results");
+    return;
+  }
+
+  const band = Number(raw);
+  if (!isValidBand(band)) {
+    revalidatePath("/admin/results");
+    redirect("/admin/results?error=speaking_band");
+  }
+  await prisma.mockAttempt.update({ where: { id }, data: { speakingBand: band } });
   revalidatePath("/admin/results");
 }
 

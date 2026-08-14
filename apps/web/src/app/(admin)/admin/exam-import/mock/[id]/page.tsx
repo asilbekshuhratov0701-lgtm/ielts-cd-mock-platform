@@ -23,7 +23,7 @@ import {
   unpublishMockAction,
   startMockAttemptAction
 } from "@/lib/mock-actions";
-import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
+import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -191,7 +191,7 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                   const r = a.resultJson as unknown as {
                     parts?: { module: string; rawScore: number; totalScore: number; band?: number | null }[];
                   } | null;
-                  const overall = overallBandFrom((r?.parts ?? []).map(partSummaryBand));
+                  const overall = overallWithSpeaking(r?.parts ?? [], a.speakingBand);
                   return (
                     <tr key={a.id} className="align-middle hover:bg-brand-50/30">
                       <td className="px-3 py-2 font-medium text-foreground">

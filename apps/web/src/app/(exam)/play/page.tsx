@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StartMockButton } from "@/components/exam/StartMockButton";
 import { isMockCompleted } from "@/lib/mock";
-import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
+import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
 
 const moduleIcon = {
   reading: <BookOpen className="h-4 w-4 text-violet-600" />,
@@ -181,7 +181,7 @@ export default async function PlayListPage() {
               const r = a.resultJson as unknown as {
                 parts?: { module: string; rawScore: number; totalScore: number; band?: number | null }[];
               } | null;
-              const overall = overallBandFrom((r?.parts ?? []).map(partSummaryBand));
+              const overall = overallWithSpeaking(r?.parts ?? [], a.speakingBand);
               return (
                 <Link key={a.id} href={`/play/mock/${a.id}/result`}>
                   <Card className="flex items-center justify-between p-3 text-sm transition-colors hover:bg-brand-50/40">

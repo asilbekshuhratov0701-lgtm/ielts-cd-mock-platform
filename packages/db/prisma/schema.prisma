@@ -903,6 +903,9 @@ model MockAttempt {
   startedAt       DateTime  @default(now())
   submittedAt     DateTime?
   resultJson      Json?
+  /// Examiner-entered Speaking band. There is no Speaking module in the app, so
+  /// this is typed in by an admin; null until then and excluded from Overall.
+  speakingBand    Float?
   resultsReleased Boolean   @default(false)
   releasedAt      DateTime?
   createdAt       DateTime  @default(now())

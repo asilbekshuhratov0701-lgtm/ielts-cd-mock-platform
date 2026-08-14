@@ -82,7 +82,10 @@ export default async function MockAttemptReviewPage({
   });
   if (!attempt || attempt.mockExam.id !== id || attempt.mockExam.orgId !== me.orgId) notFound();
 
-  const overall = overallBandFrom(attempt.partAttempts.map((p) => partBand(p)));
+  const overall = overallBandFrom([
+    ...attempt.partAttempts.map((p) => partBand(p)),
+    attempt.speakingBand ?? null
+  ]);
 
   return (
     <PageShell

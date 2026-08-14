@@ -31,6 +31,17 @@ export function overallBandFrom(bands: (number | null)[]): number | null {
   return roundToHalfBand(present.reduce((s, b) => s + b, 0) / present.length);
 }
 
+export function overallWithSpeaking(
+  parts: SummaryPart[],
+  speakingBand: number | null | undefined
+): number | null {
+  return overallBandFrom([...parts.map(partSummaryBand), speakingBand ?? null]);
+}
+
 export function bandLabel(band: number | null): string {
   return band === null ? "—" : band.toFixed(1);
+}
+
+export function isValidBand(value: number): boolean {
+  return Number.isFinite(value) && value >= 0 && value <= 9 && Math.abs(value * 2 - Math.round(value * 2)) < 1e-9;
 }

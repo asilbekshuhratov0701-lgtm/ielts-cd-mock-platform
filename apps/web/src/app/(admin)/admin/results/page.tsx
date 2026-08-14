@@ -1,11 +1,16 @@
 import { auth } from "@/auth";
 import { prisma } from "@ielts/db";
-import { releaseMockResultAction, holdMockResultAction } from "@/lib/mock-actions";
-import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
+import {
+  releaseMockResultAction,
+  holdMockResultAction,
+  setSpeakingBandAction
+} from "@/lib/mock-actions";
+import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export const metadata = { title: "Results" };
 export const dynamic = "force-dynamic";
@@ -39,6 +44,7 @@ export default async function AdminResultsPage() {
                 <th className="px-4 py-3 font-medium">Candidate</th>
                 <th className="px-4 py-3 font-medium">Exam</th>
                 <th className="px-4 py-3 font-medium">Submitted</th>
+                <th className="px-4 py-3 font-medium">Speaking</th>
                 <th className="px-4 py-3 font-medium">Overall band</th>
                 <th className="px-4 py-3 font-medium">Visibility</th>
                 <th className="px-4 py-3" />
@@ -49,7 +55,7 @@ export default async function AdminResultsPage() {
                 const r = a.resultJson as unknown as {
                   parts?: { module: string; rawScore: number; totalScore: number; band?: number | null }[];
                 } | null;
-                const overall = overallBandFrom((r?.parts ?? []).map(partSummaryBand));
+                const overall = overallWithSpeaking(r?.parts ?? [], a.speakingBand);
                 return (
                   <tr key={a.id} className="align-middle hover:bg-brand-50/30">
                     <td className="px-4 py-3 font-medium text-foreground">
@@ -58,6 +64,25 @@ export default async function AdminResultsPage() {
                     <td className="px-4 py-3 text-muted">{a.mockExam.title}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted">
                       {a.submittedAt ? a.submittedAt.toLocaleDateString() : "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <form action={setSpeakingBandAction} className="flex items-center gap-1.5">
+                        <input type="hidden" name="id" value={a.id} />
+                        <Input
+                          name="speakingBand"
+                          type="number"
+                          min={0}
+                          max={9}
+                          step={0.5}
+                          defaultValue={a.speakingBand ?? ""}
+                          placeholder="—"
+                          aria-label="Speaking band"
+                          className="h-8 w-20 tabular-nums"
+                        />
+                        <Button type="submit" variant="ghost" size="sm">
+                          Save
+                        </Button>
+                      </form>
                     </td>
                     <td className="px-4 py-3 font-semibold tabular-nums text-brand-700">
                       {bandLabel(overall)}

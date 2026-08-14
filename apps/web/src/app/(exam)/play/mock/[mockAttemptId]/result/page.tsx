@@ -120,7 +120,7 @@ export default async function MockResultPage({
     const total = p.totalScore ?? 0;
     return { module, title, band: skillBand(module, raw, total), raw, total };
   });
-  const overall = overallBandFrom(parts.map((p) => p.band));
+  const overall = overallBandFrom([...parts.map((p) => p.band), attempt.speakingBand ?? null]);
 
   return (
     <>
