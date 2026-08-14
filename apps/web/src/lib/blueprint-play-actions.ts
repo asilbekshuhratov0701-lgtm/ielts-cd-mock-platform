@@ -70,30 +70,49 @@ export async function startBlueprintAttemptAction(formData: FormData): Promise<v
 export async function saveBlueprintAnswers(
   attemptId: string,
   answers: AnswersMap
-): Promise<{ ok: boolean; remainingSec: number; expired: boolean }> {
+): Promise<{ ok: boolean; remainingSec: number; expired: boolean; paused: boolean }> {
   const userId = await requireUserId();
   const attempt = await prisma.blueprintAttempt.findUnique({ where: { id: attemptId } });
   if (!attempt || attempt.candidateId !== userId) {
-    return { ok: false, remainingSec: 0, expired: true };
+    return { ok: false, remainingSec: 0, expired: true, paused: false };
   }
   const parsed = blueprintAnswersSchema.safeParse(answers);
   if (!parsed.success) {
-    return { ok: false, remainingSec: remainingSeconds(attempt.deadlineAt), expired: false };
+    return {
+      ok: false,
+      remainingSec: remainingSeconds(attempt.deadlineAt),
+      expired: false,
+      paused: attempt.pausedAt !== null
+    };
+  }
+  if (attempt.pausedAt) {
+    return {
+      ok: false,
+      remainingSec: Math.max(0, attempt.pausedRemainingSec ?? 0),
+      expired: false,
+      paused: true
+    };
   }
   if (isExpired(attempt.deadlineAt) || attempt.status !== "in_progress") {
-    return { ok: false, remainingSec: remainingSeconds(attempt.deadlineAt), expired: true };
+    return {
+      ok: false,
+      remainingSec: remainingSeconds(attempt.deadlineAt),
+      expired: true,
+      paused: false
+    };
   }
   const res = await prisma.blueprintAttempt.updateMany({
     where: {
       id: attemptId,
       candidateId: userId,
       status: "in_progress",
+      pausedAt: null,
       deadlineAt: { gt: new Date() }
     },
     data: { answersJson: parsed.data as Prisma.InputJsonValue }
   });
   const expired = res.count === 0;
-  return { ok: !expired, remainingSec: remainingSeconds(attempt.deadlineAt), expired };
+  return { ok: !expired, remainingSec: remainingSeconds(attempt.deadlineAt), expired, paused: false };
 }
 
 export async function saveBlueprintAnnotations(
@@ -126,6 +145,7 @@ export async function submitBlueprintAttemptAction(formData: FormData): Promise<
   });
   if (!attempt || attempt.candidateId !== userId) redirect("/play");
   if (attempt.status === "submitted") redirect(`/play/${attemptId}/result`);
+  if (attempt.pausedAt) redirect(`/play/${attemptId}`);
 
   const answerKey = attempt.blueprint.answerKeyJson as unknown as Record<string, ImportAnswerKey>;
   const answers = attempt.answersJson as unknown as Record<string, CandidateAnswer>;

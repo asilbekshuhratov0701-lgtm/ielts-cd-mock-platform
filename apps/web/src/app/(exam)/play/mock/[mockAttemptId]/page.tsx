@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { ExamPreview, type LiveAttempt } from "@/components/exam-import/ExamPreview";
+import { ExamHoldScreen } from "@/components/exam/ExamHoldScreen";
+import { holdReason, answeredCount } from "@/lib/live";
 import { mediaPublicUrl } from "@/lib/media-storage";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
@@ -43,6 +45,19 @@ export default async function MockPlayPage({
   if (!partAttempt) redirect("/play");
 
   const exam = part.blueprint.engineJson as unknown as PreviewExam;
+
+  const hold = holdReason(partAttempt);
+  if (hold) {
+    return (
+      <ExamHoldScreen
+        reason={hold}
+        examTitle={`${mockAttempt.mockExam.title} — ${part.blueprint.title}`}
+        answered={answeredCount(partAttempt.answersJson)}
+        totalQuestions={part.blueprint.totalQuestions}
+      />
+    );
+  }
+
   const audioUrl = part.blueprint.audioMedia
     ? mediaPublicUrl(part.blueprint.audioMedia.r2Key)
     : null;

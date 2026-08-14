@@ -817,6 +817,12 @@ model BlueprintAttempt {
   startedAt   DateTime      @default(now())
   deadlineAt  DateTime
   submittedAt DateTime?
+  /// Set while an admin has frozen the clock (crash recovery). pausedRemainingSec
+  /// holds the seconds left at the moment of the pause; resuming rebuilds
+  /// deadlineAt from it. grantedExtraSec is a running audit of time added.
+  pausedAt           DateTime?
+  pausedRemainingSec Int?
+  grantedExtraSec    Int       @default(0)
   answersJson Json
   annotationsJson Json?
   rawScore    Int?

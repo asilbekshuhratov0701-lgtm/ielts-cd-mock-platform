@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Maximize, Minimize, StickyNote, Volume2 } from "lucide-react";
 import type { PreviewExam, PreviewSection } from "@/lib/exam-import-map";
 import type { AnswersMap, EssayGroup, SelectGroup } from "@/components/question-engine/types";
@@ -47,10 +48,20 @@ function formatClock(totalSeconds: number): string {
 
 function Autosaver({ attemptId }: { attemptId: string }) {
   const answers = useAnswers();
+  const router = useRouter();
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const first = useRef(true);
   const latest = useRef(answers);
   latest.current = answers;
+
+  const save = useCallback(
+    async (map: AnswersMap) => {
+      const res = await saveBlueprintAnswers(attemptId, map);
+      if (res.paused) router.refresh();
+    },
+    [attemptId, router]
+  );
+
   useEffect(() => {
     if (first.current) {
       first.current = false;
@@ -58,16 +69,16 @@ function Autosaver({ attemptId }: { attemptId: string }) {
     }
     clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      void saveBlueprintAnswers(attemptId, answers);
+      void save(answers);
     }, 800);
     return () => clearTimeout(timer.current);
-  }, [answers, attemptId]);
+  }, [answers, save]);
   useEffect(() => {
     const id = setInterval(() => {
-      void saveBlueprintAnswers(attemptId, latest.current);
+      void save(latest.current);
     }, 20000);
     return () => clearInterval(id);
-  }, [attemptId]);
+  }, [save]);
   return null;
 }
 

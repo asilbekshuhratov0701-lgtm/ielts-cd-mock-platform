@@ -445,6 +445,8 @@ export async function submitMockPartAction(formData: FormData): Promise<void> {
     where: { id: attemptId },
     include: { blueprint: true }
   });
+  if (part?.pausedAt) redirect(`/play/mock/${mockAttemptId}`);
+
   if (part && part.mockAttemptId === mockAttemptId && part.status === "in_progress") {
     const answerKey = part.blueprint.answerKeyJson as unknown as Record<string, ImportAnswerKey>;
     const answers = part.answersJson as unknown as Record<string, CandidateAnswer>;
