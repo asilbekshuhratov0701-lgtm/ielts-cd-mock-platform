@@ -13,7 +13,7 @@ export function ExportMenu({
   params,
   label
 }: {
-  endpoint: "results" | "writing" | "report";
+  endpoint: "results" | "writing" | "report" | "group-results" | "candidate-detail";
   params: Record<string, string>;
   label: string;
 }) {

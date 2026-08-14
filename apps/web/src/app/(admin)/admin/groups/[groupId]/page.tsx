@@ -93,7 +93,7 @@ export default async function GroupDetailPage({
       subtitle={`${group.members.length} member${group.members.length === 1 ? "" : "s"}`}
       actions={
         <div className="flex items-center gap-2">
-          <ExportMenu endpoint="results" params={{ groupId }} label="Results" />
+          <ExportMenu endpoint="group-results" params={{ groupId }} label="Results" />
           <ExportMenu endpoint="writing" params={{ groupId }} label="Writing" />
         </div>
       }

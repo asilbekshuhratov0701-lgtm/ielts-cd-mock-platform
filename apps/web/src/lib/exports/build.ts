@@ -1,6 +1,8 @@
 import ExcelJS from "exceljs";
 import type { Dataset, WritingDoc } from "./gather";
-import { resultsPdf, writingPdf } from "./pdf";
+import { groupSummaryDataset, type GroupSummary } from "./group-summary";
+import { candidateDetailDataset, type CandidateDetail } from "./candidate-detail";
+import { candidateDetailPdf, groupSummaryPdf, resultsPdf, writingPdf } from "./pdf";
 
 export type ExportFormat = "csv" | "json" | "xlsx" | "doc" | "pdf";
 
@@ -115,6 +117,23 @@ tr:nth-child(even) td{background:#f4f7fe;}
 .task{font-weight:700;color:#2563EB;font-size:11pt;margin:10pt 0 2pt;}
 .prompt{font-style:italic;color:#5a6478;margin:0 0 6pt;}
 .essay{white-space:pre-wrap;margin:0 0 4pt;padding:8px;background:#f8fafc;border:1px solid #e6eaf2;border-radius:4px;}
+.brand{text-align:center;font-size:20pt;font-weight:700;color:#2563EB;margin:0 0 4pt;}
+.heading{text-align:center;font-size:13pt;font-weight:700;color:#101a30;margin:0 0 12pt;}
+table.meta{border-collapse:collapse;width:100%;background:#f6f8fe;margin:0 0 14pt;}
+table.meta td{border:none;padding:7px 10px;font-size:10pt;}
+.mlabel{color:#5a6478;}
+table.scores{border-collapse:collapse;width:100%;font-size:10pt;}
+table.scores th{background:#2563EB;color:#fff;text-align:left;padding:7px 8px;border:1px solid #2563EB;}
+table.scores th.num,table.scores td.num{text-align:center;}
+table.scores td{padding:6px 8px;border:1px solid #d7dbe6;}
+table.scores td.pos{color:#5a6478;}
+tr:nth-child(even) td{background:#f8fafd;}
+.pill{display:inline-block;min-width:34px;padding:3px 9px;border-radius:9pt;background:#e8edfe;color:#1c3f99;font-weight:700;}
+.pill-strong{background:#2563EB;color:#fff;font-size:11pt;}
+.pill-empty{background:#f0f2f6;color:#8b93a5;font-weight:400;}
+.gen{color:#8b93a5;font-size:8pt;margin-top:12pt;}
+td.ok{color:#0b7a4b;font-weight:700;}
+td.bad{color:#b82929;font-weight:700;}
 </style></head><body>${bodyHtml}</body></html>`;
 }
 
@@ -184,6 +203,171 @@ function writingTable(docs: WritingDoc[]): {
     }
   }
   return { columns, rows, objects };
+}
+
+function groupSummaryWordBody(summary: GroupSummary): string {
+  const pill = (band: number | null, strong: boolean): string => {
+    const label = band === null ? "&mdash;" : band.toFixed(1);
+    const cls = band === null ? "pill pill-empty" : strong ? "pill pill-strong" : "pill";
+    return `<td class="num"><span class="${cls}">${label}</span></td>`;
+  };
+  const rows = summary.rows
+    .map(
+      (r) =>
+        `<tr><td class="pos">${String(r.position).padStart(2, "0")}</td><td>${htmlEscape(
+          r.candidate
+        )}</td>${pill(r.listening, false)}${pill(r.reading, false)}${pill(r.writing, false)}${pill(
+          r.speaking,
+          false
+        )}${pill(r.overall, true)}</tr>`
+    )
+    .join("");
+
+  return `<div class="brand">${htmlEscape(summary.brand)}</div>
+<div class="heading">${htmlEscape(summary.heading)} &mdash; ${htmlEscape(summary.mockTitle)}</div>
+<table class="meta"><tr>
+<td><span class="mlabel">Group:</span> <strong>${htmlEscape(summary.groupName)}</strong></td>
+<td><span class="mlabel">Date:</span> <strong>${htmlEscape(summary.date)}</strong></td>
+<td><span class="mlabel">Candidates:</span> <strong>${summary.candidateCount}</strong></td>
+</tr></table>
+<table class="scores"><thead><tr><th>#</th><th>Candidate</th><th class="num">Listening</th><th class="num">Reading</th><th class="num">Writing</th><th class="num">Speaking</th><th class="num overall">Overall</th></tr></thead><tbody>${
+    rows || `<tr><td colspan="7">No submitted results for this group yet.</td></tr>`
+  }</tbody></table>
+<p class="gen">Generated ${htmlEscape(summary.generatedAt)}</p>`;
+}
+
+export async function buildGroupSummaryExport(
+  format: ExportFormat,
+  summary: GroupSummary,
+  base: string
+): Promise<ExportFile> {
+  const filename = filenameFor(base, format);
+  const mime = MIME[format];
+  const dataset = groupSummaryDataset(summary);
+  switch (format) {
+    case "csv":
+      return { filename, mime, body: toCsv(dataset.columns, dataset.rows) };
+    case "json":
+      return {
+        filename,
+        mime,
+        body: JSON.stringify(
+          {
+            heading: summary.heading,
+            mock: summary.mockTitle,
+            group: summary.groupName,
+            date: summary.date,
+            candidates: summary.candidateCount,
+            generatedAt: summary.generatedAt,
+            results: dataset.objects
+          },
+          null,
+          2
+        )
+      };
+    case "xlsx":
+      return { filename, mime, body: await toXlsx("Group results", dataset.columns, dataset.rows) };
+    case "doc":
+      return {
+        filename,
+        mime,
+        body: wordDocument(dataset.title, groupSummaryWordBody(summary))
+      };
+    case "pdf":
+      return { filename, mime, body: await groupSummaryPdf(summary) };
+  }
+}
+
+function candidateDetailWordBody(detail: CandidateDetail): string {
+  const pill = (band: number | null, strong: boolean) =>
+    `<span class="${band === null ? "pill pill-empty" : strong ? "pill pill-strong" : "pill"}">${
+      band === null ? "&mdash;" : band.toFixed(1)
+    }</span>`;
+
+  const summary = `<table class="meta"><tr>
+<td>Listening<br>${pill(detail.listening, false)}</td>
+<td>Reading<br>${pill(detail.reading, false)}</td>
+<td>Writing<br>${pill(detail.writing, false)}</td>
+<td>Speaking<br>${pill(detail.speaking, false)}</td>
+<td>Overall<br>${pill(detail.overall, true)}</td>
+</tr></table>`;
+
+  const sections = detail.skills
+    .map((skill) => {
+      const heading =
+        skill.raw !== null && skill.total !== null
+          ? `${skill.label} &mdash; ${skill.raw}/${skill.total} correct &mdash; band ${
+              skill.band === null ? "&mdash;" : skill.band.toFixed(1)
+            }`
+          : `${skill.label} &mdash; band ${skill.band === null ? "&mdash;" : skill.band.toFixed(1)}`;
+
+      if (skill.writingTasks.length > 0) {
+        const tasks = skill.writingTasks
+          .map((task) => {
+            const c = task.criteria;
+            const criteria = c
+              ? ` &middot; TR ${c.taskResponse} &middot; CC ${c.coherenceCohesion} &middot; LR ${c.lexicalResource} &middot; GRA ${c.grammaticalRange}`
+              : "";
+            return `<div class="task">Task ${task.number} &mdash; band ${
+              task.band === null ? "&mdash;" : task.band.toFixed(1)
+            }${criteria}</div>`;
+          })
+          .join("");
+        const feedback = skill.feedback
+          ? `<div class="prompt">${htmlEscape(skill.feedback)}</div>`
+          : "";
+        return `<div class="cand">${heading}</div>${tasks}${feedback}`;
+      }
+
+      if (skill.answers.length === 0) return `<div class="cand">${heading}</div>`;
+
+      const rows = skill.answers
+        .map(
+          (a) =>
+            `<tr><td>${htmlEscape(a.number)}</td><td>${htmlEscape(
+              a.candidate
+            )}</td><td>${htmlEscape(a.accepted)}</td><td class="${
+              a.correct ? "ok" : "bad"
+            }">${a.correct ? "Correct" : "Wrong"}</td></tr>`
+        )
+        .join("");
+      return `<div class="cand">${heading}</div><table class="scores"><thead><tr><th>Q</th><th>Candidate answer</th><th>Accepted</th><th>Result</th></tr></thead><tbody>${rows}</tbody></table>`;
+    })
+    .join("");
+
+  return `<div class="brand">${htmlEscape(detail.brand)}</div>
+<div class="heading">${htmlEscape(detail.heading)}</div>
+<table class="meta"><tr>
+<td><span class="mlabel">Candidate:</span> <strong>${htmlEscape(detail.candidate)}</strong></td>
+<td><span class="mlabel">Mock:</span> <strong>${htmlEscape(detail.mockTitle)}</strong></td>
+</tr><tr>
+<td><span class="mlabel">Group:</span> <strong>${htmlEscape(detail.groupName || "—")}</strong></td>
+<td><span class="mlabel">Date:</span> <strong>${htmlEscape(detail.date)}</strong></td>
+</tr></table>
+${summary}${sections}
+<p class="gen">Generated ${htmlEscape(detail.generatedAt)}</p>`;
+}
+
+export async function buildCandidateDetailExport(
+  format: ExportFormat,
+  detail: CandidateDetail,
+  base: string
+): Promise<ExportFile> {
+  const filename = filenameFor(base, format);
+  const mime = MIME[format];
+  const dataset = candidateDetailDataset(detail);
+  switch (format) {
+    case "csv":
+      return { filename, mime, body: toCsv(dataset.columns, dataset.rows) };
+    case "json":
+      return { filename, mime, body: JSON.stringify(detail, null, 2) };
+    case "xlsx":
+      return { filename, mime, body: await toXlsx("Detail", dataset.columns, dataset.rows) };
+    case "doc":
+      return { filename, mime, body: wordDocument(dataset.title, candidateDetailWordBody(detail)) };
+    case "pdf":
+      return { filename, mime, body: await candidateDetailPdf(detail) };
+  }
 }
 
 export async function buildResultsExport(

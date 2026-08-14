@@ -106,7 +106,12 @@ export default async function AdminCandidatesPage({
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-foreground">{candidate.name ?? candidate.email}</p>
+                    <Link
+                      href={`/admin/candidates/${candidate.id}`}
+                      className="font-medium text-foreground hover:text-brand-700 hover:underline"
+                    >
+                      {candidate.name ?? candidate.email}
+                    </Link>
                     <Badge variant={candidate.status === "ACTIVE" ? "success" : "danger"}>
                       {candidate.status}
                     </Badge>
@@ -127,11 +132,11 @@ export default async function AdminCandidatesPage({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <ExportMenu
-                    endpoint="results"
-                    params={{ candidateId: candidate.id }}
-                    label="Results"
-                  />
+                  <Link href={`/admin/candidates/${candidate.id}`}>
+                    <Button variant="outline" size="sm">
+                      Results
+                    </Button>
+                  </Link>
                   <form action={resetPasswordAction} className="flex items-center gap-1.5">
                     <input type="hidden" name="userId" value={candidate.id} />
                     <Input
