@@ -2,7 +2,13 @@
 
 import { useAnswer } from "./answers-store";
 import { AnswerSlot, OptionBank, useHostedInPassage } from "./dnd";
-import { CheckboxInput, LabellingImage, RadioInput, SelectMatch } from "./primitives";
+import {
+  CheckboxInput,
+  LabellingImage,
+  LabellingImagePlaceholder,
+  RadioInput,
+  SelectMatch
+} from "./primitives";
 import { NumberBadge } from "./QuestionGroupFrame";
 import type {
   CheckboxGroup,
@@ -96,16 +102,12 @@ function GridRadioRow({ rowId, letters }: { rowId: string; letters: string[] }) 
 export function RadioGroupView({ group }: { group: RadioGroup }) {
   if (group.rows && group.optionLetters) {
     return (
-      <div className="grid gap-5 md:grid-cols-2">
-        <div className="overflow-hidden rounded-xl border border-border bg-foreground/[0.02]">
-          {group.imageUrl ? (
-            <img src={group.imageUrl} alt="Map" className="h-full w-full object-contain" />
-          ) : (
-            <div className="flex h-48 items-center justify-center text-xs text-muted">
-              (static map — letters printed on it)
-            </div>
-          )}
-        </div>
+      <div>
+        {group.imageUrl ? (
+          <LabellingImage src={group.imageUrl} alt="Map" />
+        ) : (
+          <LabellingImagePlaceholder label="(no map attached — upload one in the exam builder)" />
+        )}
         <div className="overflow-x-auto">
           <table className="border-collapse text-base">
             <thead>
