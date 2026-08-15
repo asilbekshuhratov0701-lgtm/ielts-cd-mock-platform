@@ -121,7 +121,8 @@
       "Bash(curl -s -o /dev/null -w \"home:%{http_code}\\\\n\" --max-time 120 --retry 6 --retry-delay 3 --retry-all-errors http://localhost:3000/)",
       "Bash(curl -s -o /dev/null -w \"missing-page:%{http_code}\\\\n\" http://localhost:3000/definitely-not-a-page)",
       "PowerShell(git fetch *)",
-      "PowerShell(git *)"
+      "PowerShell(git *)",
+      "PowerShell(pnpm typecheck *)"
     ]
   }
 }

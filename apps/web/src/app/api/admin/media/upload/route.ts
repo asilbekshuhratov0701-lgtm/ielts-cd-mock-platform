@@ -41,8 +41,15 @@ export async function POST(request: NextRequest) {
       bp.audioRef ?? "audio"
     )}.${ext}`;
     await saveMediaObject(key, new Uint8Array(await file.arrayBuffer()));
-    const media = await prisma.media.create({
-      data: {
+    const media = await prisma.media.upsert({
+      where: { r2Key: key },
+      update: {
+        kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
+        mime: file.type || "audio/mpeg",
+        bytes: file.size,
+        originalName: file.name
+      },
+      create: {
         orgId: me.orgId,
         r2Key: key,
         kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
@@ -52,6 +59,7 @@ export async function POST(request: NextRequest) {
         createdById: me.id
       }
     });
+
     await prisma.examBlueprint.update({
       where: { id: bp.id },
       data: {
