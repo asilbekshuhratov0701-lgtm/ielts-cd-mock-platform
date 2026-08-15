@@ -174,12 +174,19 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   await saveMediaObject(key, bytes);
 
-  const media = await prisma.media.create({
-    data: {
+  const media = await prisma.media.upsert({
+    where: { r2Key: key },
+    update: {
+      kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
+      mime: file.type || "audio/mpeg",
+      bytes: file.size,
+      originalName: file.name
+    },
+    create: {
       orgId,
       r2Key: key,
       kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
-      mime: file.type || "audio/mpeg",
+      mime: file.type ||"audio/mpeg",
       bytes: file.size,
       originalName: file.name,
       createdById: user.id
