@@ -8,6 +8,7 @@ import type { AnswersMap, EssayGroup, SelectGroup } from "@/components/question-
 import { AnswersProvider, useAnswer, useAnswers } from "@/components/question-engine/answers-store";
 import { AnswerSlot, DragProvider, PassageHostProvider } from "@/components/question-engine/dnd";
 import { headingSlotsByBlock } from "@/components/question-engine/heading-slots";
+import { InstructionText } from "@/components/question-engine/InstructionText";
 import { QuestionGroupRenderer } from "@/components/question-engine/QuestionGroupRenderer";
 import {
   saveBlueprintAnswers,
@@ -264,7 +265,7 @@ function PassagePane({
       <div
         data-hl
         data-hl-id={`p:${section.id}`}
-        className="mt-3 space-y-3 text-[15px] leading-relaxed text-foreground/85"
+        className="mt-3 space-y-3 text-[15px] font-medium leading-[1.75] text-foreground"
       >
         {section.passageBlocks.map((b, i) => {
           const host = hosts.get(i);
@@ -281,7 +282,7 @@ function PassagePane({
               ) : null}
               <p>
                 {b.label ? (
-                  <span className="mr-2 font-semibold text-foreground">{b.label}</span>
+                  <span className="mr-2 font-bold text-foreground">{b.label}</span>
                 ) : null}
                 {b.text}
               </p>
@@ -419,7 +420,7 @@ function WritingTaskPane({ group }: { group: EssayGroup }) {
       <div className={EXAM_TEXT_CLASS[textSize]}>
         <h2 className="text-base font-bold uppercase text-foreground">Writing Task {task.number}</h2>
         {group.instructions ? (
-          <p className="mt-1 text-sm italic text-muted">{group.instructions}</p>
+          <InstructionText text={group.instructions} className="mt-1 text-sm" />
         ) : null}
         <div className="mt-3 rounded-lg border border-border p-4 text-base font-semibold leading-relaxed text-foreground">
           <p className="whitespace-pre-wrap">{task.prompt}</p>
@@ -783,9 +784,13 @@ function Shell({
         <div className="border-b border-border bg-black/[0.03] px-6 py-3">
           <p className="text-sm font-bold text-foreground">Part {activePart + 1}</p>
           {section.groups.find((g): g is EssayGroup => g.inputKind === "essay")?.instructions ? (
-            <p className="text-sm text-foreground/70">
-              {section.groups.find((g): g is EssayGroup => g.inputKind === "essay")?.instructions}
-            </p>
+            <InstructionText
+              text={
+                section.groups.find((g): g is EssayGroup => g.inputKind === "essay")
+                  ?.instructions ?? ""
+              }
+              className="text-sm"
+            />
           ) : null}
         </div>
       ) : null}

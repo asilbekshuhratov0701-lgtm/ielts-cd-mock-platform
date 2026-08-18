@@ -284,7 +284,7 @@ export function GapGroupView({ group }: { group: GapGroup }) {
   return (
     <div>
       {wordLimit > 0 ? (
-        <p className="mb-2 inline-block rounded-md bg-brand-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-brand-700">
+        <p className="mb-3 inline-block rounded-md border border-brand-300 bg-brand-500/15 px-2.5 py-1 text-sm font-bold uppercase tracking-wide text-foreground">
           Write {wordLimitPhrase(wordLimit, first?.allowNumber ?? true)}
         </p>
       ) : null}

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/cn";
 import { HelpPopover } from "./HelpPopover";
+import { InstructionText } from "./InstructionText";
 import type { BaseGroup } from "./types";
 
 export function NumberBadge({ n, boxed }: { n: number; boxed?: boolean }) {
@@ -29,7 +30,7 @@ export function QuestionGroupFrame({
         <HelpPopover text={group.helpText} />
       </div>
       {group.instructions ? (
-        <p className="mb-3 text-base italic text-foreground/70">{group.instructions}</p>
+        <InstructionText text={group.instructions} className="mb-3 text-base" />
       ) : null}
       <div className={cn("rounded-md bg-black/[0.04] p-5")} data-hl data-hl-id={group.id}>
         {group.title ? (
