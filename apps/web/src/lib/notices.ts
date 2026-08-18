@@ -55,6 +55,11 @@ export const NOTICES: Record<string, Notice> = {
   speaking_saved: { variant: "success", title: "Speaking band saved" },
   speaking_cleared: { variant: "info", title: "Speaking band cleared" },
   writing_marked: { variant: "success", title: "Writing marked" },
+  writing_deleted: {
+    variant: "success",
+    title: "Submissions deleted",
+    description: "The selected writing submissions are gone for good."
+  },
 
   candidate_created: { variant: "success", title: "Candidate created" },
   candidate_updated: { variant: "success", title: "Candidate updated" },

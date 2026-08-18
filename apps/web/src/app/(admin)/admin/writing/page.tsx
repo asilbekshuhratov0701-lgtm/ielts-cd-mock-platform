@@ -1,21 +1,17 @@
-import Link from "next/link";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import {
+  WritingEvaluationTable,
+  type WritingRowData
+} from "@/components/admin/WritingEvaluationTable";
 
 export const metadata = { title: "Writing Evaluation" };
 export const dynamic = "force-dynamic";
 
-interface WritingRow {
-  key: string;
-  candidate: string;
-  exam: string;
-  kind: "Mock" | "Standalone";
+interface WritingRow extends WritingRowData {
   submitted: Date | null;
-  band: number | null;
-  href: string;
 }
 
 export default async function AdminWritingPage() {
@@ -72,6 +68,7 @@ export default async function AdminWritingPage() {
         exam: a.mockExam.title,
         kind: "Mock" as const,
         submitted: a.submittedAt,
+        submittedLabel: a.submittedAt ? a.submittedAt.toLocaleString() : "—",
         band: typeof w?.writingBand === "number" ? w.writingBand : null,
         href: `/admin/exam-import/mock/${a.mockExam.id}/attempt/${a.id}`
       };
@@ -84,6 +81,7 @@ export default async function AdminWritingPage() {
         exam: a.blueprint.title,
         kind: "Standalone" as const,
         submitted: a.submittedAt,
+        submittedLabel: a.submittedAt ? a.submittedAt.toLocaleString() : "—",
         band: w?.kind === "writing" && typeof w.writingBand === "number" ? w.writingBand : null,
         href: `/admin/writing/${a.id}`
       };
@@ -100,46 +98,9 @@ export default async function AdminWritingPage() {
           No writing submissions awaiting evaluation.
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b border-border bg-brand-50/40 text-left text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">Candidate</th>
-                <th className="px-4 py-3 font-medium">Exam</th>
-                <th className="px-4 py-3 font-medium">Type</th>
-                <th className="px-4 py-3 font-medium">Submitted</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((r) => (
-                <tr key={r.key} className="hover:bg-brand-50/30">
-                  <td className="px-4 py-3 font-medium text-foreground">{r.candidate}</td>
-                  <td className="px-4 py-3 text-muted">{r.exam}</td>
-                  <td className="px-4 py-3">
-                    <Badge variant="muted">{r.kind}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-muted">
-                    {r.submitted ? r.submitted.toLocaleString() : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {r.band !== null ? (
-                      <Badge variant="success">band {r.band.toFixed(1)}</Badge>
-                    ) : (
-                      <Badge variant="warning">Pending</Badge>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link href={r.href} className="font-medium text-brand-700 hover:underline">
-                      Evaluate
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+        <WritingEvaluationTable
+          rows={rows.map(({ submitted: _submitted, ...row }) => row)}
+        />
       )}
     </PageShell>
   );
