@@ -71,7 +71,11 @@ export const NOTICES: Record<string, Notice> = {
 
   candidate_created: { variant: "success", title: "Candidate created" },
   candidate_updated: { variant: "success", title: "Candidate updated" },
-  candidate_deleted: { variant: "success", title: "Candidate deleted" },
+  candidates_deleted: {
+    variant: "success",
+    title: "Candidates deleted",
+    description: "Their accounts, attempts and results are gone for good."
+  },
   candidates_imported: { variant: "success", title: "Candidates imported" },
   password_reset: { variant: "success", title: "Password reset" },
   status_changed: { variant: "success", title: "Status updated" },

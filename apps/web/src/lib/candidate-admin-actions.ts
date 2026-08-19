@@ -277,26 +277,32 @@ export async function updateCandidateAction(formData: FormData): Promise<void> {
   redirect("/admin/candidates?notice=candidate_updated");
 }
 
-export async function deleteCandidateAction(formData: FormData): Promise<void> {
+export async function deleteCandidatesAction(formData: FormData): Promise<void> {
   const admin = await requireAdmin();
-  const id = String(formData.get("candidateId") ?? "");
-  if (!id || id === admin.id) return;
-  const user = await prisma.user.findFirst({
-    where: { id, orgId: admin.orgId, role: "CANDIDATE" }
+  const ids = formData
+    .getAll("candidateId")
+    .map((v) => String(v))
+    .filter((v) => v.length > 0 && v !== admin.id);
+  if (ids.length === 0) redirect("/admin/candidates");
+
+  const candidates = await prisma.user.findMany({
+    where: { id: { in: ids }, orgId: admin.orgId, role: "CANDIDATE" },
+    select: { id: true, email: true }
   });
-  if (!user) return;
-  await prisma.user.delete({ where: { id } });
+  if (candidates.length === 0) redirect("/admin/candidates?error=not_found");
+
+  await prisma.user.deleteMany({ where: { id: { in: candidates.map((c) => c.id) } } });
   await logAudit({
     orgId: admin.orgId,
     actorId: admin.id,
-    action: "candidate.delete",
+    action: "candidate.delete.bulk",
     entity: "user",
-    entityId: id,
-    meta: { email: user.email }
+    meta: { count: candidates.length, emails: candidates.map((c) => c.email) }
   });
   revalidatePath("/admin/candidates");
-  redirect("/admin/candidates?notice=candidate_deleted");
+  redirect("/admin/candidates?notice=candidates_deleted");
 }
+
 
 export async function createGroupAction(formData: FormData): Promise<void> {
   const admin = await requireAdmin();

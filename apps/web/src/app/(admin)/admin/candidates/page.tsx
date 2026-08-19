@@ -1,20 +1,17 @@
 import Link from "next/link";
-import { Boxes, Pencil, Trash2 } from "lucide-react";
+import { Boxes } from "lucide-react";
 import { auth } from "@/auth";
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { CandidateImportPanel } from "@/components/candidates/CandidateImportPanel";
+import { CandidateList, type CandidateRow } from "@/components/candidates/CandidateList";
 import { ExportMenu } from "@/components/candidates/ExportMenu";
-import { createCandidateAction, resetPasswordAction, setStatusAction } from "@/lib/admin-users-actions";
-import { updateCandidateAction, deleteCandidateAction } from "@/lib/candidate-admin-actions";
+import { createCandidateAction } from "@/lib/admin-users-actions";
 
 export const metadata = { title: "Candidates" };
-
-const fieldLabel = "text-xs font-medium text-muted";
 
 export default async function AdminCandidatesPage({
   searchParams
@@ -28,15 +25,28 @@ export default async function AdminCandidatesPage({
     : null;
   const orgId = me?.orgId ?? "";
 
-  const candidates = await prisma.user.findMany({
+  const rows = await prisma.user.findMany({
     where: { orgId, role: "CANDIDATE" },
     include: {
       candidateProfile: true,
       groupMemberships: { select: { group: { select: { id: true, name: true } } } },
-      _count: { select: { mockAttempts: true } }
+      _count: { select: { mockAttempts: true, blueprintAttempts: true } }
     },
     orderBy: { createdAt: "desc" }
   });
+
+  const candidates: CandidateRow[] = rows.map((c) => ({
+    id: c.id,
+    name: c.name,
+    email: c.email,
+    status: c.status,
+    phone: c.candidateProfile?.phone ?? null,
+    country: c.candidateProfile?.country ?? null,
+    targetBand: c.candidateProfile?.targetBand ?? null,
+    groups: c.groupMemberships.map((m) => m.group),
+    mockAttempts: c._count.mockAttempts,
+    sectionAttempts: c._count.blueprintAttempts
+  }));
 
   return (
     <PageShell
@@ -100,116 +110,7 @@ export default async function AdminCandidatesPage({
       {candidates.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted">No candidates yet.</Card>
       ) : (
-        <div className="space-y-3">
-          {candidates.map((candidate) => (
-            <Card key={candidate.id} className="p-4">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link
-                      href={`/admin/candidates/${candidate.id}`}
-                      className="font-medium text-foreground hover:text-brand-700 hover:underline"
-                    >
-                      {candidate.name ?? candidate.email}
-                    </Link>
-                    <Badge variant={candidate.status === "ACTIVE" ? "success" : "danger"}>
-                      {candidate.status}
-                    </Badge>
-                    {candidate.groupMemberships.map((m) => (
-                      <Badge key={m.group.id} variant="muted">
-                        {m.group.name}
-                      </Badge>
-                    ))}
-                  </div>
-                  <p className="mt-1 text-xs text-muted">
-                    {candidate.email} · {candidate._count.mockAttempts} mock attempt
-                    {candidate._count.mockAttempts === 1 ? "" : "s"}
-                    {candidate.candidateProfile?.phone ? ` · ${candidate.candidateProfile.phone}` : ""}
-                    {candidate.candidateProfile?.targetBand
-                      ? ` · target ${candidate.candidateProfile.targetBand}`
-                      : ""}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/admin/candidates/${candidate.id}`}>
-                    <Button variant="outline" size="sm">
-                      Results
-                    </Button>
-                  </Link>
-                  <form action={resetPasswordAction} className="flex items-center gap-1.5">
-                    <input type="hidden" name="userId" value={candidate.id} />
-                    <Input
-                      name="password"
-                      type="text"
-                      minLength={8}
-                      placeholder="new password"
-                      className="h-9 w-32"
-                    />
-                    <Button type="submit" variant="ghost" size="sm">
-                      Reset
-                    </Button>
-                  </form>
-                  <form action={setStatusAction}>
-                    <input type="hidden" name="userId" value={candidate.id} />
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={candidate.status === "ACTIVE" ? "SUSPENDED" : "ACTIVE"}
-                    />
-                    <Button type="submit" variant="ghost" size="sm">
-                      {candidate.status === "ACTIVE" ? "Suspend" : "Activate"}
-                    </Button>
-                  </form>
-                </div>
-              </div>
-
-              <details className="mt-3 border-t border-border pt-3">
-                <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-brand-600 [&::-webkit-details-marker]:hidden">
-                  <Pencil className="h-3.5 w-3.5" /> Edit profile
-                </summary>
-                <form action={updateCandidateAction} className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <input type="hidden" name="candidateId" value={candidate.id} />
-                  <label className="space-y-1">
-                    <span className={fieldLabel}>Name</span>
-                    <Input name="name" defaultValue={candidate.name ?? ""} />
-                  </label>
-                  <label className="space-y-1">
-                    <span className={fieldLabel}>Email</span>
-                    <Input name="email" type="email" defaultValue={candidate.email} />
-                  </label>
-                  <label className="space-y-1">
-                    <span className={fieldLabel}>Phone</span>
-                    <Input name="phone" defaultValue={candidate.candidateProfile?.phone ?? ""} />
-                  </label>
-                  <label className="space-y-1">
-                    <span className={fieldLabel}>Country</span>
-                    <Input name="country" defaultValue={candidate.candidateProfile?.country ?? ""} />
-                  </label>
-                  <label className="space-y-1">
-                    <span className={fieldLabel}>Target band</span>
-                    <Input
-                      name="targetBand"
-                      inputMode="decimal"
-                      defaultValue={candidate.candidateProfile?.targetBand?.toString() ?? ""}
-                    />
-                  </label>
-                  <div className="flex items-end">
-                    <Button type="submit" size="sm" variant="secondary">
-                      Save changes
-                    </Button>
-                  </div>
-                </form>
-                <form action={deleteCandidateAction} className="mt-2">
-                  <input type="hidden" name="candidateId" value={candidate.id} />
-                  <Button type="submit" size="sm" variant="ghost" className="text-red-600 hover:bg-red-50">
-                    <Trash2 className="h-3.5 w-3.5" /> Delete candidate
-                  </Button>
-                </form>
-              </details>
-            </Card>
-          ))}
-        </div>
+        <CandidateList candidates={candidates} />
       )}
     </PageShell>
   );
