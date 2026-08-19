@@ -16,6 +16,7 @@ import { auth } from "@/auth";
 import { MODULE_ORDER, moduleRank, isMockCompleted } from "@/lib/mock";
 import { isValidBand } from "@/lib/mock-band";
 import { safeBuilderPath } from "@/lib/builder-redirect";
+import { logAudit } from "@/lib/audit";
 
 function durationSecFor(module: string, timeLimitMin: number | null): number {
   if (timeLimitMin && timeLimitMin > 0) return timeLimitMin * 60;
@@ -161,13 +162,21 @@ export async function deleteMockAction(formData: FormData): Promise<void> {
   const mock = await prisma.mockExam.findFirst({ where: { id, orgId } });
   if (!mock) return;
   const attempts = await prisma.mockAttempt.count({ where: { mockExamId: id } });
-  if (attempts > 0) {
+  if (attempts > 0 && formData.get("confirmAttempts") !== "1") {
     refreshAdmin(id);
     redirect(`/admin/exam-import/mock/${id}?error=has_attempts`);
   }
   await prisma.mockExam.delete({ where: { id } });
+  await logAudit({
+    orgId,
+    actorId: user.id,
+    action: "mock.delete",
+    entity: "mockExam",
+    entityId: id,
+    meta: { title: mock.title, attempts }
+  });
   revalidatePath("/admin/exam-import");
-  redirect("/admin/exam-import");
+  redirect("/admin/exam-import?notice=mock_deleted");
 }
 
 export async function saveWritingMarkAction(formData: FormData): Promise<void> {

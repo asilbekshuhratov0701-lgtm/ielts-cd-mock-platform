@@ -9,7 +9,6 @@ import {
   Play,
   Send,
   StickyNote,
-  Trash2,
   Undo2,
   Upload
 } from "lucide-react";
@@ -20,8 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { attachAudioAction } from "@/lib/exam-blueprint-actions";
 import { RenameInline } from "@/components/admin/RenameRow";
+import { DeleteMockButton } from "@/components/admin/DeleteMockButton";
 import {
-  deleteMockAction,
   publishMockAction,
   unpublishMockAction,
   saveMockNotesAction,
@@ -66,6 +65,7 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
     take: 200
   });
 
+  const attemptCount = await prisma.mockAttempt.count({ where: { mockExamId: id } });
   const author = mock.createdById
     ? await prisma.user.findUnique({
         where: { id: mock.createdById },
@@ -116,12 +116,12 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
               </Button>
             </form>
           )}
-          <form action={deleteMockAction}>
-            <input type="hidden" name="id" value={mock.id} />
-            <Button type="submit" variant="ghost">
-              <Trash2 className="h-4 w-4" /> Delete
-            </Button>
-          </form>
+          <DeleteMockButton
+            id={mock.id}
+            title={mock.title}
+            attempts={attemptCount}
+            assignments={assignments.length}
+          />
         </div>
       }
     >
@@ -174,7 +174,7 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
             label="Assigned to"
             value={`${assignedCandidates} candidate${assignedCandidates === 1 ? "" : "s"} · ${assignedGroups} group${assignedGroups === 1 ? "" : "s"}`}
           />
-          <Meta label="Attempts" value={`${attempts.length}`} />
+          <Meta label="Attempts" value={`${attemptCount}`} />
         </dl>
 
         <form action={saveMockNotesAction} className="mt-5 border-t border-border pt-4">
