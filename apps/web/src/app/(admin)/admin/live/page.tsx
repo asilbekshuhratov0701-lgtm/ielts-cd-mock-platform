@@ -91,7 +91,7 @@ export default async function AdminLivePage() {
                     <td className="px-4 py-3">
                       <span
                         className={`font-mono tabular-nums ${
-                          s.paused
+                          s.paused || s.notStarted
                             ? "text-muted"
                             : s.expired
                               ? "text-red-600"
@@ -102,7 +102,11 @@ export default async function AdminLivePage() {
                       >
                         {fmt(s.remainingSec)}
                       </span>
-                      {s.paused ? (
+                      {s.notStarted ? (
+                        <Badge variant="muted" className="ml-2">
+                          reading instructions
+                        </Badge>
+                      ) : s.paused ? (
                         <Badge variant="muted" className="ml-2">
                           frozen
                         </Badge>

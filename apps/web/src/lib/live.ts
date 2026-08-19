@@ -11,6 +11,7 @@ export type LiveSession = {
   remainingSec: number;
   expired: boolean;
   paused: boolean;
+  notStarted: boolean;
   heartbeatAgeSec: number | null;
   connection: LiveConnection;
   answered: number;
@@ -80,8 +81,13 @@ export async function listLiveSessions(orgId: string): Promise<LiveSession[]> {
         : ageSec < 150
           ? "idle"
           : "offline";
-    const remainingSec = sessionRemainingSec(row);
-    const expired = !paused && remainingSec <= 0;
+    const notStarted = row.beganAt === null;
+    const fullDurationSec = Math.max(
+      0,
+      Math.round((row.deadlineAt.getTime() - row.startedAt.getTime()) / 1000)
+    );
+    const remainingSec = notStarted ? fullDurationSec : sessionRemainingSec(row);
+    const expired = !paused && !notStarted && remainingSec <= 0;
     return {
       id: row.id,
       candidate: row.candidate.name ?? row.candidate.email,
@@ -90,12 +96,13 @@ export async function listLiveSessions(orgId: string): Promise<LiveSession[]> {
       remainingSec,
       expired,
       paused,
+      notStarted,
       heartbeatAgeSec: ageSec,
       connection,
       answered: answeredCount(row.answersJson),
       totalQuestions: row.blueprint.totalQuestions,
       grantedExtraSec: row.grantedExtraSec,
-      needsAttention: paused || expired || connection === "offline"
+      needsAttention: paused || expired || (connection === "offline" && !notStarted)
     };
   });
 }

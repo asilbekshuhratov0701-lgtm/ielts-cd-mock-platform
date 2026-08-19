@@ -12,14 +12,9 @@ import {
 } from "@ielts/core";
 import { blueprintAnswersSchema, MAX_ANNOTATIONS_BYTES } from "@ielts/validators";
 import { auth } from "@/auth";
+import { durationSecFor } from "@/lib/mock";
 
 type AnswersMap = Record<string, string | string[] | null>;
-
-function durationSecFor(module: string, timeLimitMin: number | null): number {
-  if (timeLimitMin && timeLimitMin > 0) return timeLimitMin * 60;
-  if (module === "listening") return 2040;
-  return 3600;
-}
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -65,6 +60,32 @@ export async function startBlueprintAttemptAction(formData: FormData): Promise<v
     if (!attemptId) throw e;
   }
   redirect(`/play/${attemptId}`);
+}
+
+export async function beginSectionAction(formData: FormData): Promise<void> {
+  const userId = await requireUserId();
+  const attemptId = String(formData.get("attemptId") ?? "");
+  if (!attemptId) redirect("/play");
+
+  const attempt = await prisma.blueprintAttempt.findUnique({
+    where: { id: attemptId },
+    include: { blueprint: { select: { module: true, timeLimitMin: true } } }
+  });
+  if (!attempt || attempt.candidateId !== userId) redirect("/play");
+
+  const back = attempt.mockAttemptId ? `/play/mock/${attempt.mockAttemptId}` : `/play/${attemptId}`;
+  if (attempt.status !== "in_progress" || attempt.beganAt) redirect(back);
+
+  const now = new Date();
+  const deadlineAt = computeDeadline(
+    now,
+    durationSecFor(attempt.blueprint.module, attempt.blueprint.timeLimitMin)
+  );
+  await prisma.blueprintAttempt.updateMany({
+    where: { id: attemptId, beganAt: null, status: "in_progress" },
+    data: { beganAt: now, startedAt: now, deadlineAt }
+  });
+  redirect(back);
 }
 
 export async function saveBlueprintAnswers(

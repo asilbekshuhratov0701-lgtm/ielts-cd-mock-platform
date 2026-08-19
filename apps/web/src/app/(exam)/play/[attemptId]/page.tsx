@@ -3,7 +3,10 @@ import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { ExamPreview, type LiveAttempt } from "@/components/exam-import/ExamPreview";
 import { ExamHoldScreen } from "@/components/exam/ExamHoldScreen";
+import { SectionIntro } from "@/components/exam/SectionIntro";
 import { holdReason, answeredCount } from "@/lib/live";
+import { sectionIntroCopy } from "@/lib/section-intro";
+import { durationSecFor } from "@/lib/mock";
 import { mediaPublicUrl } from "@/lib/media-storage";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
@@ -22,6 +25,23 @@ export default async function PlayPage({ params }: { params: Promise<{ attemptId
   if (attempt.status === "submitted") redirect(`/play/${attemptId}/result`);
 
   const exam = attempt.blueprint.engineJson as unknown as PreviewExam;
+
+  if (!attempt.beganAt) {
+    return (
+      <SectionIntro
+        attemptId={attempt.id}
+        module={attempt.blueprint.module}
+        examTitle={attempt.blueprint.title}
+        copy={sectionIntroCopy({
+          module: attempt.blueprint.module,
+          durationSec: durationSecFor(attempt.blueprint.module, attempt.blueprint.timeLimitMin),
+          totalQuestions: attempt.blueprint.totalQuestions,
+          sectionCount: exam.sections?.length ?? 0
+        })}
+        steps={[]}
+      />
+    );
+  }
 
   const hold = holdReason(attempt);
   if (hold) {

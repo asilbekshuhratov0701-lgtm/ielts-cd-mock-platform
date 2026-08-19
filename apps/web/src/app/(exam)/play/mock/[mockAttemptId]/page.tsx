@@ -3,7 +3,10 @@ import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { ExamPreview, type LiveAttempt } from "@/components/exam-import/ExamPreview";
 import { ExamHoldScreen } from "@/components/exam/ExamHoldScreen";
+import { SectionIntro } from "@/components/exam/SectionIntro";
 import { holdReason, answeredCount } from "@/lib/live";
+import { sectionIntroCopy } from "@/lib/section-intro";
+import { durationSecFor, MODULE_LABEL } from "@/lib/mock";
 import { mediaPublicUrl } from "@/lib/media-storage";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import type { AnswersMap } from "@/components/question-engine/types";
@@ -45,6 +48,27 @@ export default async function MockPlayPage({
   if (!partAttempt) redirect("/play");
 
   const exam = part.blueprint.engineJson as unknown as PreviewExam;
+
+  if (!partAttempt.beganAt) {
+    return (
+      <SectionIntro
+        attemptId={partAttempt.id}
+        module={part.module}
+        examTitle={mockAttempt.mockExam.title}
+        copy={sectionIntroCopy({
+          module: part.module,
+          durationSec: durationSecFor(part.module, part.blueprint.timeLimitMin),
+          totalQuestions: part.blueprint.totalQuestions,
+          sectionCount: exam.sections?.length ?? 0
+        })}
+        steps={parts.map((p, i) => ({
+          label: MODULE_LABEL[p.module] ?? p.module,
+          state:
+            i < mockAttempt.currentIndex ? "done" : i === mockAttempt.currentIndex ? "current" : "upcoming"
+        }))}
+      />
+    );
+  }
 
   const hold = holdReason(partAttempt);
   if (hold) {

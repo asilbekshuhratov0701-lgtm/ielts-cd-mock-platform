@@ -13,16 +13,10 @@ import {
   type WritingCriteria
 } from "@ielts/core";
 import { auth } from "@/auth";
-import { MODULE_ORDER, moduleRank, isMockCompleted } from "@/lib/mock";
+import { MODULE_ORDER, moduleRank, isMockCompleted, durationSecFor } from "@/lib/mock";
 import { isValidBand } from "@/lib/mock-band";
 import { safeBuilderPath } from "@/lib/builder-redirect";
 import { logAudit } from "@/lib/audit";
-
-function durationSecFor(module: string, timeLimitMin: number | null): number {
-  if (timeLimitMin && timeLimitMin > 0) return timeLimitMin * 60;
-  if (module === "listening") return 2040;
-  return 3600;
-}
 
 async function requireStaff() {
   const session = await auth();

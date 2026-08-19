@@ -815,6 +815,10 @@ model BlueprintAttempt {
   candidate   User          @relation("BlueprintAttempts", fields: [candidateId], references: [id], onDelete: Cascade)
   status      String        @default("in_progress")
   startedAt   DateTime      @default(now())
+  /// Set when the candidate presses "Start test" on the section intro screen.
+  /// While null they are still on the sound check / instructions, no time has
+  /// been spent, and deadlineAt is a placeholder that gets rebuilt on start.
+  beganAt     DateTime?
   deadlineAt  DateTime
   submittedAt DateTime?
   /// Set while an admin has frozen the clock (crash recovery). pausedRemainingSec
