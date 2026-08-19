@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { createBlueprintFromJson } from "@/lib/exam-blueprint";
 import { saveMediaObject, safeKeySegment, mediaPublicUrl } from "@/lib/media-storage";
 import { setGroupImageOn } from "@/lib/exam-blueprint-media";
+import { safeBuilderPath } from "@/lib/builder-redirect";
 
 async function requireStaff() {
   const session = await auth();
@@ -249,6 +250,21 @@ export async function attachGroupImageAction(formData: FormData): Promise<void> 
     }
   });
   refresh(id);
+}
+
+export async function renameBlueprintAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const id = String(formData.get("id") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const back = safeBuilderPath(formData.get("redirectTo"), `/admin/exam-import/${id}`);
+  if (!id) return;
+  if (!title || title.length > 200) redirect(`${back}?error=title_invalid`);
+  const bp = await loadOwnedBlueprint(id, orgId);
+  if (!bp) redirect(`${back}?error=not_found`);
+  await prisma.examBlueprint.update({ where: { id }, data: { title } });
+  refresh(id);
+  redirect(`${back}?notice=exam_renamed`);
 }
 
 export async function deleteBlueprintAction(formData: FormData): Promise<void> {

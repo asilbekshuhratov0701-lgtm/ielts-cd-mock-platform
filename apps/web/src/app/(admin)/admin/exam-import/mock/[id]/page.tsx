@@ -4,9 +4,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   AlertTriangle,
+  Info,
   Music,
   Play,
   Send,
+  StickyNote,
   Trash2,
   Undo2,
   Upload
@@ -17,10 +19,12 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { attachAudioAction } from "@/lib/exam-blueprint-actions";
+import { RenameInline } from "@/components/admin/RenameRow";
 import {
   deleteMockAction,
   publishMockAction,
   unpublishMockAction,
+  saveMockNotesAction,
   startMockAttemptAction
 } from "@/lib/mock-actions";
 import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
@@ -33,6 +37,17 @@ const stateVariant: Record<string, "default" | "warning" | "success"> = {
 
 const fileField =
   "h-9 max-w-xs rounded-lg border border-border bg-surface px-3 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-brand-700";
+
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</dt>
+      <dd className="truncate text-sm text-foreground" title={value}>
+        {value}
+      </dd>
+    </div>
+  );
+}
 
 export default async function MockDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -50,6 +65,19 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
     orderBy: { createdAt: "desc" },
     take: 200
   });
+
+  const author = mock.createdById
+    ? await prisma.user.findUnique({
+        where: { id: mock.createdById },
+        select: { name: true, email: true }
+      })
+    : null;
+  const assignments = await prisma.mockAssignment.findMany({
+    where: { mockExamId: id },
+    select: { candidateId: true, groupId: true }
+  });
+  const assignedCandidates = assignments.filter((a) => a.candidateId).length;
+  const assignedGroups = assignments.filter((a) => a.groupId).length;
 
   const readiness = mock.parts.map((p) => {
     const needsAudio = p.module === "listening" && Boolean(p.blueprint.audioRef);
@@ -116,6 +144,67 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
       </Card>
 
       <Card className="p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 font-semibold text-foreground">
+            <Info className="h-4 w-4 text-brand-600" /> Mock details
+          </h2>
+          <RenameInline
+            kind="mock"
+            id={mock.id}
+            title={mock.title}
+            redirectTo={`/admin/exam-import/mock/${mock.id}`}
+            label="Rename mock"
+          />
+        </div>
+
+        <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Meta label="Built" value={mock.createdAt.toLocaleString()} />
+          <Meta label="Built by" value={author?.name ?? author?.email ?? "—"} />
+          <Meta
+            label="Published"
+            value={mock.publishedAt ? mock.publishedAt.toLocaleString() : "not yet"}
+          />
+          <Meta label="Last changed" value={mock.updatedAt.toLocaleString()} />
+          <Meta
+            label="Parts"
+            value={`${mock.parts.length} · ${mock.parts.map((p) => p.module).join(", ") || "none"}`}
+          />
+          <Meta label="Questions" value={`${totalQuestions}`} />
+          <Meta
+            label="Assigned to"
+            value={`${assignedCandidates} candidate${assignedCandidates === 1 ? "" : "s"} · ${assignedGroups} group${assignedGroups === 1 ? "" : "s"}`}
+          />
+          <Meta label="Attempts" value={`${attempts.length}`} />
+        </dl>
+
+        <form action={saveMockNotesAction} className="mt-5 border-t border-border pt-4">
+          <input type="hidden" name="id" value={mock.id} />
+          <label
+            htmlFor="notes"
+            className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted"
+          >
+            <StickyNote className="h-3.5 w-3.5" /> Notes
+          </label>
+          <p className="mb-2 text-xs text-muted">
+            Where the material came from, who it is for, what to fix next — anything that keeps this
+            mock apart from the others.
+          </p>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={3}
+            maxLength={4000}
+            defaultValue={mock.notes ?? ""}
+            placeholder="e.g. Cambridge 21 Test 2. Listening audio re-cut on 16.08. Use for the Saturday group."
+            className="w-full rounded-lg border border-border bg-surface p-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40"
+          />
+          <Button type="submit" size="sm" variant="secondary" className="mt-2">
+            <StickyNote className="h-3.5 w-3.5" /> Save notes
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="p-5">
         <h2 className="mb-3 font-semibold text-foreground">Parts</h2>
         <ul className="divide-y divide-border">
           {readiness.map(({ part, ready, audioOk, needsAudio }) => (
@@ -133,7 +222,10 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                   <span className="truncate font-medium text-foreground">
                     {part.blueprint.title}
                   </span>
-                  <span className="text-xs uppercase text-muted">{part.module}</span>
+                  <span className="shrink-0 text-xs uppercase text-muted">{part.module}</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    · added {part.blueprint.createdAt.toLocaleDateString()}
+                  </span>
                 </Link>
                 <span className="flex shrink-0 items-center gap-2 text-xs">
                   {needsAudio && !audioOk ? (
@@ -141,6 +233,13 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                   ) : (
                     <Badge variant="success">ready</Badge>
                   )}
+                  <RenameInline
+                    kind="blueprint"
+                    id={part.blueprintId}
+                    title={part.blueprint.title}
+                    redirectTo={`/admin/exam-import/mock/${mock.id}`}
+                    label="Rename"
+                  />
                 </span>
               </div>
               {needsAudio ? (

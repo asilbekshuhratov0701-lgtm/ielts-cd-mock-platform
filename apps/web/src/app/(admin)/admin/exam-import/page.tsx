@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Layers, PenLine, Plus } from "lucide-react";
+import { ChevronRight, Layers, PenLine, Plus, StickyNote } from "lucide-react";
 import { prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { PageShell } from "@/components/Shell";
@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExamImporter } from "@/components/exam-import/ExamImporter";
+import { RenameRow } from "@/components/admin/RenameRow";
 import { createWritingExamAction } from "@/lib/exam-blueprint-actions";
 import { createMockAction } from "@/lib/mock-actions";
 import { MODULE_ORDER } from "@/lib/mock";
@@ -23,7 +24,9 @@ const errorText: Record<string, string> = {
   invalid: "The exam did not pass validation — fix the errors and try again.",
   mock_incomplete: "Give the mock a title and pick at least one part.",
   writing_incomplete: "Give the writing exam a title and both task topics.",
-  writing_invalid: "Could not create the writing exam — please try again."
+  writing_invalid: "Could not create the writing exam — please try again.",
+  title_invalid: "A title has to be between 1 and 200 characters.",
+  not_found: "That item no longer exists."
 };
 
 const field =
@@ -126,21 +129,29 @@ export default async function ExamImportPage({
           <ul className="divide-y divide-border">
             {blueprints.map((b) => (
               <li key={b.id}>
-                <Link
-                  href={`/admin/exam-import/${b.id}`}
-                  className="flex items-center justify-between gap-3 py-3 transition-colors hover:bg-brand-50/40"
+                <RenameRow
+                  kind="blueprint"
+                  id={b.id}
+                  title={b.title}
+                  redirectTo="/admin/exam-import"
                 >
-                  <span className="min-w-0">
-                    <span className="truncate font-medium text-foreground">{b.title}</span>
-                    <span className="ml-2 text-xs text-muted">
-                      {b.module} · v{b.version} · {b.totalQuestions} questions
+                  <Link
+                    href={`/admin/exam-import/${b.id}`}
+                    className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-brand-50/40"
+                  >
+                    <span className="min-w-0">
+                      <span className="truncate font-medium text-foreground">{b.title}</span>
+                      <span className="ml-2 text-xs text-muted">
+                        {b.module} · v{b.version} · {b.totalQuestions} questions · added{" "}
+                        {b.createdAt.toLocaleDateString()}
+                      </span>
                     </span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Badge variant={stateVariant[b.state] ?? "default"}>{b.state}</Badge>
-                    <ChevronRight className="h-4 w-4 text-muted" />
-                  </span>
-                </Link>
+                    <span className="flex items-center gap-2">
+                      <Badge variant={stateVariant[b.state] ?? "default"}>{b.state}</Badge>
+                      <ChevronRight className="h-4 w-4 text-muted" />
+                    </span>
+                  </Link>
+                </RenameRow>
               </li>
             ))}
           </ul>
@@ -194,21 +205,37 @@ export default async function ExamImportPage({
           <ul className="divide-y divide-border">
             {mocks.map((mock) => (
               <li key={mock.id}>
-                <Link
-                  href={`/admin/exam-import/mock/${mock.id}`}
-                  className="flex items-center justify-between gap-3 py-3 transition-colors hover:bg-brand-50/40"
+                <RenameRow
+                  kind="mock"
+                  id={mock.id}
+                  title={mock.title}
+                  redirectTo="/admin/exam-import"
                 >
-                  <span className="min-w-0">
-                    <span className="truncate font-medium text-foreground">{mock.title}</span>
-                    <span className="ml-2 text-xs text-muted">
-                      {mock.parts.map((p) => p.module).join(" · ") || "no parts"}
+                  <Link
+                    href={`/admin/exam-import/mock/${mock.id}`}
+                    className="-mx-2 flex items-center justify-between gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-brand-50/40"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate">
+                        <span className="font-medium text-foreground">{mock.title}</span>
+                        <span className="ml-2 text-xs text-muted">
+                          {mock.parts.map((p) => p.module).join(" · ") || "no parts"} · built{" "}
+                          {mock.createdAt.toLocaleDateString()}
+                        </span>
+                      </span>
+                      {mock.notes ? (
+                        <span className="mt-0.5 flex items-center gap-1 text-xs text-muted">
+                          <StickyNote className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{mock.notes}</span>
+                        </span>
+                      ) : null}
                     </span>
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <Badge variant={stateVariant[mock.state] ?? "default"}>{mock.state}</Badge>
-                    <ChevronRight className="h-4 w-4 text-muted" />
-                  </span>
-                </Link>
+                    <span className="flex items-center gap-2">
+                      <Badge variant={stateVariant[mock.state] ?? "default"}>{mock.state}</Badge>
+                      <ChevronRight className="h-4 w-4 text-muted" />
+                    </span>
+                  </Link>
+                </RenameRow>
               </li>
             ))}
           </ul>

@@ -15,6 +15,7 @@ import {
 import { auth } from "@/auth";
 import { MODULE_ORDER, moduleRank, isMockCompleted } from "@/lib/mock";
 import { isValidBand } from "@/lib/mock-band";
+import { safeBuilderPath } from "@/lib/builder-redirect";
 
 function durationSecFor(module: string, timeLimitMin: number | null): number {
   if (timeLimitMin && timeLimitMin > 0) return timeLimitMin * 60;
@@ -121,6 +122,35 @@ export async function unpublishMockAction(formData: FormData): Promise<void> {
   if (!mock) return;
   await prisma.mockExam.update({ where: { id }, data: { state: "draft", publishedAt: null } });
   refreshAdmin(id);
+}
+
+export async function renameMockAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const id = String(formData.get("id") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const back = safeBuilderPath(formData.get("redirectTo"), `/admin/exam-import/mock/${id}`);
+  if (!id) return;
+  if (!title || title.length > 200) redirect(`${back}?error=title_invalid`);
+  const mock = await prisma.mockExam.findFirst({ where: { id, orgId } });
+  if (!mock) redirect(`${back}?error=not_found`);
+  await prisma.mockExam.update({ where: { id }, data: { title } });
+  refreshAdmin(id);
+  redirect(`${back}?notice=mock_renamed`);
+}
+
+export async function saveMockNotesAction(formData: FormData): Promise<void> {
+  const user = await requireStaff();
+  const orgId = await orgIdFor(user.id);
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const raw = String(formData.get("notes") ?? "").trim();
+  if (raw.length > 4000) redirect(`/admin/exam-import/mock/${id}?error=notes_too_long`);
+  const mock = await prisma.mockExam.findFirst({ where: { id, orgId } });
+  if (!mock) return;
+  await prisma.mockExam.update({ where: { id }, data: { notes: raw || null } });
+  refreshAdmin(id);
+  redirect(`/admin/exam-import/mock/${id}?notice=${raw ? "notes_saved" : "notes_cleared"}`);
 }
 
 export async function deleteMockAction(formData: FormData): Promise<void> {

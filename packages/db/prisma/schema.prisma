@@ -847,6 +847,9 @@ model MockExam {
   org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   title       String
   state       String       @default("draft")
+  /// Free-text admin memo shown on the mock's detail page, so a library of
+  /// similarly named mocks stays tellable apart.
+  notes       String?      @db.Text
   createdById String?
   publishedAt DateTime?
   createdAt   DateTime     @default(now())

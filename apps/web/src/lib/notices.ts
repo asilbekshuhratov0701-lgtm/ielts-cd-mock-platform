@@ -23,6 +23,7 @@ export const NOTICES: Record<string, Notice> = {
     description: "It is back to draft and hidden from candidates."
   },
   exam_deleted: { variant: "success", title: "Exam deleted" },
+  exam_renamed: { variant: "success", title: "Part renamed" },
   writing_created: { variant: "success", title: "Writing exam created" },
 
   audio_attached: {
@@ -40,6 +41,13 @@ export const NOTICES: Record<string, Notice> = {
   },
   mock_unpublished: { variant: "info", title: "Mock unpublished" },
   mock_deleted: { variant: "success", title: "Mock deleted" },
+  mock_renamed: { variant: "success", title: "Mock renamed" },
+  notes_saved: {
+    variant: "success",
+    title: "Notes saved",
+    description: "They show on this mock's detail page."
+  },
+  notes_cleared: { variant: "info", title: "Notes cleared" },
   assignments_saved: {
     variant: "success",
     title: "Assignments saved",
@@ -127,7 +135,17 @@ export const NOTICES: Record<string, Notice> = {
   },
   upload_failed: { variant: "error", title: "Upload failed", description: "Please try again." },
   forbidden: { variant: "error", title: "Not permitted" },
-  not_found: { variant: "error", title: "Not found" }
+  not_found: { variant: "error", title: "Not found" },
+  title_invalid: {
+    variant: "error",
+    title: "That title will not do",
+    description: "Give it between 1 and 200 characters."
+  },
+  notes_too_long: {
+    variant: "error",
+    title: "Notes are too long",
+    description: "Keep them under 4000 characters."
+  }
 };
 
 export function noticeFor(code: string | null | undefined): Notice | null {

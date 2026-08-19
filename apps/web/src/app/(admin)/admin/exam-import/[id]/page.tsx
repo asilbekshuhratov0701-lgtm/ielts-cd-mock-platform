@@ -4,6 +4,7 @@ import { ArrowLeft, Image as ImageIcon, Music, Play, Send, Trash2, Undo2 } from 
 import { prisma } from "@ielts/db";
 import { PageShell } from "@/components/Shell";
 import { MediaUploadField } from "@/components/admin/MediaUploadField";
+import { RenameInline } from "@/components/admin/RenameRow";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -92,6 +93,20 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
       >
         <ArrowLeft className="h-4 w-4" /> Back to exam import
       </Link>
+
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
+        <span className="text-sm text-muted">
+          Added {bp.createdAt.toLocaleString()}
+          {bp.publishedAt ? ` · published ${bp.publishedAt.toLocaleString()}` : ""}
+        </span>
+        <RenameInline
+          kind="blueprint"
+          id={bp.id}
+          title={bp.title}
+          redirectTo={`/admin/exam-import/${bp.id}`}
+          label="Rename part"
+        />
+      </Card>
 
       <Card className="flex flex-wrap items-center gap-3 p-4">
         <Badge variant={stateVariant[bp.state] ?? "default"}>{bp.state}</Badge>
