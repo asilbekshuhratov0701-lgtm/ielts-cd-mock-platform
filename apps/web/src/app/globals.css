@@ -47,6 +47,12 @@
   --border: 231 28% 22%;
 }
 
+.exam-mode-standard,
+.exam-mode-sepia,
+.exam-mode-night {
+  color: hsl(var(--foreground));
+}
+
 .exam-text-normal {
   zoom: 1;
 }

@@ -127,7 +127,7 @@ export function RadioInput({
               "flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-2.5 text-base transition-colors",
               selected
                 ? "border-brand-300 bg-brand-50 text-brand-800"
-                : "border-border hover:bg-brand-50/50"
+                : "border-border text-foreground hover:bg-brand-50/50"
             )}
           >
             <input
@@ -176,7 +176,7 @@ export function CheckboxInput({
               "flex items-start gap-3 rounded-lg border px-4 py-2.5 text-base transition-colors",
               checked
                 ? "border-brand-300 bg-brand-50 text-brand-800"
-                : "border-border hover:bg-brand-50/50",
+                : "border-border text-foreground hover:bg-brand-50/50",
               disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
             )}
           >
