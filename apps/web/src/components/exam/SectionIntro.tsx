@@ -6,7 +6,6 @@ import {
   Check,
   CheckCircle2,
   ChevronLeft,
-  Film,
   Headphones,
   Play,
   Square,
@@ -53,7 +52,12 @@ function Stepper({ steps }: { steps: IntroStep[] }) {
           <li key={step.label} className={cn("flex min-w-0 flex-1", last && "flex-none")}>
             <div className="flex min-w-0 flex-1 flex-col items-center">
               <div className="flex w-full items-center">
-                <span className={cn("h-0.5 flex-1", i === 0 ? "bg-transparent" : filled ? "bg-brand-600" : "bg-border")} />
+                <span
+                  className={cn(
+                    "h-0.5 flex-1",
+                    i === 0 ? "bg-transparent" : filled ? "bg-brand-600" : "bg-border"
+                  )}
+                />
                 <span
                   className={cn(
                     "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
@@ -69,7 +73,11 @@ function Stepper({ steps }: { steps: IntroStep[] }) {
                 <span
                   className={cn(
                     "h-0.5 flex-1",
-                    last ? "bg-transparent" : steps[i + 1]?.state !== "upcoming" ? "bg-brand-600" : "bg-border"
+                    last
+                      ? "bg-transparent"
+                      : steps[i + 1]?.state !== "upcoming"
+                        ? "bg-brand-600"
+                        : "bg-border"
                   )}
                 />
               </div>
@@ -269,65 +277,63 @@ function Instructions({
 function VideoBriefing({
   attemptId,
   video,
-  examTitle,
   onBack
 }: {
   attemptId: string;
   video: InstructionVideo;
-  examTitle: string;
   onBack: () => void;
 }) {
-  const [watched, setWatched] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [blocked, setBlocked] = useState(false);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    void el.play().catch(() => setBlocked(true));
+  }, []);
+
+  function start() {
+    const el = videoRef.current;
+    if (!el) return;
+    void el
+      .play()
+      .then(() => setBlocked(false))
+      .catch(() => {});
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
-      <div className="flex shrink-0 items-center justify-between gap-4 px-6 py-4">
-        <p className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wide text-muted">
-          {examTitle}
-        </p>
-        <h1 className="min-w-0 truncate text-sm font-bold text-foreground">{video.title}</h1>
-        <p className="flex min-w-0 flex-1 items-center justify-end gap-2 truncate text-xs text-muted">
-          {watched ? (
-            <>
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-              Video watched
-            </>
-          ) : (
-            <>
-              <Film className="h-4 w-4 shrink-0" />
-              Instruction video
-            </>
-          )}
-        </p>
-      </div>
-
-      <div className="min-h-0 flex-1 bg-black">
-        <video
-          src={video.src}
-          controls
-          controlsList="nodownload"
-          playsInline
-          preload="metadata"
-          onEnded={() => setWatched(true)}
-          className="h-full w-full object-contain"
-        />
-      </div>
-
       <div className="flex shrink-0 items-center justify-between gap-4 px-6 py-4">
         <Button type="button" variant="ghost" onClick={onBack}>
           <ChevronLeft className="h-4 w-4" /> Instructions
         </Button>
 
-        <p className="hidden text-center text-sm text-muted sm:block">
-          Your time starts when you press{" "}
-          <span className="font-semibold text-foreground">Confirm</span> — nothing is counting down
-          while you watch this.
-        </p>
-
         <form action={beginSectionAction}>
           <input type="hidden" name="attemptId" value={attemptId} />
           <ConfirmButton />
         </form>
+      </div>
+
+      <div className="relative min-h-0 flex-1 bg-black">
+        <video
+          ref={videoRef}
+          src={video.src}
+          autoPlay
+          playsInline
+          preload="auto"
+          className="h-full w-full object-contain"
+        />
+
+        {blocked ? (
+          <button
+            type="button"
+            onClick={start}
+            className="absolute inset-0 flex items-center justify-center gap-3 bg-black/50 text-white"
+          >
+            <Play className="h-5 w-5" />
+            <span className="text-sm font-semibold">Click to play the video</span>
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -351,12 +357,7 @@ export function SectionIntro({
 
   if (stage === "video" && video) {
     return (
-      <VideoBriefing
-        attemptId={attemptId}
-        video={video}
-        examTitle={examTitle}
-        onBack={() => setStage("instructions")}
-      />
+      <VideoBriefing attemptId={attemptId} video={video} onBack={() => setStage("instructions")} />
     );
   }
 
