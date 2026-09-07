@@ -82,3 +82,18 @@ export function sectionIntroCopy({
     ]
   };
 }
+
+export interface InstructionVideo {
+  src: string;
+  title: string;
+}
+
+const INSTRUCTION_VIDEOS: Record<string, InstructionVideo> = {
+  listening: { src: "/video/ielts-listening.mp4", title: "How the Listening test works" },
+  reading: { src: "/video/ielts-reading.mp4", title: "How the Reading test works" },
+  writing: { src: "/video/ielts-writing.mp4", title: "How the Writing test works" }
+};
+
+export function instructionVideoFor(module: string): InstructionVideo | null {
+  return INSTRUCTION_VIDEOS[module] ?? null;
+}

@@ -2,16 +2,32 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { Check, Headphones, Play, Square, Volume1, Volume2 } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  ChevronLeft,
+  Film,
+  Headphones,
+  Play,
+  Square,
+  Volume1,
+  Volume2
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { beginSectionAction } from "@/lib/blueprint-play-actions";
-import type { SectionIntroCopy } from "@/lib/section-intro";
+import {
+  instructionVideoFor,
+  type InstructionVideo,
+  type SectionIntroCopy
+} from "@/lib/section-intro";
 
 export interface IntroStep {
   label: string;
   state: "done" | "current" | "upcoming";
 }
+
+type Stage = "sound" | "instructions" | "video";
 
 const SOUND_CHECK_SRC = "/audio/sound-check.wav";
 
@@ -171,6 +187,145 @@ function StartButton() {
   );
 }
 
+function ConfirmButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" size="lg" variant="success" disabled={pending} className="min-w-[11rem]">
+      <CheckCircle2 className="h-4 w-4" />
+      {pending ? "Starting…" : "Confirm"}
+    </Button>
+  );
+}
+
+function Instructions({
+  attemptId,
+  copy,
+  steps,
+  hasVideo,
+  onContinue
+}: {
+  attemptId: string;
+  copy: SectionIntroCopy;
+  steps: IntroStep[];
+  hasVideo: boolean;
+  onContinue: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-8 shadow-card">
+      <h1 className="text-xl font-bold text-foreground">{copy.title}</h1>
+      <p className="mt-2 text-base text-foreground/80">Time: {copy.time}</p>
+
+      <h2 className="mt-7 text-base font-bold uppercase tracking-wide text-foreground">
+        Instructions to candidates
+      </h2>
+      <ul className="mt-3 list-disc space-y-2 pl-6 text-base text-foreground/85">
+        {copy.instructions.map((line) => (
+          <li key={line}>{bold(line)}</li>
+        ))}
+      </ul>
+
+      <h2 className="mt-7 text-base font-bold uppercase tracking-wide text-foreground">
+        Information for candidates
+      </h2>
+      <ul className="mt-3 list-disc space-y-2 pl-6 text-base text-foreground/85">
+        {copy.information.map((line) => (
+          <li key={line}>{bold(line)}</li>
+        ))}
+      </ul>
+
+      <p className="mt-7 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
+        {hasVideo ? (
+          <>
+            A short instruction video comes next. Your time starts when you press{" "}
+            <span className="font-semibold">Confirm</span> after it — nothing is counting down while
+            you read this.
+          </>
+        ) : (
+          <>
+            Your time starts when you press <span className="font-semibold">Start test</span> —
+            nothing is counting down while you read this.
+          </>
+        )}
+      </p>
+
+      {hasVideo ? (
+        <div className="mt-6 flex justify-center">
+          <Button type="button" size="lg" onClick={onContinue} className="min-w-[11rem]">
+            Continue
+          </Button>
+        </div>
+      ) : (
+        <form action={beginSectionAction} className="mt-6 flex justify-center">
+          <input type="hidden" name="attemptId" value={attemptId} />
+          <StartButton />
+        </form>
+      )}
+
+      {steps.length > 1 ? <Stepper steps={steps} /> : null}
+    </div>
+  );
+}
+
+function VideoBriefing({
+  attemptId,
+  video,
+  steps,
+  onBack
+}: {
+  attemptId: string;
+  video: InstructionVideo;
+  steps: IntroStep[];
+  onBack: () => void;
+}) {
+  const [watched, setWatched] = useState(false);
+
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-8 shadow-card">
+      <h1 className="text-xl font-bold text-foreground">Instruction video</h1>
+      <p className="mt-2 text-base text-foreground/80">{video.title}</p>
+
+      <video
+        src={video.src}
+        controls
+        controlsList="nodownload"
+        playsInline
+        preload="metadata"
+        onEnded={() => setWatched(true)}
+        className="mt-6 aspect-video w-full rounded-xl bg-black"
+      />
+
+      <p className="mt-4 flex items-center justify-center gap-2 text-center text-sm text-muted">
+        {watched ? (
+          <>
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+            Video watched. Press Confirm when you are ready to begin.
+          </>
+        ) : (
+          <>
+            <Film className="h-4 w-4 shrink-0" />
+            Watch the video, or press Confirm to skip it and begin.
+          </>
+        )}
+      </p>
+
+      <p className="mt-6 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
+        Your time starts when you press <span className="font-semibold">Confirm</span> — nothing is
+        counting down while you watch this.
+      </p>
+
+      <form action={beginSectionAction} className="mt-6 flex items-center justify-between gap-4">
+        <input type="hidden" name="attemptId" value={attemptId} />
+        <Button type="button" variant="ghost" onClick={onBack}>
+          <ChevronLeft className="h-4 w-4" /> Instructions
+        </Button>
+        <ConfirmButton />
+      </form>
+
+      {steps.length > 1 ? <Stepper steps={steps} /> : null}
+    </div>
+  );
+}
+
 export function SectionIntro({
   attemptId,
   module,
@@ -184,50 +339,31 @@ export function SectionIntro({
   steps: IntroStep[];
   examTitle: string;
 }) {
-  const [soundChecked, setSoundChecked] = useState(module !== "listening");
+  const video = instructionVideoFor(module);
+  const [stage, setStage] = useState<Stage>(module === "listening" ? "sound" : "instructions");
 
   return (
     <div className="min-h-screen bg-background px-6 py-10">
       <div className="mx-auto w-full max-w-3xl">
         <p className="mb-6 text-xs font-semibold uppercase tracking-wide text-muted">{examTitle}</p>
 
-        {soundChecked ? (
-          <div className="rounded-2xl border border-border bg-surface p-8 shadow-card">
-            <h1 className="text-xl font-bold text-foreground">{copy.title}</h1>
-            <p className="mt-2 text-base text-foreground/80">Time: {copy.time}</p>
-
-            <h2 className="mt-7 text-base font-bold uppercase tracking-wide text-foreground">
-              Instructions to candidates
-            </h2>
-            <ul className="mt-3 list-disc space-y-2 pl-6 text-base text-foreground/85">
-              {copy.instructions.map((line) => (
-                <li key={line}>{bold(line)}</li>
-              ))}
-            </ul>
-
-            <h2 className="mt-7 text-base font-bold uppercase tracking-wide text-foreground">
-              Information for candidates
-            </h2>
-            <ul className="mt-3 list-disc space-y-2 pl-6 text-base text-foreground/85">
-              {copy.information.map((line) => (
-                <li key={line}>{bold(line)}</li>
-              ))}
-            </ul>
-
-            <p className="mt-7 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-800">
-              Your time starts when you press <span className="font-semibold">Start test</span> —
-              nothing is counting down while you read this.
-            </p>
-
-            <form action={beginSectionAction} className="mt-6 flex justify-center">
-              <input type="hidden" name="attemptId" value={attemptId} />
-              <StartButton />
-            </form>
-
-            {steps.length > 1 ? <Stepper steps={steps} /> : null}
-          </div>
+        {stage === "sound" ? (
+          <SoundCheck onContinue={() => setStage("instructions")} />
+        ) : stage === "video" && video ? (
+          <VideoBriefing
+            attemptId={attemptId}
+            video={video}
+            steps={steps}
+            onBack={() => setStage("instructions")}
+          />
         ) : (
-          <SoundCheck onContinue={() => setSoundChecked(true)} />
+          <Instructions
+            attemptId={attemptId}
+            copy={copy}
+            steps={steps}
+            hasVideo={video !== null}
+            onContinue={() => setStage("video")}
+          />
         )}
       </div>
     </div>
