@@ -95,6 +95,16 @@ export const NOTICES: Record<string, Notice> = {
     description: "The candidate can continue from where they stopped."
   },
   time_granted: { variant: "success", title: "Extra time granted" },
+  attempt_ended: {
+    variant: "success",
+    title: "Session ended",
+    description: "The answers given so far were scored and the attempt is closed."
+  },
+  attempt_discarded: {
+    variant: "success",
+    title: "Session discarded",
+    description: "The attempt and its answers are gone; the candidate can sit it again."
+  },
 
   email: {
     variant: "error",

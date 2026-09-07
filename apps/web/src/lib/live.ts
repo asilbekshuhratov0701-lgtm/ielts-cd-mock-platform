@@ -18,6 +18,7 @@ export type LiveSession = {
   totalQuestions: number;
   grantedExtraSec: number;
   needsAttention: boolean;
+  mockAttemptId: string | null;
 };
 
 export function answeredCount(value: unknown): number {
@@ -102,7 +103,8 @@ export async function listLiveSessions(orgId: string): Promise<LiveSession[]> {
       answered: answeredCount(row.answersJson),
       totalQuestions: row.blueprint.totalQuestions,
       grantedExtraSec: row.grantedExtraSec,
-      needsAttention: paused || expired || (connection === "offline" && !notStarted)
+      needsAttention: paused || expired || (connection === "offline" && !notStarted),
+      mockAttemptId: row.mockAttemptId
     };
   });
 }

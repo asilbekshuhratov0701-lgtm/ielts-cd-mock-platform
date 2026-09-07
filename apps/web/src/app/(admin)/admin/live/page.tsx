@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatCard } from "@/components/ui/stat-card";
 import { AutoRefresh } from "@/components/AutoRefresh";
+import { EndSessionControls } from "@/components/admin/EndSessionControls";
 
 export const metadata = { title: "Live Exam Center" };
 export const dynamic = "force-dynamic";
@@ -160,6 +161,17 @@ export default async function AdminLivePage() {
                             <Plus className="h-3.5 w-3.5" /> 5 min
                           </Button>
                         </form>
+                        <EndSessionControls
+                          target={{
+                            attemptId: s.id,
+                            candidate: s.candidate,
+                            examTitle: s.examTitle,
+                            skill: s.sectionKind,
+                            answered: s.answered,
+                            totalQuestions: s.totalQuestions,
+                            isMock: s.mockAttemptId !== null
+                          }}
+                        />
                       </div>
                     </td>
                   </tr>
@@ -174,7 +186,9 @@ export default async function AdminLivePage() {
         <Clock className="mr-1 inline h-3 w-3" />
         If a candidate&apos;s machine crashes, their answers are already saved. Freeze the clock so
         no more time is lost, then Resume (optionally adding minutes) once they are back at the
-        machine — they continue from the same question, in the same skill.
+        machine — they continue from the same question, in the same skill. End closes a session
+        for good, scoring whatever was answered; Discard deletes a stale or unused attempt
+        outright so the candidate can sit it again.
       </p>
     </PageShell>
   );

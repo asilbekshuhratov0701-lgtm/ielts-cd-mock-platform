@@ -2,18 +2,28 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { prisma } from "@ielts/db";
-import { remainingSeconds } from "@ielts/core";
+import { prisma, Prisma } from "@ielts/db";
+import {
+  remainingSeconds,
+  scoreImportedExam,
+  type CandidateAnswer,
+  type ImportAnswerKey
+} from "@ielts/core";
 import { auth } from "@/auth";
+import { logAudit } from "@/lib/audit";
 
 const MAX_GRANT_MINUTES = 180;
 
-async function requireAdminOrgId(): Promise<string | null> {
+async function requireAdmin(): Promise<{ id: string; orgId: string } | null> {
   const session = await auth();
   const role = session?.user?.role;
   if (!session?.user?.id || (role !== "ADMIN" && role !== "SUPER_ADMIN")) return null;
   const me = await prisma.user.findUnique({ where: { id: session.user.id } });
-  return me?.orgId ?? null;
+  return me?.orgId ? { id: me.id, orgId: me.orgId } : null;
+}
+
+async function requireAdminOrgId(): Promise<string | null> {
+  return (await requireAdmin())?.orgId ?? null;
 }
 
 async function loadOwnedAttempt(attemptId: string, orgId: string) {
@@ -105,4 +115,119 @@ export async function grantTimeAction(formData: FormData): Promise<void> {
   }
   revalidatePath("/admin/live");
   redirect("/admin/live?notice=time_granted");
+}
+
+async function scoreAndSubmit(
+  attempt: { id: string; answersJson: unknown; blueprint: { answerKeyJson: unknown } },
+  now: Date
+): Promise<void> {
+  const answerKey = attempt.blueprint.answerKeyJson as unknown as Record<string, ImportAnswerKey>;
+  const answers = attempt.answersJson as unknown as Record<string, CandidateAnswer>;
+  const score = scoreImportedExam(answerKey, answers);
+  await prisma.blueprintAttempt.updateMany({
+    where: { id: attempt.id, status: "in_progress" },
+    data: {
+      status: "submitted",
+      submittedAt: now,
+      pausedAt: null,
+      pausedRemainingSec: null,
+      rawScore: score.correct,
+      totalScore: score.total,
+      resultJson: score as unknown as Prisma.InputJsonValue
+    }
+  });
+}
+
+export async function endAttemptAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  if (!admin) return;
+  const attemptId = String(formData.get("attemptId") ?? "");
+  if (!attemptId) return;
+  const attempt = await prisma.blueprintAttempt.findFirst({
+    where: { id: attemptId, status: "in_progress", blueprint: { orgId: admin.orgId } },
+    include: { blueprint: { select: { answerKeyJson: true } } }
+  });
+  if (!attempt) return;
+
+  const now = new Date();
+  await scoreAndSubmit(attempt, now);
+
+  const mockAttemptId = attempt.mockAttemptId;
+  if (mockAttemptId) {
+    const openParts = await prisma.blueprintAttempt.findMany({
+      where: { mockAttemptId, status: "in_progress" },
+      include: { blueprint: { select: { answerKeyJson: true } } }
+    });
+    for (const part of openParts) await scoreAndSubmit(part, now);
+
+    const partAttempts = await prisma.blueprintAttempt.findMany({
+      where: { mockAttemptId },
+      include: { blueprint: { select: { module: true, title: true } } },
+      orderBy: { partOrder: "asc" }
+    });
+    const summary = {
+      parts: partAttempts.map((p) => ({
+        module: p.blueprint.module,
+        title: p.blueprint.title,
+        rawScore: p.rawScore ?? 0,
+        totalScore: p.totalScore ?? 0
+      })),
+      rawScore: partAttempts.reduce((s, p) => s + (p.rawScore ?? 0), 0),
+      totalScore: partAttempts.reduce((s, p) => s + (p.totalScore ?? 0), 0)
+    };
+    await prisma.mockAttempt.updateMany({
+      where: { id: mockAttemptId, status: "in_progress" },
+      data: {
+        status: "submitted",
+        submittedAt: now,
+        resultJson: summary as unknown as Prisma.InputJsonValue
+      }
+    });
+  }
+
+  await logAudit({
+    orgId: admin.orgId,
+    actorId: admin.id,
+    action: "live.attempt.end",
+    entity: "attempt",
+    entityId: attemptId,
+    meta: { mockAttemptId, candidateId: attempt.candidateId }
+  });
+
+  revalidatePath("/admin/live");
+  redirect("/admin/live?notice=attempt_ended");
+}
+
+export async function discardAttemptAction(formData: FormData): Promise<void> {
+  const admin = await requireAdmin();
+  if (!admin) return;
+  const attemptId = String(formData.get("attemptId") ?? "");
+  if (!attemptId) return;
+  const attempt = await prisma.blueprintAttempt.findFirst({
+    where: { id: attemptId, status: "in_progress", blueprint: { orgId: admin.orgId } },
+    select: { id: true, candidateId: true, mockAttemptId: true }
+  });
+  if (!attempt) return;
+
+  const mockAttemptId = attempt.mockAttemptId;
+  if (mockAttemptId) {
+    await prisma.$transaction([
+      prisma.blueprintAttempt.deleteMany({ where: { mockAttemptId } }),
+      prisma.mockAttempt.deleteMany({ where: { id: mockAttemptId } })
+    ]);
+  } else {
+    await prisma.blueprintAttempt.deleteMany({ where: { id: attempt.id } });
+  }
+
+  await logAudit({
+    orgId: admin.orgId,
+    actorId: admin.id,
+    action: "live.attempt.discard",
+    entity: "attempt",
+    entityId: attemptId,
+    meta: { mockAttemptId, candidateId: attempt.candidateId }
+  });
+
+  revalidatePath("/admin/live");
+  redirect("/admin/live?notice=attempt_discarded");
 }
