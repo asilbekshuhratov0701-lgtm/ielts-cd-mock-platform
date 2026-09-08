@@ -109,6 +109,7 @@ export async function gatherResults(scope: Scope): Promise<Dataset> {
     "Reading",
     "R. band",
     "Writing band",
+    "Speaking band",
     "Overall band",
     "Released"
   ];
@@ -127,7 +128,8 @@ export async function gatherResults(scope: Scope): Promise<Dataset> {
     const lBand = listening ? partSummaryBand(listening) : null;
     const rBand = reading ? partSummaryBand(reading) : null;
     const wBand = writing ? partSummaryBand(writing) : null;
-    const overall = overallBandFrom([lBand, rBand, wBand]);
+    const sBand = attempt.speakingBand ?? null;
+    const overall = overallBandFrom([lBand, rBand, wBand, sBand]);
 
     const groups = attempt.candidate.groupMemberships.map((g) => g.group.name).join(", ");
     const rawOf = (p?: SummaryPart) => (p ? `${p.rawScore}/${p.totalScore}` : "");
@@ -143,6 +145,7 @@ export async function gatherResults(scope: Scope): Promise<Dataset> {
       rawOf(reading),
       bandLabel(rBand),
       bandLabel(wBand),
+      bandLabel(sBand),
       bandLabel(overall),
       attempt.resultsReleased ? "Yes" : "No"
     ];

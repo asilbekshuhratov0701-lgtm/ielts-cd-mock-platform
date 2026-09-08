@@ -140,6 +140,7 @@ async function collectBackup(orgId: string) {
       currentIndex: a.currentIndex,
       startedAt: iso(a.startedAt),
       submittedAt: iso(a.submittedAt),
+      speakingBand: a.speakingBand,
       resultsReleased: a.resultsReleased,
       releasedAt: iso(a.releasedAt),
       resultJson: a.resultJson,
