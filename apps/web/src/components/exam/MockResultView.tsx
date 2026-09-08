@@ -55,9 +55,13 @@ export function MockResultView({
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
           <CheckCircle2 className="h-7 w-7" />
         </span>
-        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">Mock completed</h1>
+        <h1 className="mt-5 text-2xl font-semibold tracking-tight text-foreground">
+          Mock completed
+        </h1>
         <p className="mt-1 text-sm text-muted">{examTitle}</p>
-        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted">Overall band</p>
+        <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-muted">
+          Overall band
+        </p>
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -77,49 +81,58 @@ export function MockResultView({
         </div>
       </Card>
 
-      {parts.length > 0 || speakingBand !== null ? (
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {parts.map((p, i) => (
-            <Card key={i} className="p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                {moduleIcon[p.module] ?? null}
-                <span className="capitalize">{p.module}</span>
-              </div>
-              {p.module === "writing" && p.band === null ? (
-                <p className="mt-2 text-2xl font-bold text-muted">
-                  —
-                  <span className="ml-2 align-middle text-xs font-normal">
-                    examiner-marked (pending)
-                  </span>
+      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {parts.map((p, i) => (
+          <Card key={i} className="p-4">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              {moduleIcon[p.module] ?? null}
+              <span className="capitalize">{p.module}</span>
+            </div>
+            {p.module === "writing" && p.band === null ? (
+              <p className="mt-2 text-2xl font-bold text-muted">
+                —
+                <span className="ml-2 align-middle text-xs font-normal">
+                  examiner-marked (pending)
+                </span>
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-3xl font-bold text-brand-700">{fmt(p.band)}</p>
+                <p className="text-xs text-muted">
+                  {p.module === "writing"
+                    ? "examiner-marked"
+                    : `${p.raw ?? 0} / ${p.total ?? 0} correct`}
                 </p>
-              ) : (
-                <>
-                  <p className="mt-2 text-3xl font-bold text-brand-700">{fmt(p.band)}</p>
-                  <p className="text-xs text-muted">
-                    {p.module === "writing"
-                      ? "examiner-marked"
-                      : `${p.raw ?? 0} / ${p.total ?? 0} correct`}
-                  </p>
-                </>
-              )}
-            </Card>
-          ))}
-          {speakingBand !== null ? (
-            <Card className="p-4">
-              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                {moduleIcon.speaking}
-                <span>Speaking</span>
-              </div>
+              </>
+            )}
+          </Card>
+        ))}
+        <Card className="p-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            {moduleIcon.speaking}
+            <span>Speaking</span>
+          </div>
+          {speakingBand === null ? (
+            <p className="mt-2 text-2xl font-bold text-muted">
+              —
+              <span className="ml-2 align-middle text-xs font-normal">
+                examiner-marked (pending)
+              </span>
+            </p>
+          ) : (
+            <>
               <p className="mt-2 text-3xl font-bold text-brand-700">{fmt(speakingBand)}</p>
               <p className="text-xs text-muted">examiner-marked</p>
-            </Card>
-          ) : null}
-        </div>
-      ) : null}
+            </>
+          )}
+        </Card>
+      </div>
 
       {open ? (
         <Card className="mt-5 space-y-5 p-5">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Detailed scores</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
+            Detailed scores
+          </h2>
           {parts.map((p, i) => (
             <div key={i} className="rounded-lg border border-border p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
@@ -143,20 +156,20 @@ export function MockResultView({
               )}
             </div>
           ))}
-          {speakingBand !== null ? (
-            <div className="rounded-lg border border-border p-4">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2 font-medium text-foreground">
-                  {moduleIcon.speaking}
-                  <span>Speaking</span>
-                </div>
-                <span className="rounded-md bg-brand-50 px-2 py-0.5 text-sm font-semibold text-brand-700">
-                  Band {fmt(speakingBand)}
-                </span>
+          <div className="rounded-lg border border-border p-4">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 font-medium text-foreground">
+                {moduleIcon.speaking}
+                <span>Speaking</span>
               </div>
-              <p className="text-sm text-muted">examiner-marked</p>
+              <span className="rounded-md bg-brand-50 px-2 py-0.5 text-sm font-semibold text-brand-700">
+                Band {fmt(speakingBand)}
+              </span>
             </div>
-          ) : null}
+            <p className="text-sm text-muted">
+              {speakingBand === null ? "examiner-marked (pending)" : "examiner-marked"}
+            </p>
+          </div>
         </Card>
       ) : null}
 
