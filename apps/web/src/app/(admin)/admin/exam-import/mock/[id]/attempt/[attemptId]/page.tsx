@@ -249,6 +249,22 @@ export default async function MockAttemptReviewPage({
           </Card>
         );
       })}
+
+      <Card className="p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-foreground">
+            <span className="capitalize">speaking</span>
+            <span className="ml-2 text-sm font-normal text-muted">
+              {attempt.speakingBand === null
+                ? "examiner-marked (pending) — set it on the Results page"
+                : "examiner-marked"}
+            </span>
+          </h2>
+          <span className="rounded-md bg-brand-50 px-2 py-0.5 text-sm font-semibold text-brand-700">
+            Speaking band {bandLabel(attempt.speakingBand ?? null)}
+          </span>
+        </div>
+      </Card>
     </PageShell>
   );
 }

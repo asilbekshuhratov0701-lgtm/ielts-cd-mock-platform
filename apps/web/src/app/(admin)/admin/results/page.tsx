@@ -5,7 +5,7 @@ import {
   holdMockResultAction,
   setSpeakingBandAction
 } from "@/lib/mock-actions";
-import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
+import { overallWithSpeaking, partSummaryBand, bandLabel, type SummaryPart } from "@/lib/mock-band";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +44,9 @@ export default async function AdminResultsPage() {
                 <th className="px-4 py-3 font-medium">Candidate</th>
                 <th className="px-4 py-3 font-medium">Exam</th>
                 <th className="px-4 py-3 font-medium">Submitted</th>
+                <th className="px-4 py-3 font-medium">L</th>
+                <th className="px-4 py-3 font-medium">R</th>
+                <th className="px-4 py-3 font-medium">W</th>
                 <th className="px-4 py-3 font-medium">Speaking</th>
                 <th className="px-4 py-3 font-medium">Overall band</th>
                 <th className="px-4 py-3 font-medium">Visibility</th>
@@ -52,10 +55,13 @@ export default async function AdminResultsPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {attempts.map((a) => {
-                const r = a.resultJson as unknown as {
-                  parts?: { module: string; rawScore: number; totalScore: number; band?: number | null }[];
-                } | null;
-                const overall = overallWithSpeaking(r?.parts ?? [], a.speakingBand);
+                const parts =
+                  (a.resultJson as unknown as { parts?: SummaryPart[] } | null)?.parts ?? [];
+                const bandOf = (module: string) => {
+                  const part = parts.find((p) => p.module === module);
+                  return part ? partSummaryBand(part) : null;
+                };
+                const overall = overallWithSpeaking(parts, a.speakingBand);
                 return (
                   <tr key={a.id} className="align-middle hover:bg-brand-50/30">
                     <td className="px-4 py-3 font-medium text-foreground">
@@ -64,6 +70,15 @@ export default async function AdminResultsPage() {
                     <td className="px-4 py-3 text-muted">{a.mockExam.title}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted">
                       {a.submittedAt ? a.submittedAt.toLocaleDateString() : "—"}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-muted">
+                      {bandLabel(bandOf("listening"))}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-muted">
+                      {bandLabel(bandOf("reading"))}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-muted">
+                      {bandLabel(bandOf("writing"))}
                     </td>
                     <td className="px-4 py-3">
                       <form action={setSpeakingBandAction} className="flex items-center gap-1.5">
