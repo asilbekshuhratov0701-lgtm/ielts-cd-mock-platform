@@ -23,40 +23,53 @@ function iso(value: Date | null | undefined): string {
 }
 
 async function collectBackup(orgId: string) {
-  const [org, users, groups, mockExams, blueprints, assignments, attempts, settings] =
-    await Promise.all([
-      prisma.organization.findUnique({ where: { id: orgId } }),
-      prisma.user.findMany({
-        where: { orgId },
-        include: {
-          candidateProfile: true,
-          staffProfile: true,
-          groupMemberships: { select: { groupId: true } }
-        },
-        orderBy: { createdAt: "asc" }
-      }),
-      prisma.candidateGroup.findMany({
-        where: { orgId },
-        include: { members: { select: { candidateId: true } } },
-        orderBy: { createdAt: "asc" }
-      }),
-      prisma.mockExam.findMany({ where: { orgId }, include: { parts: true } }),
-      prisma.examBlueprint.findMany({ where: { orgId } }),
-      prisma.mockAssignment.findMany({ where: { mockExam: { orgId } } }),
-      prisma.mockAttempt.findMany({
-        where: { mockExam: { orgId } },
-        include: { partAttempts: { orderBy: { partOrder: "asc" } } }
-      }),
-      prisma.setting.findMany({ where: { orgId } })
-    ]);
+  const [
+    org,
+    users,
+    groups,
+    mockExams,
+    blueprints,
+    assignments,
+    attempts,
+    settings,
+    mediaFolders,
+    media
+  ] = await Promise.all([
+    prisma.organization.findUnique({ where: { id: orgId } }),
+    prisma.user.findMany({
+      where: { orgId },
+      include: {
+        candidateProfile: true,
+        staffProfile: true,
+        groupMemberships: { select: { groupId: true } }
+      },
+      orderBy: { createdAt: "asc" }
+    }),
+    prisma.candidateGroup.findMany({
+      where: { orgId },
+      include: { members: { select: { candidateId: true } } },
+      orderBy: { createdAt: "asc" }
+    }),
+    prisma.mockExam.findMany({ where: { orgId }, include: { parts: true } }),
+    prisma.examBlueprint.findMany({ where: { orgId } }),
+    prisma.mockAssignment.findMany({ where: { mockExam: { orgId } } }),
+    prisma.mockAttempt.findMany({
+      where: { mockExam: { orgId } },
+      include: { partAttempts: { orderBy: { partOrder: "asc" } } }
+    }),
+    prisma.setting.findMany({ where: { orgId } }),
+    prisma.mediaFolder.findMany({ where: { orgId }, orderBy: { path: "asc" } }),
+    prisma.media.findMany({ where: { orgId }, orderBy: { createdAt: "asc" } })
+  ]);
 
   const candidateCount = users.filter((u) => u.role === "CANDIDATE").length;
   const submittedCount = attempts.filter((a) => a.status === "submitted").length;
+  const mediaBytes = media.reduce((sum, m) => sum + m.bytes, 0);
 
   return {
     meta: {
       platform: "ZiyoMock",
-      backupVersion: 1,
+      backupVersion: 2,
       exportedAt: new Date().toISOString(),
       organisation: org ? { id: org.id, name: org.name, slug: org.slug } : null
     },
@@ -70,7 +83,10 @@ async function collectBackup(orgId: string) {
       assignments: assignments.length,
       attempts: attempts.length,
       submittedAttempts: submittedCount,
-      settings: settings.length
+      settings: settings.length,
+      mediaFolders: mediaFolders.length,
+      media: media.length,
+      mediaBytes
     },
     users: users.map((u) => ({
       id: u.id,
@@ -120,6 +136,8 @@ async function collectBackup(orgId: string) {
       timerSource: b.timerSource,
       timeLimitMin: b.timeLimitMin,
       audioRef: b.audioRef,
+      audioMediaId: b.audioMediaId,
+      createdById: b.createdById,
       publishedAt: iso(b.publishedAt),
       sourceJson: b.sourceJson,
       engineJson: b.engineJson,
@@ -157,7 +175,29 @@ async function collectBackup(orgId: string) {
         resultJson: p.resultJson
       }))
     })),
-    settings: settings.map((s) => ({ key: s.key, valueJson: s.valueJson }))
+    settings: settings.map((s) => ({ key: s.key, valueJson: s.valueJson })),
+    mediaFolders: mediaFolders.map((f) => ({
+      id: f.id,
+      parentId: f.parentId,
+      name: f.name,
+      path: f.path
+    })),
+    media: media.map((m) => ({
+      id: m.id,
+      r2Key: m.r2Key,
+      kind: String(m.kind),
+      mime: m.mime,
+      bytes: m.bytes,
+      originalName: m.originalName,
+      checksum: m.checksum,
+      folderId: m.folderId,
+      tagsJson: m.tagsJson,
+      version: m.version,
+      parentMediaId: m.parentMediaId,
+      archived: m.archived,
+      createdById: m.createdById,
+      createdAt: iso(m.createdAt)
+    }))
   };
 }
 
@@ -207,7 +247,9 @@ async function backupWorkbook(data: BackupData): Promise<Buffer> {
       ["Exam blueprints", data.counts.blueprints],
       ["Assignments", data.counts.assignments],
       ["Attempts", data.counts.attempts],
-      ["Submitted attempts", data.counts.submittedAttempts]
+      ["Submitted attempts", data.counts.submittedAttempts],
+      ["Media files", data.counts.media],
+      ["Media size (MB)", Math.round((data.counts.mediaBytes / 1024 / 1024) * 10) / 10]
     ]
   );
 
@@ -245,6 +287,28 @@ async function backupWorkbook(data: BackupData): Promise<Buffer> {
       m.state,
       m.parts.map((p) => p.module).join(", "),
       m.publishedAt.slice(0, 10)
+    ])
+  );
+
+  const folderPath = new Map(data.mediaFolders.map((f) => [f.id, f.path]));
+  const audioUser = new Map<string, string[]>();
+  for (const b of data.blueprints) {
+    if (!b.audioMediaId) continue;
+    audioUser.set(b.audioMediaId, [...(audioUser.get(b.audioMediaId) ?? []), b.title]);
+  }
+  addSheet(
+    workbook,
+    "Media",
+    ["File", "Kind", "Type", "Size (KB)", "Folder", "Used by", "R2 key", "Uploaded"],
+    data.media.map((m) => [
+      m.originalName ?? m.r2Key,
+      m.kind,
+      m.mime,
+      Math.round(m.bytes / 1024),
+      m.folderId ? (folderPath.get(m.folderId) ?? "") : "",
+      (audioUser.get(m.id) ?? []).join(", "),
+      m.r2Key,
+      m.createdAt.slice(0, 10)
     ])
   );
 

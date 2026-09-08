@@ -95,8 +95,8 @@ export default async function AdminSettingsPage() {
           <div>
             <h2 className="font-semibold text-foreground">Backup data</h2>
             <p className="mt-1 text-sm text-muted">
-              Export all of this centre&apos;s data — candidates, groups, exams, assignments, and
-              results — for safekeeping or transfer.
+              Export all of this centre&apos;s data — candidates, groups, exams, assignments,
+              results, and the media catalogue — for safekeeping or transfer.
             </p>
           </div>
         </div>
@@ -119,7 +119,9 @@ export default async function AdminSettingsPage() {
         <p className="mt-3 text-xs text-muted">
           The <strong>JSON</strong> file is a complete backup (including exam content and answers)
           suitable for restoring — keep it secure. The <strong>Excel</strong> workbook is a
-          human-readable summary across sheets, ideal for sharing.
+          human-readable summary across sheets, ideal for sharing. Audio and image{" "}
+          <em>files</em> live in object storage and are not inside either download; both list the
+          media records and their storage keys, so a restore can re-link them.
         </p>
       </Card>
 
