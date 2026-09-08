@@ -100,8 +100,8 @@ export default async function AdminExamsPage() {
                       mockId={mock.id}
                       candidates={candidates}
                       groups={groups}
-                      assignedCandidateIds={assignedCandidateIds}
-                      assignedGroupIds={assignedGroupIds}
+                      assignedCandidateIds={[...assignedCandidateIds]}
+                      assignedGroupIds={[...assignedGroupIds]}
                     />
                   </div>
                 </details>
