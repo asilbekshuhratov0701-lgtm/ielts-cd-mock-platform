@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
-import { BookOpen, CheckCircle2, ChevronDown, Headphones, PenLine } from "lucide-react";
+import { BookOpen, CheckCircle2, ChevronDown, Headphones, Mic, PenLine } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -25,7 +25,8 @@ export type MockPartView = {
 const moduleIcon: Record<string, ReactNode> = {
   listening: <Headphones className="h-4 w-4 text-brand-600" />,
   reading: <BookOpen className="h-4 w-4 text-brand-600" />,
-  writing: <PenLine className="h-4 w-4 text-brand-600" />
+  writing: <PenLine className="h-4 w-4 text-brand-600" />,
+  speaking: <Mic className="h-4 w-4 text-brand-600" />
 };
 
 const fmt = (b: number | null) => (b === null ? "—" : b.toFixed(1));
@@ -33,11 +34,13 @@ const fmt = (b: number | null) => (b === null ? "—" : b.toFixed(1));
 export function MockResultView({
   examTitle,
   overall,
-  parts
+  parts,
+  speakingBand
 }: {
   examTitle: string;
   overall: number | null;
   parts: MockPartView[];
+  speakingBand: number | null;
 }) {
   const [open, setOpen] = useState(false);
   const feedbackParts = parts.filter((p) => p.writing?.feedback && p.writing.feedback.trim());
@@ -74,7 +77,7 @@ export function MockResultView({
         </div>
       </Card>
 
-      {parts.length > 0 ? (
+      {parts.length > 0 || speakingBand !== null ? (
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {parts.map((p, i) => (
             <Card key={i} className="p-4">
@@ -101,6 +104,16 @@ export function MockResultView({
               )}
             </Card>
           ))}
+          {speakingBand !== null ? (
+            <Card className="p-4">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                {moduleIcon.speaking}
+                <span>Speaking</span>
+              </div>
+              <p className="mt-2 text-3xl font-bold text-brand-700">{fmt(speakingBand)}</p>
+              <p className="text-xs text-muted">examiner-marked</p>
+            </Card>
+          ) : null}
         </div>
       ) : null}
 
@@ -113,7 +126,6 @@ export function MockResultView({
                 <div className="flex items-center gap-2 font-medium text-foreground">
                   {moduleIcon[p.module] ?? null}
                   <span className="capitalize">{p.module}</span>
-                  <span className="text-sm font-normal text-muted">{p.title}</span>
                 </div>
                 <span className="rounded-md bg-brand-50 px-2 py-0.5 text-sm font-semibold text-brand-700">
                   Band {fmt(p.band)}
@@ -131,6 +143,20 @@ export function MockResultView({
               )}
             </div>
           ))}
+          {speakingBand !== null ? (
+            <div className="rounded-lg border border-border p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 font-medium text-foreground">
+                  {moduleIcon.speaking}
+                  <span>Speaking</span>
+                </div>
+                <span className="rounded-md bg-brand-50 px-2 py-0.5 text-sm font-semibold text-brand-700">
+                  Band {fmt(speakingBand)}
+                </span>
+              </div>
+              <p className="text-sm text-muted">examiner-marked</p>
+            </div>
+          ) : null}
         </Card>
       ) : null}
 

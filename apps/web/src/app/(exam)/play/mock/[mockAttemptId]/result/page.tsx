@@ -125,7 +125,12 @@ export default async function MockResultPage({
   return (
     <>
       <ExitFullscreen />
-      <MockResultView examTitle={attempt.mockExam.title} overall={overall} parts={parts} />
+      <MockResultView
+        examTitle={attempt.mockExam.title}
+        overall={overall}
+        parts={parts}
+        speakingBand={attempt.speakingBand ?? null}
+      />
     </>
   );
 }
