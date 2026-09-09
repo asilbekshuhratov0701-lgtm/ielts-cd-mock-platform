@@ -22,8 +22,8 @@ const THEME_INIT = `(function(){try{var t=localStorage.getItem("ziyomock-theme")
 
 export const metadata: Metadata = {
   title: {
-    default: "IELTS Mock Platform",
-    template: "%s · IELTS Mock Platform"
+    default: "ZiyoMock - Interactive IELTS Mock Platform",
+    template: "%s · ZiyoMock"
   },
   description: "Computer-Delivered IELTS mock examinations — Listening, Reading, Writing."
 };
