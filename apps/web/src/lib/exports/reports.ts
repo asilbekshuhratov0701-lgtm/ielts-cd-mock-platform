@@ -2,6 +2,7 @@ import { prisma } from "@ielts/db";
 import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
 import { SETTING_KEYS, getNumberSetting } from "@/lib/settings";
 import type { Dataset } from "./gather";
+import { formatSheetDateTime } from "@/lib/datetime";
 
 export type ReportType = "exam" | "attendance" | "bands";
 
@@ -22,11 +23,7 @@ export interface ReportSummary {
 }
 
 function fmtNow(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(
-    d.getMinutes()
-  )}`;
+  return formatSheetDateTime(new Date());
 }
 
 function makeDataset(

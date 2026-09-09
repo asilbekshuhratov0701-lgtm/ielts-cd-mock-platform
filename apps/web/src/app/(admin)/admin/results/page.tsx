@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatDate } from "@/lib/datetime";
 
 export const metadata = { title: "Results" };
 export const dynamic = "force-dynamic";
@@ -69,7 +70,7 @@ export default async function AdminResultsPage() {
                     </td>
                     <td className="px-4 py-3 text-muted">{a.mockExam.title}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted">
-                      {a.submittedAt ? a.submittedAt.toLocaleDateString() : "—"}
+                      {formatDate(a.submittedAt)}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted">
                       {bandLabel(bandOf("listening"))}

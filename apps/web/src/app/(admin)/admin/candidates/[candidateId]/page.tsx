@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExportMenu } from "@/components/candidates/ExportMenu";
 import { overallWithSpeaking, partSummaryBand, bandLabel, type SummaryPart } from "@/lib/mock-band";
+import { formatDate } from "@/lib/datetime";
 
 export const metadata = { title: "Candidate" };
 export const dynamic = "force-dynamic";
@@ -98,7 +99,7 @@ export default async function AdminCandidatePage({
                       {attempt.mockExam.title}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-muted">
-                      {attempt.submittedAt ? attempt.submittedAt.toLocaleDateString() : "—"}
+                      {formatDate(attempt.submittedAt)}
                     </td>
                     <td className="px-4 py-3 tabular-nums text-muted">
                       {bandLabel(bandOf("listening"))}

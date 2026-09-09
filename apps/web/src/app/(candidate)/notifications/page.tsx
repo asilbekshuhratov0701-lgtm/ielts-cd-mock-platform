@@ -6,6 +6,7 @@ import { markAllReadAction } from "@/lib/notifications-actions";
 import { PageShell } from "@/components/Shell";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/datetime";
 
 export const metadata = { title: "Notifications" };
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ function timeAgo(date: Date): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
+  return formatDate(date);
 }
 
 function describe(type: string, payload: unknown): { text: string; href: string | null } {

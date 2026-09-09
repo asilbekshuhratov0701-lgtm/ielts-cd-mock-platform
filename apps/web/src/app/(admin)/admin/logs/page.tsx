@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/input";
 import { requireAdminUser } from "@/lib/page-guards";
 import { cn } from "@/lib/cn";
+import { formatDateTime } from "@/lib/datetime";
 
 export const metadata = { title: "System Logs" };
 export const dynamic = "force-dynamic";
@@ -164,7 +165,7 @@ export default async function AdminLogsPage({
               {logs.map((log) => (
                 <tr key={log.id} className="align-top hover:bg-brand-50/30">
                   <td className="whitespace-nowrap px-4 py-3 text-muted">
-                    {log.createdAt.toLocaleString()}
+                    {formatDateTime(log.createdAt)}
                   </td>
                   <td className="px-4 py-3 text-foreground">
                     {log.actor?.name ?? log.actor?.email ?? "system"}

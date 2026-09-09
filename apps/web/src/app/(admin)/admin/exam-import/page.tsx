@@ -11,6 +11,7 @@ import { RenameRow } from "@/components/admin/RenameRow";
 import { createWritingExamAction } from "@/lib/exam-blueprint-actions";
 import { createMockAction } from "@/lib/mock-actions";
 import { MODULE_ORDER } from "@/lib/mock";
+import { formatDate } from "@/lib/datetime";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -143,7 +144,7 @@ export default async function ExamImportPage({
                       <span className="truncate font-medium text-foreground">{b.title}</span>
                       <span className="ml-2 text-xs text-muted">
                         {b.module} · v{b.version} · {b.totalQuestions} questions · added{" "}
-                        {b.createdAt.toLocaleDateString()}
+                        {formatDate(b.createdAt)}
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
@@ -220,7 +221,7 @@ export default async function ExamImportPage({
                         <span className="font-medium text-foreground">{mock.title}</span>
                         <span className="ml-2 text-xs text-muted">
                           {mock.parts.map((p) => p.module).join(" · ") || "no parts"} · built{" "}
-                          {mock.createdAt.toLocaleDateString()}
+                          {formatDate(mock.createdAt)}
                         </span>
                       </span>
                       {mock.notes ? (

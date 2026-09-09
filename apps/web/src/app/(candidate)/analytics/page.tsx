@@ -9,6 +9,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BandTrendChart, SkillAveragesChart } from "@/components/analytics-charts";
+import { formatDayMonth } from "@/lib/datetime";
 
 export const metadata = { title: "Analytics" };
 export const dynamic = "force-dynamic";
@@ -50,7 +51,7 @@ export default async function AnalyticsPage() {
   const target = profile?.targetBand ?? null;
 
   const trend = scored.map((a) => ({
-    label: a.submittedAt ? a.submittedAt.toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—",
+    label: formatDayMonth(a.submittedAt),
     band: a.score!.overallBand!
   }));
 

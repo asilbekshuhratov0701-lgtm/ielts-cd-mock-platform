@@ -6,6 +6,7 @@ import {
   WritingEvaluationTable,
   type WritingRowData
 } from "@/components/admin/WritingEvaluationTable";
+import { formatDateTime } from "@/lib/datetime";
 
 export const metadata = { title: "Writing Evaluation" };
 export const dynamic = "force-dynamic";
@@ -68,7 +69,7 @@ export default async function AdminWritingPage() {
         exam: a.mockExam.title,
         kind: "Mock" as const,
         submitted: a.submittedAt,
-        submittedLabel: a.submittedAt ? a.submittedAt.toLocaleString() : "—",
+        submittedLabel: formatDateTime(a.submittedAt),
         band: typeof w?.writingBand === "number" ? w.writingBand : null,
         href: `/admin/exam-import/mock/${a.mockExam.id}/attempt/${a.id}`
       };
@@ -81,7 +82,7 @@ export default async function AdminWritingPage() {
         exam: a.blueprint.title,
         kind: "Standalone" as const,
         submitted: a.submittedAt,
-        submittedLabel: a.submittedAt ? a.submittedAt.toLocaleString() : "—",
+        submittedLabel: formatDateTime(a.submittedAt),
         band: w?.kind === "writing" && typeof w.writingBand === "number" ? w.writingBand : null,
         href: `/admin/writing/${a.id}`
       };

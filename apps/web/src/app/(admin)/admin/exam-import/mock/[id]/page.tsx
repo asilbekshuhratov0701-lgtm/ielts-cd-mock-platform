@@ -28,6 +28,7 @@ import {
 } from "@/lib/mock-actions";
 import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
 import { formatMinutesSeconds } from "@/lib/mock";
+import { formatDate, formatDateTime } from "@/lib/datetime";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -159,13 +160,13 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
         </div>
 
         <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Meta label="Built" value={mock.createdAt.toLocaleString()} />
+          <Meta label="Built" value={formatDateTime(mock.createdAt)} />
           <Meta label="Built by" value={author?.name ?? author?.email ?? "—"} />
           <Meta
             label="Published"
-            value={mock.publishedAt ? mock.publishedAt.toLocaleString() : "not yet"}
+            value={formatDateTime(mock.publishedAt, "not yet")}
           />
-          <Meta label="Last changed" value={mock.updatedAt.toLocaleString()} />
+          <Meta label="Last changed" value={formatDateTime(mock.updatedAt)} />
           <Meta
             label="Parts"
             value={`${mock.parts.length} · ${mock.parts.map((p) => p.module).join(", ") || "none"}`}
@@ -225,7 +226,7 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                   </span>
                   <span className="shrink-0 text-xs uppercase text-muted">{part.module}</span>
                   <span className="shrink-0 text-xs text-muted">
-                    · added {part.blueprint.createdAt.toLocaleDateString()}
+                    · added {formatDate(part.blueprint.createdAt)}
                   </span>
                 </Link>
                 <span className="flex shrink-0 items-center gap-2 text-xs">
@@ -301,7 +302,7 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                         {a.candidate.name ?? a.candidate.email}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 text-muted">
-                        {a.submittedAt ? a.submittedAt.toLocaleString() : "—"}
+                        {formatDateTime(a.submittedAt)}
                       </td>
                       <td className="px-3 py-2 font-semibold tabular-nums text-brand-700">
                         {a.status === "submitted" ? bandLabel(overall) : "—"}

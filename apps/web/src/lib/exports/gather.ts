@@ -1,5 +1,6 @@
 import { prisma } from "@ielts/db";
 import { partSummaryBand, overallBandFrom, bandLabel } from "@/lib/mock-band";
+import { formatSheetDateTime } from "@/lib/datetime";
 
 export interface Dataset {
   title: string;
@@ -42,12 +43,7 @@ interface SummaryPart {
 }
 
 function fmtDate(value: Date | null): string {
-  if (!value) return "";
-  const d = new Date(value);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(
-    d.getMinutes()
-  )}`;
+  return formatSheetDateTime(value);
 }
 
 function words(text: string): number {

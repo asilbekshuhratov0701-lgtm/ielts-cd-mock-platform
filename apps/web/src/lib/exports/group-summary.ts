@@ -1,6 +1,7 @@
 import { prisma } from "@ielts/db";
 import { partSummaryBand, overallBandFrom, bandLabel, type SummaryPart } from "@/lib/mock-band";
 import type { Dataset } from "./gather";
+import { formatDate } from "@/lib/datetime";
 
 export interface GroupSummaryRow {
   position: number;
@@ -23,25 +24,8 @@ export interface GroupSummary {
   rows: GroupSummaryRow[];
 }
 
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec"
-];
-
 export function longDate(value: Date | null): string {
-  if (!value) return "—";
-  const d = new Date(value);
-  return `${String(d.getDate()).padStart(2, "0")} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return formatDate(value);
 }
 
 export async function gatherGroupSummary(orgId: string, groupId: string): Promise<GroupSummary> {

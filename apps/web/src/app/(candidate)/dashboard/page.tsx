@@ -8,6 +8,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/datetime";
 
 export const metadata = { title: "Dashboard" };
 
@@ -80,7 +81,7 @@ export default async function DashboardPage() {
                 <div className="min-w-0">
                   <p className="truncate font-medium text-foreground">{attempt.exam.title}</p>
                   <p className="text-xs text-muted">
-                    {attempt.submittedAt ? attempt.submittedAt.toLocaleDateString() : "—"}
+                    {formatDate(attempt.submittedAt)}
                   </p>
                 </div>
                 {released ? (

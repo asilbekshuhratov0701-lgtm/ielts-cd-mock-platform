@@ -18,6 +18,7 @@ import {
   unpublishBlueprintAction
 } from "@/lib/exam-blueprint-actions";
 import { startBlueprintAttemptAction } from "@/lib/blueprint-play-actions";
+import { formatDateTime } from "@/lib/datetime";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -97,8 +98,8 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
 
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <span className="text-sm text-muted">
-          Added {bp.createdAt.toLocaleString()}
-          {bp.publishedAt ? ` · published ${bp.publishedAt.toLocaleString()}` : ""}
+          Added {formatDateTime(bp.createdAt)}
+          {bp.publishedAt ? ` · published ${formatDateTime(bp.publishedAt)}` : ""}
         </span>
         <RenameInline
           kind="blueprint"

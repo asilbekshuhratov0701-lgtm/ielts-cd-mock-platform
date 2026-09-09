@@ -2,6 +2,7 @@ import ExcelJS from "exceljs";
 import { prisma } from "@ielts/db";
 import { gatherResults, gatherWriting } from "./gather";
 import { formatMinutesSeconds } from "@/lib/mock";
+import { fileStamp, formatDate } from "@/lib/datetime";
 
 export type BackupFormat = "json" | "xlsx";
 
@@ -12,11 +13,7 @@ interface BackupExport {
 }
 
 function stamp(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(
-    d.getMinutes()
-  )}`;
+  return fileStamp();
 }
 
 function iso(value: Date | null | undefined): string {
@@ -269,7 +266,7 @@ async function backupWorkbook(data: BackupData): Promise<Buffer> {
       u.candidateProfile?.phone ?? "",
       u.candidateProfile?.country ?? "",
       u.candidateProfile?.targetBand ?? "",
-      u.createdAt.slice(0, 10)
+      formatDate(u.createdAt, "")
     ])
   );
 
@@ -277,7 +274,7 @@ async function backupWorkbook(data: BackupData): Promise<Buffer> {
     workbook,
     "Groups",
     ["Name", "Kind", "Members", "Created"],
-    data.groups.map((g) => [g.name, g.kind, g.memberIds.length, g.createdAt.slice(0, 10)])
+    data.groups.map((g) => [g.name, g.kind, g.memberIds.length, formatDate(g.createdAt, "")])
   );
 
   addSheet(
@@ -288,7 +285,7 @@ async function backupWorkbook(data: BackupData): Promise<Buffer> {
       m.title,
       m.state,
       m.parts.map((p) => p.module).join(", "),
-      m.publishedAt.slice(0, 10)
+      formatDate(m.publishedAt, "")
     ])
   );
 
@@ -311,7 +308,7 @@ async function backupWorkbook(data: BackupData): Promise<Buffer> {
       m.folderId ? (folderPath.get(m.folderId) ?? "") : "",
       (audioUser.get(m.id) ?? []).join(", "),
       m.r2Key,
-      m.createdAt.slice(0, 10)
+      formatDate(m.createdAt, "")
     ])
   );
 

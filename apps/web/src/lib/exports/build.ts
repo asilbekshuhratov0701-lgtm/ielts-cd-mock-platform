@@ -3,6 +3,7 @@ import type { Dataset, WritingDoc } from "./gather";
 import { groupSummaryDataset, type GroupSummary } from "./group-summary";
 import { candidateDetailDataset, type CandidateDetail } from "./candidate-detail";
 import { candidateDetailPdf, groupSummaryPdf, resultsPdf, writingPdf } from "./pdf";
+import { fileStamp } from "@/lib/datetime";
 
 export type ExportFormat = "csv" | "json" | "xlsx" | "doc" | "pdf";
 
@@ -39,11 +40,7 @@ function slug(text: string): string {
 }
 
 function stamp(): string {
-  const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(
-    d.getMinutes()
-  )}`;
+  return fileStamp();
 }
 
 function filenameFor(base: string, format: ExportFormat): string {

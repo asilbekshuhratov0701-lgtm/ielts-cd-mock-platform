@@ -13,6 +13,7 @@ import { saveWritingMarkAction } from "@/lib/mock-actions";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import type { CandidateAnswer, ImportAnswerKey, WritingCriteria } from "@ielts/core";
 import { cn } from "@/lib/cn";
+import { formatDateTime } from "@/lib/datetime";
 
 const CRIT: { key: string; label: string; field: keyof WritingCriteria }[] = [
   { key: "tr", label: "Task Response", field: "taskResponse" },
@@ -91,7 +92,7 @@ export default async function MockAttemptReviewPage({
     <PageShell
       title={attempt.candidate.name ?? attempt.candidate.email}
       subtitle={`${attempt.mockExam.title} · ${
-        attempt.submittedAt ? attempt.submittedAt.toLocaleString() : "in progress"
+        formatDateTime(attempt.submittedAt, "in progress")
       }`}
       actions={
         <Badge variant={attempt.status === "submitted" ? "success" : "warning"}>

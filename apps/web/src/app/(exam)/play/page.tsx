@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { StartMockButton } from "@/components/exam/StartMockButton";
 import { isMockCompleted } from "@/lib/mock";
 import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
+import { formatDate, formatLongDate, formatMonthShort, formatWeekdayShort, formatDayOfMonth } from "@/lib/datetime";
 
 const moduleIcon = {
   reading: <BookOpen className="h-4 w-4 text-violet-600" />,
@@ -106,14 +107,14 @@ export default async function PlayListPage() {
                     style={{ background: "linear-gradient(135deg,#2563EB,#7C5CFC)" }}
                   >
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-white/80">
-                      {mockDate.toLocaleString("en-GB", { month: "short" })}
+                      {formatMonthShort(mockDate)}
                     </span>
                     <span className="text-4xl font-extrabold leading-none">
-                      {String(mockDate.getDate()).padStart(2, "0")}
+                      {formatDayOfMonth(mockDate)}
                     </span>
                     <span className="my-1 h-px w-6 bg-white/40" />
                     <span className="text-[11px] font-semibold uppercase tracking-wide text-white/80">
-                      {mockDate.toLocaleString("en-GB", { weekday: "short" })}
+                      {formatWeekdayShort(mockDate)}
                     </span>
                   </div>
 
@@ -121,11 +122,7 @@ export default async function PlayListPage() {
                     <div>
                       <p className="text-lg font-semibold text-foreground">{mock.title}</p>
                       <p className="mt-0.5 text-xs text-muted">
-                        {mockDate.toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric"
-                        })}
+                        {formatLongDate(mockDate)}
                       </p>
                       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         {mock.parts.map((p) => (
@@ -187,7 +184,7 @@ export default async function PlayListPage() {
                   <Card className="flex items-center justify-between p-3 text-sm transition-colors hover:bg-brand-50/40">
                     <span className="text-muted">
                       {a.mockExam.title}
-                      {a.submittedAt ? ` · ${new Date(a.submittedAt).toLocaleDateString()}` : ""}
+                      {a.submittedAt ? ` · ${formatDate(a.submittedAt)}` : ""}
                     </span>
                     <span className="font-semibold text-foreground">
                       {a.resultsReleased ? `Band ${bandLabel(overall)}` : "Pending review"}
