@@ -25,6 +25,13 @@ export const registerSchema = z.object({
 export type RegisterInput = z.infer<typeof registerSchema>;
 
 export const forgotPasswordSchema = z.object({ email: emailField });
+export const verifyResetCodeSchema = z.object({
+  email: emailField,
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/)
+});
 export const resetPasswordSchema = z.object({
   token: z.string().min(10),
   password: z.string().min(8).max(200)

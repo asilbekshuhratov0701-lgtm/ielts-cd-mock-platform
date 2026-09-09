@@ -105,6 +105,40 @@ Open <http://localhost:3000>.
   - A candidate visiting `/admin` → redirected to `/dashboard`.
   - A logged-in user visiting `/login` → redirected to their role home.
 - **Logout** — the button in the candidate/admin header clears the session.
+- **Forgot password** at `/forgot` — enter an email, receive a **6-digit code**, type it, then
+  choose a new password. The code lasts 10 minutes, allows 5 wrong guesses, and the resend
+  button is on a 60-second cooldown. See *Password reset email (Resend)* below.
+
+## Password reset email (Resend)
+
+Reset codes go out through [Resend](https://resend.com). **Without a key the dev server prints
+the code to its own console** — look for a line like
+`[email] no RESEND_API_KEY — password reset code for you@example.com is 402913` — so the whole
+flow is testable locally before any email is configured. In production a missing key makes the
+forgot page say so plainly rather than pretend it sent something.
+
+To send real email:
+
+1. Sign in at [resend.com](https://resend.com) → **API Keys** → **Create API Key**. Give it
+   *Sending access*, and copy the `re_…` value — Resend shows it only once.
+2. Paste it into **`apps/web/.env`** (this file is gitignored; never commit the key):
+   ```ini
+   RESEND_API_KEY="re_your_key_here"
+   EMAIL_FROM="ZiyoMock <onboarding@resend.dev>"
+   ```
+3. Restart `pnpm dev:web`, then request a code at `/forgot`.
+
+`onboarding@resend.dev` works immediately but **only delivers to the email address that owns
+the Resend account** — fine for testing, useless for candidates. Before launch, add your domain
+under **Domains** → **Add Domain**, publish the DKIM/SPF DNS records Resend gives you, wait for
+it to go **Verified**, then switch to an address on it:
+
+```ini
+EMAIL_FROM="ZiyoMock <noreply@yourdomain.com>"
+```
+
+Delivery problems show up in Resend's **Logs** tab, and send failures are logged by the server
+as `[email] send failed`.
 
 ## 6. Take the demo exam (exam engine)
 

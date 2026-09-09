@@ -11,9 +11,22 @@ export interface SendEmailResult {
   error?: string;
 }
 
+export type DeliveryMode = "resend" | "console" | "unconfigured";
+
+/**
+ * Without a Resend key there is nothing to send with. In development that is
+ * fine — the caller prints the code to the server log instead — but in
+ * production it is a misconfiguration the user has to be told about, because
+ * silently "succeeding" strands anyone who has forgotten their password.
+ */
+export function deliveryMode(): DeliveryMode {
+  if (process.env.RESEND_API_KEY) return "resend";
+  return process.env.NODE_ENV === "production" ? "unconfigured" : "console";
+}
+
 export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? "IELTS Platform <onboarding@resend.dev>";
+  const from = process.env.EMAIL_FROM ?? "ZiyoMock <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.warn(`[email] RESEND_API_KEY not set — skipped "${args.subject}" to ${args.to}`);
@@ -48,28 +61,33 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
   }
 }
 
-export function passwordResetEmail(link: string): { subject: string; html: string; text: string } {
-  const subject = "Reset your IELTS Platform password";
-  const text = `We received a request to reset your password.
+export function passwordCodeEmail(
+  code: string,
+  ttlMinutes: number
+): { subject: string; html: string; text: string } {
+  const subject = `${code} is your ZiyoMock password reset code`;
+  const text = `Your ZiyoMock password reset code is ${code}.
 
-Open this link to choose a new one (valid for 1 hour):
-${link}
+Enter it on the forgot-password page to choose a new password. The code expires in ${ttlMinutes} minutes and can be used once.
 
-If you didn't request this, you can safely ignore this email.`;
+If you didn't request this, you can safely ignore this email — your password stays as it is.`;
   const html = `<!doctype html>
 <html>
   <body style="margin:0;background:#f1f5f9;padding:24px;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:16px;padding:32px">
       <tr><td>
-        <h1 style="margin:0 0 12px;font-size:20px;color:#1d4ed8">Reset your password</h1>
-        <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#475569">
-          We received a request to reset your IELTS Platform password. Click the button below to choose a new one. This link is valid for 1 hour.
+        <h1 style="margin:0 0 12px;font-size:20px;color:#4f46e5">Your password reset code</h1>
+        <p style="margin:0 0 22px;font-size:14px;line-height:1.6;color:#475569">
+          Enter this code on the forgot-password page to choose a new password.
         </p>
-        <a href="${link}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:600;font-size:14px;padding:12px 20px;border-radius:10px">
-          Choose a new password
-        </a>
-        <p style="margin:24px 0 0;font-size:12px;line-height:1.6;color:#94a3b8">
-          If you didn't request this, you can safely ignore this email. For your security, the link expires after 1 hour and can be used only once.
+        <div style="font-size:34px;font-weight:700;letter-spacing:.32em;text-align:center;color:#0f172a;background:#eef0fa;border-radius:12px;padding:18px 12px">
+          ${code}
+        </div>
+        <p style="margin:22px 0 0;font-size:13px;line-height:1.6;color:#475569">
+          The code expires in ${ttlMinutes} minutes and can be used once.
+        </p>
+        <p style="margin:16px 0 0;font-size:12px;line-height:1.6;color:#94a3b8">
+          If you didn't request this, you can safely ignore this email — your password stays as it is.
         </p>
       </td></tr>
     </table>

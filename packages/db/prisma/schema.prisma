@@ -303,12 +303,23 @@ model VerificationToken {
 }
 
 model PasswordResetToken {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash String    @unique
-  expires   DateTime
-  usedAt    DateTime?
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Argon2id hash of the six-digit code that was emailed. Never stored in clear.
+  codeHash String
+  /// Wrong guesses so far. The row is destroyed once this passes the limit, so a
+  /// six-digit code cannot be walked through.
+  attempts Int    @default(0)
+  /// Set the moment the code is entered correctly, which is also when tokenHash
+  /// is issued — the one-time ticket that authorises the new password. A ticket
+  /// without a verifiedAt is never accepted.
+  verifiedAt DateTime?
+  tokenHash  String?   @unique
+  /// Drives the resend cooldown, so the form cannot be used to mail-bomb anyone.
+  lastSentAt DateTime  @default(now())
+  expires    DateTime
+  usedAt     DateTime?
 
   @@index([userId])
 }

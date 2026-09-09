@@ -15,13 +15,14 @@ export default async function ResetPasswordPage({
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">Reset password</h1>
         <p className="mt-1.5 text-sm leading-relaxed text-muted">
-          This link is missing its reset token. Request a new link from the forgot-password page.
+          This reset session is missing its ticket. Request a new code from the forgot-password
+          page.
         </p>
         <Link
           href="/forgot"
           className="mt-6 inline-block text-sm font-medium text-brand-700 hover:underline"
         >
-          ← Request a new link
+          ← Request a new code
         </Link>
       </div>
     );
