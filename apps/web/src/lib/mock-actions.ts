@@ -13,7 +13,7 @@ import {
   type WritingCriteria
 } from "@ielts/core";
 import { auth } from "@/auth";
-import { MODULE_ORDER, moduleRank, isMockCompleted, durationSecFor } from "@/lib/mock";
+import { MODULE_ORDER, moduleRank, isMockCompleted, attemptDurationSecFor } from "@/lib/mock";
 import { isValidBand } from "@/lib/mock-band";
 import { safeBuilderPath } from "@/lib/builder-redirect";
 import { logAudit } from "@/lib/audit";
@@ -395,7 +395,17 @@ async function createPartAttempt(
   timeLimitMin: number | null
 ) {
   const startedAt = new Date();
-  const deadlineAt = computeDeadline(startedAt, durationSecFor(part.module, timeLimitMin));
+  const audio =
+    part.module === "listening"
+      ? await prisma.examBlueprint.findUnique({
+          where: { id: part.blueprintId },
+          select: { audioMedia: { select: { durationSec: true } } }
+        })
+      : null;
+  const deadlineAt = computeDeadline(
+    startedAt,
+    attemptDurationSecFor(part.module, timeLimitMin, audio?.audioMedia?.durationSec)
+  );
   return prisma.blueprintAttempt.create({
     data: {
       blueprintId: part.blueprintId,

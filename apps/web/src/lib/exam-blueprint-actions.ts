@@ -8,6 +8,7 @@ import { createBlueprintFromJson } from "@/lib/exam-blueprint";
 import { saveMediaObject, safeKeySegment, mediaPublicUrl } from "@/lib/media-storage";
 import { setGroupImageOn } from "@/lib/exam-blueprint-media";
 import { safeBuilderPath } from "@/lib/builder-redirect";
+import { probeAudioDurationSec, plausibleDurationSec } from "@ielts/core";
 
 async function requireStaff() {
   const session = await auth();
@@ -174,6 +175,8 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
   )}.${ext}`;
   const bytes = new Uint8Array(await file.arrayBuffer());
   await saveMediaObject(key, bytes);
+  const durationSec =
+    plausibleDurationSec(Number(formData.get("durationSec"))) ?? probeAudioDurationSec(bytes);
 
   const media = await prisma.media.upsert({
     where: { r2Key: key },
@@ -181,6 +184,7 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
       kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
       mime: file.type || "audio/mpeg",
       bytes: file.size,
+      durationSec,
       originalName: file.name
     },
     create: {
@@ -189,6 +193,7 @@ export async function attachAudioAction(formData: FormData): Promise<void> {
       kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
       mime: file.type ||"audio/mpeg",
       bytes: file.size,
+      durationSec,
       originalName: file.name,
       createdById: user.id
     }

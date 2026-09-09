@@ -7,6 +7,26 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { noticeFor } from "@/lib/notices";
 
+function readAudioDuration(file: File): Promise<number | null> {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const probe = new Audio();
+    const done = (value: number | null) => {
+      URL.revokeObjectURL(url);
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), 15000);
+    probe.preload = "metadata";
+    probe.onloadedmetadata = () => {
+      const seconds = probe.duration;
+      done(Number.isFinite(seconds) && seconds > 0 ? Math.round(seconds) : null);
+    };
+    probe.onerror = () => done(null);
+    probe.src = url;
+  });
+}
+
 export function MediaUploadField({
   kind,
   blueprintId,
@@ -25,11 +45,12 @@ export function MediaUploadField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
-  const upload = (file: File) => {
+  const upload = (file: File, durationSec: number | null) => {
     const form = new FormData();
     form.set("kind", kind);
     form.set("blueprintId", blueprintId);
     if (groupId) form.set("groupId", groupId);
+    if (durationSec) form.set("durationSec", String(durationSec));
     form.set("file", file);
 
     const id = toast.show({
@@ -60,7 +81,7 @@ export function MediaUploadField({
       const notice = noticeFor(code);
       if (xhr.status >= 200 && xhr.status < 300) {
         toast.update(id, {
-          variant: "success",
+          variant: notice?.variant ?? "success",
           title: notice?.title ?? "Upload complete",
           description: notice?.description ?? file.name,
           progress: undefined
@@ -98,7 +119,12 @@ export function MediaUploadField({
         disabled={busy}
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) upload(file);
+          if (!file) return;
+          if (kind !== "audio") {
+            upload(file, null);
+            return;
+          }
+          void readAudioDuration(file).then((seconds) => upload(file, seconds));
         }}
         className="block w-full max-w-xs text-sm text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-brand-700 hover:file:bg-brand-100"
       />

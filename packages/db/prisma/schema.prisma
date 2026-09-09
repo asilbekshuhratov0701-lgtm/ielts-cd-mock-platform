@@ -747,6 +747,11 @@ model Media {
   kind          MediaKind
   mime          String
   bytes         Int          @default(0)
+  /// Playable length in whole seconds, read from the file when it is uploaded.
+  /// Listening attempts derive their deadline from this so the exam clock runs
+  /// for exactly as long as the recording; null means the length could not be
+  /// read and the module falls back to its fixed time limit.
+  durationSec   Int?
   originalName  String?
   checksum      String?
   folderId      String?

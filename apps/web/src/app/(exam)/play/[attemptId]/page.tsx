@@ -34,7 +34,11 @@ export default async function PlayPage({ params }: { params: Promise<{ attemptId
         examTitle={attempt.blueprint.title}
         copy={sectionIntroCopy({
           module: attempt.blueprint.module,
-          durationSec: durationSecFor(attempt.blueprint.module, attempt.blueprint.timeLimitMin),
+          durationSec: durationSecFor(
+            attempt.blueprint.module,
+            attempt.blueprint.timeLimitMin,
+            attempt.blueprint.audioMedia?.durationSec
+          ),
           totalQuestions: attempt.blueprint.totalQuestions,
           sectionCount: exam.sections?.length ?? 0
         })}
@@ -62,6 +66,7 @@ export default async function PlayPage({ params }: { params: Promise<{ attemptId
     attemptId: attempt.id,
     deadlineAt: attempt.deadlineAt.toISOString(),
     serverNow: new Date().toISOString(),
+    audioDurationSec: attempt.blueprint.audioMedia?.durationSec ?? null,
     initialAnswers: (attempt.answersJson as unknown as AnswersMap) ?? {},
     initialAnnotations: (attempt.annotationsJson as unknown as Annotations) ?? {
       notes: [],

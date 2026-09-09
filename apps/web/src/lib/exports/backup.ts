@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { prisma } from "@ielts/db";
 import { gatherResults, gatherWriting } from "./gather";
+import { formatMinutesSeconds } from "@/lib/mock";
 
 export type BackupFormat = "json" | "xlsx";
 
@@ -69,7 +70,7 @@ async function collectBackup(orgId: string) {
   return {
     meta: {
       platform: "ZiyoMock",
-      backupVersion: 2,
+      backupVersion: 3,
       exportedAt: new Date().toISOString(),
       organisation: org ? { id: org.id, name: org.name, slug: org.slug } : null
     },
@@ -188,6 +189,7 @@ async function collectBackup(orgId: string) {
       kind: String(m.kind),
       mime: m.mime,
       bytes: m.bytes,
+      durationSec: m.durationSec,
       originalName: m.originalName,
       checksum: m.checksum,
       folderId: m.folderId,
@@ -299,12 +301,13 @@ async function backupWorkbook(data: BackupData): Promise<Buffer> {
   addSheet(
     workbook,
     "Media",
-    ["File", "Kind", "Type", "Size (KB)", "Folder", "Used by", "R2 key", "Uploaded"],
+    ["File", "Kind", "Type", "Size (KB)", "Length", "Folder", "Used by", "R2 key", "Uploaded"],
     data.media.map((m) => [
       m.originalName ?? m.r2Key,
       m.kind,
       m.mime,
       Math.round(m.bytes / 1024),
+      m.durationSec ? formatMinutesSeconds(m.durationSec) : "",
       m.folderId ? (folderPath.get(m.folderId) ?? "") : "",
       (audioUser.get(m.id) ?? []).join(", "),
       m.r2Key,

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ExamPreview } from "@/components/exam-import/ExamPreview";
 import { mediaPublicUrl } from "@/lib/media-storage";
+import { formatMinutesSeconds } from "@/lib/mock";
 import type { PreviewExam } from "@/lib/exam-import-map";
 import {
   deleteBlueprintAction,
@@ -126,8 +127,14 @@ export default async function ExamBlueprintPage({ params }: { params: Promise<{ 
             {bp.audioMedia ? <Badge variant="success">attached</Badge> : null}
           </h2>
           <p className="mb-3 text-sm text-muted">
-            One continuous file for the whole module, bound to <code>{bp.audioRef}</code>.
+            One continuous file for the whole module, bound to <code>{bp.audioRef}</code>. The exam
+            clock runs for exactly as long as this recording.
             {bp.audioMedia ? ` Current: ${bp.audioMedia.originalName ?? bp.audioMedia.r2Key}.` : ""}
+            {bp.audioMedia
+              ? bp.audioMedia.durationSec
+                ? ` Length: ${formatMinutesSeconds(bp.audioMedia.durationSec)} — that is the time candidates get.`
+                : " Its length could not be read, so this section falls back to its fixed time limit."
+              : ""}
           </p>
           <MediaUploadField
             kind="audio"

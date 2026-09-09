@@ -12,7 +12,7 @@ import {
 } from "@ielts/core";
 import { blueprintAnswersSchema, MAX_ANNOTATIONS_BYTES } from "@ielts/validators";
 import { auth } from "@/auth";
-import { durationSecFor } from "@/lib/mock";
+import { attemptDurationSecFor } from "@/lib/mock";
 
 type AnswersMap = Record<string, string | string[] | null>;
 
@@ -27,7 +27,10 @@ export async function startBlueprintAttemptAction(formData: FormData): Promise<v
   const blueprintId = String(formData.get("blueprintId") ?? "");
   if (!blueprintId) redirect("/play");
 
-  const bp = await prisma.examBlueprint.findUnique({ where: { id: blueprintId } });
+  const bp = await prisma.examBlueprint.findUnique({
+    where: { id: blueprintId },
+    include: { audioMedia: { select: { durationSec: true } } }
+  });
   if (!bp || bp.state !== "published") redirect("/play");
 
   const existing = await prisma.blueprintAttempt.findFirst({
@@ -36,7 +39,10 @@ export async function startBlueprintAttemptAction(formData: FormData): Promise<v
   if (existing) redirect(`/play/${existing.id}`);
 
   const startedAt = new Date();
-  const deadlineAt = computeDeadline(startedAt, durationSecFor(bp.module, bp.timeLimitMin));
+  const deadlineAt = computeDeadline(
+    startedAt,
+    attemptDurationSecFor(bp.module, bp.timeLimitMin, bp.audioMedia?.durationSec)
+  );
   let attemptId: string | null = null;
   try {
     const attempt = await prisma.blueprintAttempt.create({
@@ -69,7 +75,15 @@ export async function beginSectionAction(formData: FormData): Promise<void> {
 
   const attempt = await prisma.blueprintAttempt.findUnique({
     where: { id: attemptId },
-    include: { blueprint: { select: { module: true, timeLimitMin: true } } }
+    include: {
+      blueprint: {
+        select: {
+          module: true,
+          timeLimitMin: true,
+          audioMedia: { select: { durationSec: true } }
+        }
+      }
+    }
   });
   if (!attempt || attempt.candidateId !== userId) redirect("/play");
 
@@ -79,7 +93,11 @@ export async function beginSectionAction(formData: FormData): Promise<void> {
   const now = new Date();
   const deadlineAt = computeDeadline(
     now,
-    durationSecFor(attempt.blueprint.module, attempt.blueprint.timeLimitMin)
+    attemptDurationSecFor(
+      attempt.blueprint.module,
+      attempt.blueprint.timeLimitMin,
+      attempt.blueprint.audioMedia?.durationSec
+    )
   );
   await prisma.blueprintAttempt.updateMany({
     where: { id: attemptId, beganAt: null, status: "in_progress" },
@@ -133,7 +151,12 @@ export async function saveBlueprintAnswers(
     data: { answersJson: parsed.data as Prisma.InputJsonValue }
   });
   const expired = res.count === 0;
-  return { ok: !expired, remainingSec: remainingSeconds(attempt.deadlineAt), expired, paused: false };
+  return {
+    ok: !expired,
+    remainingSec: remainingSeconds(attempt.deadlineAt),
+    expired,
+    paused: false
+  };
 }
 
 export async function saveBlueprintAnnotations(

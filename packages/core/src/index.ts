@@ -7,3 +7,4 @@ export * from "./scoring/import-scoring";
 export * from "./scoring/tables";
 export * from "./exam/state-machine";
 export * from "./exam/timing";
+export * from "./exam/audio-duration";

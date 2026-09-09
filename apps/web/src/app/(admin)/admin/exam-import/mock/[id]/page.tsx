@@ -27,6 +27,7 @@ import {
   startMockAttemptAction
 } from "@/lib/mock-actions";
 import { overallWithSpeaking, bandLabel } from "@/lib/mock-band";
+import { formatMinutesSeconds } from "@/lib/mock";
 
 const stateVariant: Record<string, "default" | "warning" | "success"> = {
   draft: "default",
@@ -257,6 +258,9 @@ export default async function MockDetailPage({ params }: { params: Promise<{ id:
                     <span className="inline-flex items-center gap-1 text-xs text-muted">
                       <Music className="h-3.5 w-3.5" />
                       {part.blueprint.audioMedia.originalName ?? "attached"}
+                      {part.blueprint.audioMedia.durationSec
+                        ? ` · ${formatMinutesSeconds(part.blueprint.audioMedia.durationSec)} on the clock`
+                        : " · length unknown, fixed time limit applies"}
                     </span>
                   ) : null}
                 </form>

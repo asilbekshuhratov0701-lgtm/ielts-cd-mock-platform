@@ -57,7 +57,11 @@ export default async function MockPlayPage({
         examTitle={mockAttempt.mockExam.title}
         copy={sectionIntroCopy({
           module: part.module,
-          durationSec: durationSecFor(part.module, part.blueprint.timeLimitMin),
+          durationSec: durationSecFor(
+            part.module,
+            part.blueprint.timeLimitMin,
+            part.blueprint.audioMedia?.durationSec
+          ),
           totalQuestions: part.blueprint.totalQuestions,
           sectionCount: exam.sections?.length ?? 0
         })}
@@ -89,6 +93,7 @@ export default async function MockPlayPage({
     attemptId: partAttempt.id,
     deadlineAt: partAttempt.deadlineAt.toISOString(),
     serverNow: new Date().toISOString(),
+    audioDurationSec: part.blueprint.audioMedia?.durationSec ?? null,
     initialAnswers: (partAttempt.answersJson as unknown as AnswersMap) ?? {},
     initialAnnotations: (partAttempt.annotationsJson as unknown as Annotations) ?? {
       notes: [],

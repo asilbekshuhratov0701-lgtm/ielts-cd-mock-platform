@@ -29,7 +29,13 @@ export const NOTICES: Record<string, Notice> = {
   audio_attached: {
     variant: "success",
     title: "Audio attached",
-    description: "The listening track is bound to this exam."
+    description: "The listening track is bound to this exam and sets the exam clock."
+  },
+  audio_attached_no_length: {
+    variant: "info",
+    title: "Audio attached, length unknown",
+    description:
+      "The file could not be read for its length, so this section falls back to its fixed time limit."
   },
   image_attached: { variant: "success", title: "Image attached" },
 

@@ -4,6 +4,7 @@ import { prisma, Prisma } from "@ielts/db";
 import { auth } from "@/auth";
 import { saveMediaObject, mediaPublicUrl, safeKeySegment } from "@/lib/media-storage";
 import { setGroupImageOn } from "@/lib/exam-blueprint-media";
+import { probeAudioDurationSec, plausibleDurationSec } from "@ielts/core";
 
 export const dynamic = "force-dynamic";
 
@@ -40,13 +41,17 @@ export async function POST(request: NextRequest) {
     const key = `${safeKeySegment(bp.examKey)}-v${bp.version}-${safeKeySegment(
       bp.audioRef ?? "audio"
     )}.${ext}`;
-    await saveMediaObject(key, new Uint8Array(await file.arrayBuffer()));
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    await saveMediaObject(key, bytes);
+    const durationSec =
+      plausibleDurationSec(Number(form.get("durationSec"))) ?? probeAudioDurationSec(bytes);
     const media = await prisma.media.upsert({
       where: { r2Key: key },
       update: {
         kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
         mime: file.type || "audio/mpeg",
         bytes: file.size,
+        durationSec,
         originalName: file.name
       },
       create: {
@@ -55,6 +60,7 @@ export async function POST(request: NextRequest) {
         kind: "AUDIO" as Prisma.MediaCreateInput["kind"],
         mime: file.type || "audio/mpeg",
         bytes: file.size,
+        durationSec,
         originalName: file.name,
         createdById: me.id
       }
@@ -68,7 +74,11 @@ export async function POST(request: NextRequest) {
       }
     });
     revalidatePath(`/admin/exam-import/${bp.id}`);
-    return NextResponse.json({ ok: true, code: "audio_attached" });
+    return NextResponse.json({
+      ok: true,
+      code: durationSec ? "audio_attached" : "audio_attached_no_length",
+      durationSec
+    });
   }
 
   if (kind === "group-image") {

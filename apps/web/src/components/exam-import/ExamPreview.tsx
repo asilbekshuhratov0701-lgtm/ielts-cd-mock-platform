@@ -35,6 +35,7 @@ export interface LiveAttempt {
   attemptId: string;
   deadlineAt: string;
   serverNow: string;
+  audioDurationSec?: number | null;
   initialAnswers: AnswersMap;
   initialAnnotations?: Annotations;
   mock?: { mockAttemptId: string; index: number; count: number };
@@ -629,6 +630,11 @@ function Shell({
     live ? Math.max(0, Math.round((deadlineMs - (Date.now() + offsetRef.current)) / 1000)) : null
   );
 
+  const audioTimed = Boolean(live && exam.module === "listening" && audioUrl);
+  const [audioLeft, setAudioLeft] = useState<number | null>(
+    audioTimed && live?.audioDurationSec ? Math.ceil(live.audioDurationSec) : null
+  );
+
   useEffect(() => {
     if (!live) return;
     const tick = () => {
@@ -651,6 +657,30 @@ function Shell({
         finishFormRef.current?.requestSubmit();
       }
     : undefined;
+
+  const shownRemaining =
+    audioTimed && audioLeft !== null && remaining !== null
+      ? Math.min(remaining, audioLeft)
+      : remaining;
+
+  const trackAudioClock = () => {
+    const el = audioRef.current;
+    if (!audioTimed || !el) return;
+    const total = el.duration;
+    if (!Number.isFinite(total) || total <= 0) return;
+    setAudioLeft(Math.max(0, Math.ceil(total - el.currentTime)));
+  };
+
+  const onAudioEnded = () => {
+    const el = audioRef.current;
+    if (!audioTimed || !el) return;
+    const total = el.duration;
+    if (Number.isFinite(total) && total > 0 && el.currentTime < total - 1.5) return;
+    setAudioLeft(0);
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    finishFormRef.current?.requestSubmit();
+  };
 
   function step(dir: -1 | 1) {
     const i = orderedNums.indexOf(activeNum);
@@ -728,7 +758,7 @@ function Shell({
           setVolume(v);
           if (audioRef.current) audioRef.current.volume = v;
         }}
-        remaining={remaining}
+        remaining={shownRemaining}
         onFinish={onFinish}
         partProgress={live?.mock ? { index: live.mock.index, count: live.mock.count } : undefined}
         finishLabel={
@@ -765,10 +795,15 @@ function Shell({
           ref={audioRef}
           src={audioUrl}
           autoPlay
+          onLoadedMetadata={trackAudioClock}
+          onDurationChange={trackAudioClock}
           onTimeUpdate={() => {
             const t = audioRef.current?.currentTime ?? 0;
             maxRef.current = Math.max(maxRef.current, t);
+            trackAudioClock();
           }}
+          onEnded={onAudioEnded}
+          onError={() => setAudioLeft(null)}
           onSeeking={() => {
             if (audioRef.current && audioRef.current.currentTime > maxRef.current + 0.5) {
               audioRef.current.currentTime = maxRef.current;

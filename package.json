@@ -19,7 +19,8 @@
     "db:local": "node scripts/dev-db.mjs",
     "db:generate": "pnpm --filter @ielts/db run generate",
     "db:migrate": "pnpm --filter @ielts/db run migrate",
-    "db:studio": "pnpm --filter @ielts/db run studio"
+    "db:studio": "pnpm --filter @ielts/db run studio",
+    "db:audio-length": "pnpm --filter @ielts/db run backfill-audio-length"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
