@@ -17,6 +17,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:local": "node scripts/dev-db.mjs",
+    "icons": "node scripts/gen-icons.mjs",
     "db:generate": "pnpm --filter @ielts/db run generate",
     "db:migrate": "pnpm --filter @ielts/db run migrate",
     "db:studio": "pnpm --filter @ielts/db run studio",
